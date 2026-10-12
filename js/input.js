@@ -2,7 +2,7 @@
 //  input.js — Commandes : joystick tactile, boutons A/B/C/Esquive/Relève, clavier. Actions press/rel/dash/swap.
 // ============================================================
 const joy=document.getElementById('joy'),knob=document.getElementById('knob');
-function jmove(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;if(innerHeight>innerWidth){const q=dx;dx=dy;dy=-q}const m=Math.hypot(dx,dy),L=45;if(m>L){dx*=L/m;dy*=L/m}jx=dx/L;jy=dy/L;knob.style.transform=`translate(${dx}px,${dy}px)`}
+function jmove(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;if(innerHeight>innerWidth){const q=dx;dx=dy;dy=-q}dx/=UIK.menu;dy/=UIK.menu;const m=Math.hypot(dx,dy),L=45;if(m>L){dx*=L/m;dy*=L/m}jx=dx/L;jy=dy/L;knob.style.transform=`translate(${dx}px,${dy}px)`}
 joy.addEventListener('pointerdown',e=>{joy.setPointerCapture(e.pointerId);jmove(e)});
 joy.addEventListener('pointermove',e=>{if(joy.hasPointerCapture(e.pointerId))jmove(e)});
 const jend=()=>{jx=jy=0;knob.style.transform=''};

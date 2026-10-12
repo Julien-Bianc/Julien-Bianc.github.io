@@ -12,7 +12,7 @@ const teamOk = t => t.members.length >= 1 && t.members.length <= t.size && t.mem
 function showMain(){
   G = null;
   menu(`<h1>Arène des Créatures</h1><div class='mlist'>${MAIN_MENU.map(m =>
-    `<button class='mbtn' data-id='${m.id}' ${m.soon ? 'disabled' : ''}><b>${m.label}</b><small>${m.soon ? 'Bientôt' : m.desc}</small></button>`).join('')}</div>${MENU_WARN}`);
+    `<button class='mbtn' data-id='${m.id}' ${m.soon ? 'disabled' : ''}><b>${m.label}</b><small>${m.soon ? 'Bientôt' : m.desc}</small></button>`).join('')}</div>${MENU_WARN}<p class='ver'>v${GAME_VERSION}</p>`);
   bindAll('.mbtn', el => {
     const it = MAIN_MENU.find(m => m.id === el.dataset.id), fn = SCREENS[it.screen];
     if(fn) fn(); else console.warn('Écran inconnu : ' + it.screen);
@@ -34,30 +34,44 @@ function showTeams(){
   document.getElementById('back').onclick = showMain;
 }
 
+function pokeDetail(id){
+  const D = POKEMON[id]; if(!D) return `<p>${NAME[id] || id}</p>`;
+  const bar = (label, v, max, txt) => `<div class='stat'><span>${label}</span><div class='bar'><i style='width:${Math.min(100, v/max*100)}%'></i></div><b>${txt}</b></div>`;
+  const chips = D.types.map(t => `<span class='tc' style='background:${COL[t]}'>${TN[t] || t}</span>`).join('');
+  const mv = D.moves.map(m => `<div class='mvd'><div class='mvh'><span class='tc' style='background:${(m.color || COL[m.type])}'>${TN[m.type] || m.type}</span><b>${esc(m.name)}</b><small>${KIND_LABEL[m.kind] || m.kind} · puiss. ${m.power} · ${m.cooldown}s</small></div><em>${esc(moveDesc(m))}</em></div>`).join('');
+  return `<div class='dh'>${thumb(id)}<div><b>${esc(D.name)}</b><br>${chips}</div></div>
+    ${bar('PV', D.hp, 140, D.hp*10)}${bar('Vitesse', D.speed, 230, D.speed)}
+    ${D.ability ? `<p class='abl'><b>${esc(D.ability.name)}</b> — ${esc(D.ability.desc)}</p>` : ''}${mv}`;
+}
 function showTeamEditor(team){
-  const ed = { id:team.id, name:team.name, size:team.size, members:team.members.filter(id => ORDER.includes(id)) };
+  const ed = { id:team.id, name:team.name, size:team.size, members:team.members.filter(id => ORDER.includes(id)), focus:null };
+  ed.focus = ed.members[0] || ORDER[0];
   const sync = () => { const el = document.getElementById('tn'); if(el) ed.name = el.value; };
   const render = () => {
+    const inTeam = ed.members.includes(ed.focus);
     menu(`<h1>${ed.id ? 'Modifier' : 'Nouvelle'} équipe</h1>
     <div class='row'><input id='tn' value="${esc(ed.name)}" maxlength='18'>
-      <button class='btn2 ${ed.size === 3 ? 'on' : ''}' data-size='3'>3v3</button><button class='btn2 ${ed.size === 6 ? 'on' : ''}' data-size='6'>6v6</button></div>
-    <div class='row'>${Array.from({ length:ed.size }, (_, i) => `<div class='slot' data-rm='${i}'>${ed.members[i] ? thumb(ed.members[i]) : '+'}</div>`).join('')}</div>
-    <div class='scroll'><div class='grid2'>${ORDER.map(id => `<button class='card ${ed.members.includes(id) ? 'sel' : ''}' data-add='${id}'>${thumb(id)}<small>${NAME[id]}</small><small class='ty'>${typesOf(id).map(t => `<span class='tc' style='background:${COL[t]}'>${TN[t] || t}</span>`).join('')}</small></button>`).join('')}</div></div>
-    <div class='row'><button class='btn' id='sv'>Enregistrer</button><button class='btn2' id='cn'>Annuler</button></div>`);
+      <button class='btn2 ${ed.size === 3 ? 'on' : ''}' data-size='3'>3v3</button><button class='btn2 ${ed.size === 6 ? 'on' : ''}' data-size='6'>6v6</button>
+      ${Array.from({ length:ed.size }, (_, i) => `<div class='slot' data-rm='${i}'>${ed.members[i] ? thumb(ed.members[i]) : '+'}</div>`).join('')}</div>
+    <div class='edit'>
+      <div class='scroll left'><div class='grid2c'>${ORDER.map(id => `<button class='card ${ed.members.includes(id) ? 'sel' : ''} ${id === ed.focus ? 'foc' : ''}' data-add='${id}'>${thumb(id)}<small>${NAME[id]}</small></button>`).join('')}</div></div>
+      <div class='scroll right'><button class='btn2 ${inTeam ? 'on' : ''}' id='tg'>${inTeam ? 'Retirer de l\'équipe' : (ed.members.length < ed.size ? 'Ajouter à l\'équipe' : 'Équipe pleine')}</button>${pokeDetail(ed.focus)}</div>
+    </div>
+    <div class='row'><button class='btn' id='sv'>Enregistrer (${ed.members.length}/${ed.size})</button><button class='btn2' id='cn'>Annuler</button></div>`);
     bindAll('[data-size]', el => { sync(); ed.size = +el.dataset.size; ed.members = ed.members.slice(0, ed.size); render(); });
     bindAll('[data-rm]', el => { sync(); ed.members.splice(+el.dataset.rm, 1); render(); });
-    bindAll('[data-add]', el => {
-      sync(); const id = el.dataset.add, i = ed.members.indexOf(id);
-      if(i >= 0) ed.members.splice(i, 1); else if(ed.members.length < ed.size) ed.members.push(id);
+    bindAll('[data-add]', el => { sync(); ed.focus = el.dataset.add; render(); });                // toucher une carte = voir ses statistiques
+    document.getElementById('tg').onclick = () => {
+      sync(); const i = ed.members.indexOf(ed.focus);
+      if(i >= 0) ed.members.splice(i, 1); else if(ed.members.length < ed.size) ed.members.push(ed.focus);
       render();
-    });
+    };
     document.getElementById('sv').onclick = () => { sync(); if(!ed.members.length){ alert('Ajoute au moins 1 Pokémon.'); return; } Save.saveTeam({ id:ed.id, name:ed.name.trim() || 'Équipe', size:ed.size, members:ed.members }); showTeams(); };
     document.getElementById('cn').onclick = showTeams;
   };
   render();
 }
 
-// ---------- Solo ----------
 function showSolo(sel){
   const teams = Save.teams().filter(teamOk);
   if(!teams.length){

@@ -2,8 +2,8 @@
 //  combat.js — Règles de combat : lancement d'une partie, apparition des ennemis, dégâts, statuts, IA, déroulement d'une image (step).
 // ============================================================
 function setSt(o,t,k){if(o.st||Math.random()>.3)return;if(t=='feu'){o.st='burn';o.stT=4;dmgTxt(o.x,o.y-50,'BRÛLÉ','#ff8a5a')}else if(t=='foudre'||k=='tide'){o.st='par';o.stT=2;dmgTxt(o.x,o.y-50,t=='foudre'?'PARALYSÉ':'RALENTI','#ffe24a')}}
-function hurtE(d,b){const e=G.e;if(e.hp<=0||G.intro>0)return;const x=mult(b.t,e.t),dm=x===0?0:Math.max(1,Math.round(d*x));e.hp-=dm;hitFx(e.x,e.y,dm,x,1,b.t);setSt(e,b.t,b.k,b);if(b.drain){const p=G.p;p.hp=Math.min(p.max,p.hp+dm*b.drain);dmgTxt(p.x,p.y-34,'+'+Math.round(dm*b.drain*10),'#8dff9a')}if(e.hp<=0){e.hp=0;G.wait=2.2;dmgTxt(e.x,e.y,'K.O.','#ffd23f');bullets.length=0;zn.length=0;return 1}}
-function hurtP(d,b){const p=G.p;if(p.inv>0||p.dT>0||p.hp<=0)return;const x=mult(b.t,p.t),dm=x===0?0:Math.max(1,Math.round(d*x));p.hp-=dm;p.inv=.6;hitFx(p.x,p.y,dm,x,0,b.t);setSt(p,b.t,b.k,b);if(p.hp<=0){p.hp=0;const nx=G.team.find(c=>c.hp>0);if(nx){doSwap(nx);G.swc=0}else{G.over=1;battleEnd(false)}return 1}}
+function hurtE(d,b){const e=G.e;if(e.hp<=0||G.intro>0)return;const x=mult(b.t,e.t),dm=x===0?0:Math.max(1,Math.round(d*x));e.hp-=dm;hitFx(e.x,e.y,dm,x,1,b.t,b.col);setSt(e,b.t,b.k,b);if(b.drain){const p=G.p;p.hp=Math.min(p.max,p.hp+dm*b.drain);dmgTxt(p.x,p.y-34,'+'+Math.round(dm*b.drain*10),'#8dff9a')}if(e.hp<=0){e.hp=0;G.wait=2.2;dmgTxt(e.x,e.y,'K.O.','#ffd23f');bullets.length=0;zn.length=0;return 1}}
+function hurtP(d,b){const p=G.p;if(p.inv>0||p.dT>0||p.hp<=0)return;const x=mult(b.t,p.t),dm=x===0?0:Math.max(1,Math.round(d*x));p.hp-=dm;p.inv=.6;hitFx(p.x,p.y,dm,x,0,b.t,b.col);setSt(p,b.t,b.k,b);if(p.hp<=0){p.hp=0;const nx=G.team.find(c=>c.hp>0);if(nx){doSwap(nx);G.swc=0}else{G.over=1;battleEnd(false)}return 1}}
 function explode(b){fx.push({x:b.x,y:b.y,t:.45,mx:.45});G.shake=Math.max(G.shake,.2);crater(b.x,b.y,12,COL[b.t]||'#e8603c');for(let i=0;i<8;i++){const a=i*.785+Math.random()*.2;bullets.push({x:b.x,y:b.y,vx:Math.cos(a)*200,vy:Math.sin(a)*200,r:4,d:b.d*.4,t:b.t,k:'shot',own:b.own,life:.55,hit:0,age:0})}for(let i=0;i<14;i++)pt.push({x:b.x,y:b.y,vx:(Math.random()-.5)*260,vy:(Math.random()-.5)*260,g:0,t:.4,c:i%2?'#ffffff':(COL[b.t]||'#ff7a2c'),s:3})}
 function cast(s,d,m,c,own,sc,ang){const a=ang??Math.atan2(d.y-s.y,d.x-s.x),sp=m.s*(own?1:(.85+Math.min(G.wave,3)*.03)*G.stage.pspeed),dm=m.d*(1+c*.9)*sc,t=m.tp||s.t,k=m.k,ox=s.x+Math.cos(a)*16,oy=s.y+Math.sin(a)*16,R=Math.random;
  const B=o=>{const an=o.an??a,v=o.sp||sp;bullets.push({x:ox,y:oy,vx:Math.cos(an)*v,vy:Math.sin(an)*v,r:5,d:dm,t,k,own,life:3,hit:0,age:0,...o})};
@@ -51,8 +51,8 @@ function step(dt){DT=dt;if(HS>0){HS-=dt;return}const p=G.p,e=G.e;G.time+=dt;if(G
  p.x=Math.max(30,Math.min(W-30,p.x+dx*sp*dt));p.y=Math.max(44,Math.min(H-34,p.y+dy*sp*dt));
  for(let i=0;i<3;i++){if(p.cd[i]>0)p.cd[i]-=dt;if(down[i]&&p.cd[i]<=0)p.ch[i]=Math.min(1,p.ch[i]+dt/(isBig(p.mv[i])?1.1:.7))}
  if(p.dC>0)p.dC-=dt;if(p.inv>0)p.inv-=dt;
- if(p.st){p.stT-=dt;if(p.st=='burn'||p.st=='psn')p.hp=Math.max(1,p.hp-2.5*dt);if(p.stT<=0)p.st=null}
- if(e.st){e.stT-=dt;if(e.st=='burn'||e.st=='psn')e.hp=Math.max(1,e.hp-3*dt);if(e.stT<=0)e.st=null}
+ if(p.st){p.stT-=dt;if(p.st=='burn'||p.st=='psn')p.hp-=2.5*dt;if(p.stT<=0)p.st=null}
+ if(e.st){e.stT-=dt;if(e.st=='burn'||e.st=='psn')e.hp-=3*dt;if(e.stT<=0)e.st=null}
  if(G.intro>0)G.intro-=dt;
  if(e.hp>0&&!G.wait){const dd=300+Math.sin(G.time*.7+e.ph)*70,an=Math.atan2(H/2-p.y,W/2-p.x)+Math.sin(G.time*.5+e.ph)*1.1,tx=Math.max(50,Math.min(W-50,p.x+Math.cos(an)*dd)),ty=Math.max(60,Math.min(H-50,p.y+Math.sin(an)*dd)),pf=e.st=='par'?.5:1;
   e.y+=(ty-e.y)*Math.min(1,dt*2*pf);e.x+=(tx-e.x)*Math.min(1,dt*(1.8+Math.min(G.wave,3)*.35)*pf*G.stage.speed);

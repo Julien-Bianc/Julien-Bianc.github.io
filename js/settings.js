@@ -5,13 +5,14 @@
 // Touches par défaut (le moteur utilise ces codes en interne ; tes touches personnalisées sont converties par canon())
 const DEFAULT_KEYS = { up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', a:'KeyJ', b:'KeyK', c:'KeyL', dash:'Space', swap:'KeyQ', pause:'Escape', fullscreen:'KeyF' };
 const KEY_LABELS = { up:'Haut', down:'Bas', left:'Gauche', right:'Droite', a:'Attaque A', b:'Attaque B', c:'Attaque C', dash:'Esquive', swap:'Relève', pause:'Pause', fullscreen:'Plein écran' };
-const SETTINGS_DEFAULT = { master:.8, sfx:.9, music:.5, shake:1, autoFs:false };
+const SETTINGS_DEFAULT = { master:.8, sfx:.9, music:.5, shake:.35, autoFs:false, uiMenu:0, uiHud:0 };   // uiMenu / uiHud : 0 = automatique, sinon facteur (1 = normal)
 
 const Settings = {
   get(){
     const d = Save.load();
     if(!d.settings) d.settings = {};
     const s = d.settings;
+    if((s.ver || 0) < 5){ s.shake = SETTINGS_DEFAULT.shake; s.ver = 5; }       // v0.05 : secousses réduites par défaut
     for(const k in SETTINGS_DEFAULT) if(s[k] === undefined) s[k] = SETTINGS_DEFAULT[k];
     if(!s.keys) s.keys = {};
     for(const a in DEFAULT_KEYS) if(!s.keys[a]) s.keys[a] = DEFAULT_KEYS[a];
@@ -77,3 +78,14 @@ addEventListener('pointerdown', () => { if(!fsEl() && Settings.get().autoFs) tog
 // ---------- PWA (installation sur l'écran d'accueil, plein écran comme une appli) ----------
 if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
   navigator.serviceWorker.register('sw.js').catch(() => {});
+
+// ---------- taille de l'interface (écrans 2K/4K) ----------
+const UIK = { menu:1, hud:1 };
+function uiAuto(){ const w = Math.max(innerWidth, innerHeight); return { menu:Math.max(1, Math.min(3, w/900)), hud:Math.max(1, Math.min(1.8, w/1100)) }; }
+function applyUI(){
+  const s = Settings.get(), a = uiAuto();
+  UIK.menu = s.uiMenu || a.menu; UIK.hud = s.uiHud || a.hud;
+  document.documentElement.style.setProperty('--ui', UIK.menu.toFixed(2));
+}
+addEventListener('resize', applyUI);
+applyUI();

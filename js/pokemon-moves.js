@@ -40,12 +40,12 @@ function updRs(s, d, own){
     const M = R.M, b = { t:R.m.tp, k:R.m.k, own, status:M.status };
     let dm = R.m.d * R.sc * (1 + R.c*.9);
     const ab = abilityOf(s), cr = M.crit ? M.crit + ((ab && ab.critBonus) || 0) : 0;
-    if(cr && Math.random() < cr){ dm *= 1.6; dmgTxt(d.x, d.y - 64, 'CRITIQUE !', '#ffd23f'); }
+    if(cr && Math.random() < cr){ dm *= 1.6; b.crit = 1; dmgTxt(d.x, d.y - 64, 'CRITIQUE !', '#ffd23f'); }
     sfx.push({ x:d.x, y:d.y, k:M.fx, tp:R.m.tp, born:performance.now(), dur:280, a:Math.atan2(d.y - s.y, d.x - s.x) });
     if(M.inv){ if(own) s.inv = Math.max(s.inv, M.inv); else s.invT = G.time + M.inv; }
     const ko = own ? hurtE(dm, b) : hurtP(dm, b);
     if(M.kb && !ko){ const a = Math.atan2(d.y - s.y, d.x - s.x); d.x = Math.max(30, Math.min(W - 30, d.x + Math.cos(a)*M.kb)); d.y = Math.max(44, Math.min(H - 34, d.y + Math.sin(a)*M.kb)); }
-    if(M.recoil){ const lost = Math.max(1, Math.round(dm*M.recoil)); s.hp = Math.max(1, s.hp - lost); dmgTxt(s.x, s.y - 48, '-' + lost*10 + ' contrecoup', '#ff9a8a'); }
+    if(M.recoil){ const lost = Math.max(1, Math.round(dm*M.recoil)); s.hp -= lost; dmgTxt(s.x, s.y - 48, '-' + lost*10 + ' contrecoup', '#ff9a8a'); }
     if(ko){ s.rs = null; return; }
   }
   if(t >= R.end){ s.rs = null; s.x = R.sx; s.y = R.sy; }
@@ -61,7 +61,7 @@ function fan(s, d, m, c, own, sc, ang){
     const an = a + (i - mid)*(F.spread || .15) + (R() - .5)*(F.jitter ?? .05), v = sp*(.8 + R()*.4);
     bullets.push({ x:s.x + Math.cos(a)*16, y:s.y + Math.sin(a)*16, vx:Math.cos(an)*v, vy:Math.sin(an)*v,
       r:(F.radius || 5) + (F.radiusJitter ? R()*F.radiusJitter : 0), d:dm, t:m.tp, k:'fan', own,
-      life:F.life || 1, hit:0, age:0, status:F.status, home:F.home });
+      life:F.life || 1, hit:0, age:0, status:F.status, home:F.home, col:F.color });
   }
   if(F.exhaust) s.exh = G.time + F.exhaust;      // ralentit le lanceur après l'attaque
 }

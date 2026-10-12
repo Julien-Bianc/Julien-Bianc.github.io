@@ -15,7 +15,8 @@ function glow(c){
   const k = document.createElement('canvas'); k.width = k.height = 32; const x = k.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
   g.addColorStop(0, hexA(c, 1)); g.addColorStop(.4, hexA(c, .7)); g.addColorStop(1, hexA(c, 0)); x.fillStyle = g; x.fillRect(0, 0, 32, 32); return GL[c] = k;
 }
-function vp(o){ if(VP.length < 900) VP.push(Object.assign({ x:0, y:0, vx:0, vy:0, life:.5, max:0, s:6, s1:6, col:'#fff', pal:null, g:0, fr:0, kind:'glow', rot:0, vr:0, a:1 }, o, { max:o.life })); }
+let VFX_LOW = false;
+function vp(o){ if(VP.length < (VFX_LOW ? 350 : 900) && !(VFX_LOW && Math.random() < .5)) VP.push(Object.assign({ x:0, y:0, vx:0, vy:0, life:.5, max:0, s:6, s1:6, col:'#fff', pal:null, g:0, fr:0, kind:'glow', rot:0, vr:0, a:1 }, o, { max:o.life })); }
 const R_ = (a, b) => a + Math.random()*(b - a);
 const ang2 = a => [Math.cos(a), Math.sin(a)];
 
@@ -49,7 +50,7 @@ function drawVfx(){
   ctx.globalCompositeOperation = 'lighter';
   for(const b of bullets){
     const t = b.t, fl = .85 + Math.random()*.3, r = b.r*(t === 'feu' || t === 'dragon' ? 3.2 : 2.6)*fl;
-    ctx.globalAlpha = .38; ctx.drawImage(glow(t === 'feu' ? '#ff8a2c' : t === 'dragon' ? '#9a60e8' : (COL[t] || '#ffffff')), b.x - r, b.y - r, r*2, r*2);
+    ctx.globalAlpha = .38; ctx.drawImage(glow(t === 'feu' ? '#ff8a2c' : t === 'dragon' ? '#9a60e8' : (b.col || COL[t] || '#ffffff')), b.x - r, b.y - r, r*2, r*2);
     if(t === 'feu' || t === 'dragon'){ ctx.globalAlpha = .45; const c = glow(t === 'feu' ? '#fff0a0' : '#e8d8ff'); ctx.drawImage(c, b.x - r*.5, b.y - r*.5, r, r); }
   }
   // lueur des rayons et colonnes d'éclairs
@@ -93,14 +94,15 @@ trail = function(b){
     case 'vol':
       vp({ x, y, vx:-b.vx*.2, vy:-b.vy*.2, life:.25, kind:'spark', col:'#e8f0ff' }); break;
     default:
-      vp({ x, y, vx:R_(-30, 30), vy:R_(-30, 30), life:R_(.2, .4), s:R_(4, 7), s1:2, col:COL[t] || '#fff', a:.7 });
+      vp({ x, y, vx:R_(-30, 30), vy:R_(-30, 30), life:R_(.2, .4), s:R_(4, 7), s1:2, col:b.col || COL[t] || '#fff', a:.7 });
   }
 };
 
 // ---------- impacts (appelé à chaque coup reçu) ----------
 function burst(n, fn){ for(let i = 0; i < n; i++) fn(i, Math.random()*6.283); }
-function hitFx2(x, y, tp, d, en){
-  const k = Math.min(2.2, .7 + d/22), N = n => Math.round(n*k), col = COL[tp] || '#fff';
+function hitFx2(x, y, tp, d, en, ov){
+  const k = Math.min(2.2, .7 + d/22), N = n => Math.round(n*k), col = ov || COL[tp] || '#fff';
+  if(ov){ burst(N(12), (i, a) => vp({ x, y, vx:Math.cos(a)*R_(60, 200), vy:Math.sin(a)*R_(60, 200), life:.5, s:R_(7, 11), s1:2, kind:'star', col:ov, rot:a, vr:6 })); vp({ x, y, life:.4, s:6, s1:52*k, kind:'ring', col:ov }); vp({ x, y, life:.2, s:14*k, s1:34*k, col:ov, a:.9 }); kick(Math.min(4, 1 + d/14), en); return; }
   const ring = (c, s) => vp({ x, y, life:.4, s:6, s1:s*k, kind:'ring', col:c });
   switch(tp){
     case 'feu':
@@ -136,10 +138,10 @@ function hitFx2(x, y, tp, d, en){
       burst(N(8), (i, a) => vp({ x, y, life:.45, s:R_(7, 12), s1:2, kind:'star', col:col, rot:a, vr:6, vx:Math.cos(a)*R_(60, 170), vy:Math.sin(a)*R_(60, 170) })); ring('#ffffff', 44);
   }
   vp({ x, y, life:.14, s:14*k, s1:30*k, col:'#ffffff', a:.9 });
-  kick(Math.min(7, 1.5 + d/8), en);
+  kick(Math.min(4, 1 + d/14), en);
 }
 const _hitFxV = hitFx;
-hitFx = function(x, y, d, m, en, tp){ _hitFxV(x, y, d, m, en, tp); hitFx2(x, y, tp || (en ? G.p.t : G.e.t), d, en); playSfx('hit:' + (tp || 'normal'), Math.min(1.6, .7 + d/25)); };
+hitFx = function(x, y, d, m, en, tp, col){ _hitFxV(x, y, d, m, en, tp, col); hitFx2(x, y, tp || (en ? G.p.t : G.e.t), d, en, col); playSfx('hit:' + (tp || 'normal'), Math.min(1.6, .7 + d/25)); };
 
 // ---------- départ d'une attaque (flamme, givre… devant le lanceur) ----------
 const _castV = cast;
@@ -157,7 +159,7 @@ cast = function(s, d, m, c, own, sc, ang){
 // ---------- K.O. ----------
 const KOFX = [];
 function onKO(o, en){
-  slowmo(.3, .9); HS = Math.max(HS, .2); G.shake = Math.max(G.shake, .9); ZOOM.k = .1; flashScreen(.7); kick(10, en);
+  slowmo(.45, .7); HS = Math.max(HS, .12); G.shake = Math.max(G.shake, .5); ZOOM.k = .05; flashScreen(.4); kick(5, en);
   const col = COL[o.t] || '#fff';
   burst(26, (i, a) => vp({ x:o.x, y:o.y, vx:Math.cos(a)*R_(80, 300), vy:Math.sin(a)*R_(80, 300), life:R_(.6, 1.1), s:R_(8, 14), s1:2, kind:'star', col:i%2 ? '#ffe070' : col, rot:a, vr:R_(-8, 8), fr:1.5 }));
   for(let i = 0; i < 3; i++) vp({ x:o.x, y:o.y, life:.5 + i*.15, s:10, s1:90 + i*30, kind:'ring', col:i ? col : '#fff' });

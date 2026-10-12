@@ -136,3 +136,16 @@ Il faut au moins 6 Pokémon chargés pour créer des équipes 6v6. Les équipes 
 | Modifier l'écran Options | `js/options.js` |
 | Changer l'apparence d'un type d'attaque, le K.O., les chocs | `js/vfx.js` |
 | Changer l'animation de Pokéball | `js/pokeball.js` |
+
+## v0.05 — entraînement, lisibilité, critiques, K.O. définitif
+- **Entraînement** (menu principal) : choisis ton Pokémon et un mannequin sur un terrain quadrillé. Dans la pause : change de Pokémon,
+  mannequin immobile / mobile / qui se bat, invincibilité, recharge instantanée. Code : `js/training.js`.
+- **Lisibilité** : secousses réduites par défaut (35 %), réglables dans Options. Aperçu au sol des attaques pendant la charge ou la visée
+  (cône, ligne, zone ; plus marqué quand tu vises) : `js/aim.js`.
+- **Critiques** : 1 chance sur 16 pour tous les Pokémon, x1,5 (`CRIT` dans `js/rules.js`).
+- **K.O. définitif** : un Pokémon K.O. ne revient jamais ; brûlure, poison et contrecoup peuvent achever. L'esquive annule la charge.
+- **Équipe** : l'éditeur affiche PV, vitesse, capacité et les 3 attaques avec description (`data/pokemon-tweaks.js` → `MOVE_DESC`,
+  ou champ `desc` dans l'attaque).
+- **Écrans 2K/4K** : Options → taille des menus et de l'ATH (Auto par défaut).
+- **Aurasphère** : projectile bleu (champ `color` d'une attaque de kind 'fan').
+- **Sécurité** : si le jeu rencontre une erreur, il se met en pause et affiche un rapport à copier au lieu de se figer.
