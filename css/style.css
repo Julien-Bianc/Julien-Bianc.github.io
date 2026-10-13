@@ -278,3 +278,8 @@ body{position:fixed;inset:0;width:100%;overscroll-behavior:none;touch-action:man
 .ab.lk{opacity:.35;filter:grayscale(1)}
 /* victoire : gain de Pokédollars */
 .gain{display:flex;flex-direction:column;align-items:center;margin:4px 0}.gain b{font-size:20px;color:#ffe27a;text-shadow:0 0 8px #ffd23f88}.gain small{font-size:10px;opacity:.8}
+/* v0.10b : illustration des cartes recadrée et centrée (pose selon la rareté) */
+.ta{align-items:center!important}
+.ta img{width:94px!important;height:78px!important;margin:0!important;image-rendering:pixelated}
+.pk.miss img{width:50px!important;height:42px!important}
+.pk.big img{width:94px!important;height:78px!important}

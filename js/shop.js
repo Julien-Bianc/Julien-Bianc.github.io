@@ -33,6 +33,61 @@ function crateImg(){
 }
 
 
+// ---------- illustration des cartes : une POSE différente selon la rareté, recadrée et centrée ----------
+//  C  = au repos (Idle), de face.  PC = en pleine attaque.  R = attaque spéciale / pose de puissance.
+//  Pour choisir toi-même la pose d'un Pokémon : dans data/pokemon*.js, ajoute par exemple
+//    cards:{ PC:{ anim:'Strike', frame:2, dir:1 }, R:{ anim:'Pose' } }
+//  anim = nom d'une animation du dossier (voir AnimData.xml), frame = numéro d'image (défaut : image de frappe ou milieu),
+//  dir = direction 0 bas, 1 bas-droite, 2 droite … 7 bas-gauche.
+const CARD_POSE = {
+  C:  { anims:['Idle'],                                                  dir:0, frame:0 },
+  PC: { anims:['Attack', 'Strike', 'MultiScratch', 'QuickStrike', 'Swing'], dir:1, frame:'hit' },
+  R:  { anims:['SpAttack', 'Shoot', 'Charge', 'RearUp', 'Twirl'], dir:7, frame:'mid' }
+};
+const ART_W = 94, ART_H = 78;                                               // taille de la zone d'illustration de la carte
+function cardPose(pid, r){
+  const S = SPR[pid], P = CARD_POSE[r] || CARD_POSE.C, ov = (S && S.def.cards && S.def.cards[r]) || {};
+  if(!S) return null;
+  const ok = n => { const a = n && resolveAnim(S, n); return a && S.IM[a] && S.D.anim[a] ? a : null; };
+  let an = ok(ov.anim);
+  if(!an){
+    const used = r === 'R' ? cardPose(pid, 'PC') : null;                    // la rare évite la même animation que la peu commune
+    an = P.anims.map(ok).find(a => a && (!used || a !== used.an)) || P.anims.map(ok).find(Boolean) || 'Idle';
+  }
+  const d = S.D.anim[an], n = d.dur.length, f = ov.frame ?? P.frame;
+  let fi = f === 'hit' ? (d.hit ?? Math.floor(n/2)) : f === 'mid' ? Math.floor(n/2) : +f || 0;
+  return { an, fi:Math.max(0, Math.min(n - 1, fi)), dir:ov.dir ?? P.dir };
+}
+// découpe une image d'animation : cadre serré autour des pixels visibles + échelle entière qui tient dans la zone
+function poseCrop(S, an, fi, dir){
+  const d = S.D.anim[an], im = S.IM[an]; if(!d || !im || !im.naturalWidth) return null;
+  const nr = Math.floor(im.naturalHeight/d.fh), row = nr >= 8 ? dir : 0;
+  const t = mkc(d.fw, d.fh), x = t.getContext('2d', { willReadFrequently:true });
+  x.drawImage(im, fi*d.fw, row*d.fh, d.fw, d.fh, 0, 0, d.fw, d.fh);
+  const px = x.getImageData(0, 0, d.fw, d.fh).data;
+  let x0 = d.fw, y0 = d.fh, x1 = -1, y1 = -1;
+  for(let yy = 0; yy < d.fh; yy++) for(let xx = 0; xx < d.fw; xx++) if(px[(yy*d.fw + xx)*4 + 3] > 0){ if(xx < x0) x0 = xx; if(xx > x1) x1 = xx; if(yy < y0) y0 = yy; if(yy > y1) y1 = yy; }
+  if(x1 < 0) return null;
+  const w = x1 - x0 + 1, h = y1 - y0 + 1, fit = Math.min(ART_W*.9/w, ART_H*.9/h);
+  return { t, x0, y0, w, h, k:fit >= 1 ? Math.floor(fit) : fit };
+}
+function cardArt(pid, r){
+  const key = 'art' + pid + r; if(_shopCache[key]) return _shopCache[key];
+  const S = SPR[pid], ps = cardPose(pid, r);
+  if(!ps) return _shopCache[key] = spr(pid).toDataURL();
+  let c = poseCrop(S, ps.an, ps.fi, ps.dir);
+  // garde-fou : si la pose sort plus petite que la pose de repos (effet ou pixel isolé loin du Pokémon), on prend une autre image
+  const base = poseCrop(S, 'Idle', 0, 0), want = base ? base.k : 1;
+  if(!(S.def.cards && S.def.cards[r] && S.def.cards[r].frame != null) && (!c || c.k < want)){
+    const n = S.D.anim[ps.an].dur.length;
+    for(let i = 1; i < n && (!c || c.k < want); i++){ const q = poseCrop(S, ps.an, (ps.fi + i) % n, ps.dir); if(q && (!c || q.k > c.k)) c = q; }
+  }
+  if(!c) return _shopCache[key] = spr(pid).toDataURL();
+  const out = mkc(ART_W, ART_H), o = out.getContext('2d'); o.imageSmoothingEnabled = false;
+  o.drawImage(c.t, c.x0, c.y0, c.w, c.h, Math.round((ART_W - c.w*c.k)/2), Math.round((ART_H - c.h*c.k)/2), c.w*c.k, c.h*c.k);
+  return _shopCache[key] = out.toDataURL();
+}
+
 // ---------- carte de collection (format carte Pokémon, en HTML pour de beaux effets holo) ----------
 const spriteURL = id => _shopCache['sp' + id] || (_shopCache['sp' + id] = spr(id).toDataURL());
 const SYM = { C:'●', PC:'◆', R:'★', UR:'✦' };
@@ -45,7 +100,7 @@ function cardHtml(it, s){
   const no = String(ORDER.indexOf(it.poke) + 1).padStart(2, '0') + '/' + String(ORDER.length).padStart(2, '0');
   return `<div class='cw r-${it.r}' style='--cs:${s}'><div class='tcg'><div class='tin' style='background:${body}'>
     <div class='th'><b>${esc(D.name)}</b><span>PV ${D.hp}${dots}</span></div>
-    <div class='ta' style='background:radial-gradient(ellipse at 50% 90%,${a1},${a2})'><img src='${spriteURL(it.poke)}'></div>
+    <div class='ta' style='background:radial-gradient(ellipse at 50% 90%,${a1},${a2})'><img src='${cardArt(it.poke, it.r)}'></div>
     <div class='ti'>${D.types.map(t => TN[t] || t).join('/')} · Vit. ${D.speed}</div>
     <div class='tmv'>${mv}</div>
     <div class='tf'><span>${no}</span><span class='ts' style='color:${R.col}'>${SYM[it.r]}</span></div></div>
@@ -285,13 +340,13 @@ function binderBody(o, inv){
     const id = `card:${pid}:${r}`, it = ITEM[id], f = id === o.sel ? ' foc' : '';
     if(!show(id)) return `<span class='pk off'></span>`;
     if(owned(id)) return `<button class='pk r-${r}${f}' data-id='${id}' style='${rarCss(r)}'>${cardHtml(it, .4)}${inv[id] > 1 ? `<span class='cnt'>×${inv[id]}</span>` : ''}</button>`;
-    return `<button class='pk miss${f}' data-id='${id}' style='${rarCss(r)}'><img src='${spriteURL(pid)}'><span class='sym'>${SYM[r]}</span></button>`;
+    return `<button class='pk miss${f}' data-id='${id}' style='${rarCss(r)}'><img src='${cardArt(pid, r)}'><span class='sym'>${SYM[r]}</span></button>`;
   };
   const it = o.sel && ITEM[o.sel] && ITEM[o.sel].kind === 'card' ? ITEM[o.sel] : null;
   let detail = `<p>Ton classeur : une page par Pokémon, avec ses cartes <b style='color:${RAR.C.col}'>commune</b>, <b style='color:${RAR.PC.col}'>peu commune</b> et <b style='color:${RAR.R.col}'>rare</b>.</p><p>Les cartes manquantes apparaissent en silhouette.</p><p class='hint'>Échanges entre joueurs : bientôt.</p>`;
   if(it && owned(it.id)) detail = `<div class='bdv'>${cardHtml(it, .85)}<div><b style='color:${RAR[it.r].col}'>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
       <p>Possédée : ×${inv[it.id]}</p><p class='hint'>${whereTxt(it)}</p></div></div>${sellRow(it)}<div class='row left'><button class='btn2' disabled>Échanger — bientôt</button></div>`;
-  else if(it) detail = `<div class='bdv'><div class='pk miss big' style='${rarCss(it.r)}'><img src='${spriteURL(it.poke)}'><span class='sym'>${SYM[it.r]}</span></div><div><b>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
+  else if(it) detail = `<div class='bdv'><div class='pk miss big' style='${rarCss(it.r)}'><img src='${cardArt(it.poke, it.r)}'><span class='sym'>${SYM[it.r]}</span></div><div><b>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
       <p>Pas encore obtenue</p><p class='hint'>${whereTxt(it)}</p></div></div>`;
   return `<div class='row'>${[['all', 'Toutes'], ['have', 'Possédées'], ['miss', 'Manquantes']].map(([k, l]) => `<button class='btn2 sm ${o.filter === k ? 'on' : ''}' data-f='${k}'>${l}</button>`).join('')}</div>
     <div class='edit invw bnd'><div class='scroll left'><div class='bgrid'>${rows.length ? rows.map(pid => `<div class='bpg'><div class='bn'><span>#${String(ORDER.indexOf(pid) + 1).padStart(2, '0')}</span> ${esc(NAME[pid])} <em>${CARD_RARITIES.filter(r => owned(`card:${pid}:${r}`)).length}/${CARD_RARITIES.length}</em></div><div class='bpk'>${CARD_RARITIES.map(r => pocket(pid, r)).join('')}</div></div>`).join('') : '<p>Aucune carte ici.</p>'}</div></div>

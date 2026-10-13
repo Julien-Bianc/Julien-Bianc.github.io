@@ -225,3 +225,46 @@ Nouveaux effets de contact (`effect`) : `bite`, `punch`, `xslash`, `shadow`, `ps
 - **Psykoud'Boul** : charge (zone de tir visible, elle devient rouge quand il verrouille), puis rayon violet géant qui te suit lentement.
 - Il se téléporte si tu restes collé à lui. Les types restent respectés : Ténèbres est immunisé au Psy, Normal au Spectre.
 - Réglages : `data/boss-mewtwo.js` (stats, attaques, cerveau `ai`, `BOSS_STAGE`) ; code : `js/boss.js` (kinds `prison`, `stasis`, `grab`, `megabeam`).
+
+## v0.11 — Magasin : Pokédollars, caisse du grand départ, objets tenus, classeur
+### Monnaie : les Pokédollars (₽) — `data/economy.js`
+- Solde de départ : 100 ₽ (de quoi ouvrir une caisse). Le solde s'affiche dans le menu, le magasin et l'inventaire.
+- **Victoire en Solo** : gain selon le niveau (`soloWin`, prévu pour 3 adversaires, multiplié par adversaires/3 : 1 adversaire = 1/3, 6v6 = x2)
+  + **bonus de premier passage** (`firstClear`, une fois par niveau en 3v3 et une fois en 6v6). Le gain s'affiche sur l'écran de victoire.
+- **Revente des doublons** (`sell`) : C 5 ₽, PC 15 ₽, R 40 ₽, UR 120 ₽. On garde toujours 1 exemplaire.
+
+### Caisses à emplacements — `data/shop.js`
+Tirage : une rareté (UR 2 %, R 5 %, PC 16,7 %, C le reste ; une rareté absente de la caisse donne sa chance à celle du dessous),
+puis un **emplacement** de cette rareté (chances égales, ou `w` pour un poids), puis un objet au hasard dans l'emplacement.
+**Caisse du grand départ (100 ₽)** : Commun → carte commune d'un des 7 Pokémon de départ / objet tenu commun ;
+Peu commun → carte peu commune / objet tenu peu commun ; Rare → carte rare / objet tenu rare.
+Les emplacements « à définir » (Commun 3-5, Peu commun 3) sont prêts en commentaire : décommente et remplis `cards`, `held` ou `items`.
+L'aperçu de la caisse affiche chaque emplacement avec sa chance réelle et son contenu (touche un objet pour sa fiche).
+
+### Objets tenus — `data/items.js` (données) + `js/held-items.js` (effets en combat)
+37 objets des jeux Pokémon (sprites : projet pokesprite, licence MIT, dans `assets/items/`). Plus l'objet est fort, plus il est rare :
+- **Communs** : 18 objets de type (+20 % sur un type : Charbon, Eau Mystique…), Baie Oran (soin 10 % sous 50 % PV), 6 baies anti-statut.
+- **Peu communs** : Baie Sitrus (soin 25 %), Baie Prine (tout statut), Ceinture Pro, Griffe Rasoir, Grelot Coque, Bandeau, Casque Brut.
+- **Rares** : Restes, Orbe Vie, Bandeau Choix, Mouchoir Choix (bloqués sur la 1re attaque jusqu'à la relève), Ceinture Force.
+- **Équiper** : Mes équipes → Modifier → toucher un Pokémon de l'équipe → « Équiper ». Un même objet ne peut être porté que par
+  un Pokémon de l'équipe. Les baies et la Ceinture Force servent une fois par combat mais ne sont jamais perdues.
+- Nouvel objet : une ligne dans `HELD` (avec un `fx` existant) + son PNG dans `assets/items/`. Il entre tout seul dans les caisses.
+
+### Inventaire en 2 onglets — `js/shop.js`
+- **Objets** : objets tenus (inconnus = « ? »), effet, qui le porte, où le trouver, revente.
+- **Classeur** : une page par Pokémon avec ses cartes commune / peu commune / rare, filtres Toutes / Possédées / Manquantes,
+  cartes manquantes en silhouette. Bouton « Échanger » prêt pour le futur système d'échange.
+
+| Je veux… | Fichier |
+|---|---|
+| Changer les gains, le solde de départ, les prix de revente | `data/economy.js` |
+| Changer le prix ou le contenu d'une caisse, créer une caisse | `data/shop.js` |
+| Ajouter / équilibrer un objet tenu | `data/items.js` |
+| Créer un nouvel effet d'objet | `js/held-items.js` |
+| Écrans magasin / inventaire / classeur | `js/shop.js` |
+
+### Illustrations des cartes
+Le Pokémon est recadré au pixel près et centré dans l'illustration. Chaque rareté a sa pose, tirée des sprites PMD :
+**commune** = au repos de face, **peu commune** = en pleine attaque, **rare** = attaque spéciale / pose de puissance.
+Réglages par défaut : `CARD_POSE` dans `js/shop.js`. Pour imposer une pose à un Pokémon, ajoute dans son entrée de `data/pokemon*.js` :
+`cards:{ PC:{ anim:'Strike', frame:2, dir:1 }, R:{ anim:'Pose' } }` (dir : 0 bas, 1 bas-droite … 7 bas-gauche).
