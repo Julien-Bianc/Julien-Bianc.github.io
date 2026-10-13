@@ -8,8 +8,8 @@ const MAIN_MENU = [
   { id:'solo',    label:'Solo',          desc:'Défis de plus en plus durs',            screen:'solo'  },
   { id:'teams',   label:'Mes équipes',   desc:'Créer et modifier tes équipes (3v3 / 6v6)', screen:'teams' },
   { id:'training', label:'Entraînement', desc:'Teste tous les Pokémon sur une grande map', screen:'training' },
-  { id:'shop',    label:'Magasin',       desc:'Caisses et objets',                     screen:'shop'      },
-  { id:'inventory', label:'Inventaire', desc:'Les objets que tu possèdes',            screen:'inventory' },
+  { id:'shop',    label:'Magasin',       desc:'Caisses : cartes et objets tenus',     screen:'shop'      },
+  { id:'inventory', label:'Inventaire', desc:'Objets tenus et classeur de cartes',    screen:'inventory' },
   { id:'versus',  label:'Combat libre',  desc:'', soon:true },
   { id:'online',  label:'Multijoueur',   desc:'', soon:true },
   { id:'options', label:'Options',       desc:'Son, touches, plein écran', screen:'options' }

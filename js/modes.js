@@ -11,7 +11,8 @@ function enemyTeam(size){
 function startSolo(team, stageIndex){
   const S = STAGES[stageIndex];
   Save.lastTeam = team.id;
-  start({ mode:'solo', team:team.members.slice(), size:team.size, teamId:team.id, stageIndex, stage:S, arena:S.arena, enemies:enemyTeam(team.members.length) });
+  const items = {}; team.members.forEach(id => { const it = Save.teamItem(team, id); if(it) items[id] = it; });   // objets tenus
+  start({ mode:'solo', team:team.members.slice(), items, size:team.size, teamId:team.id, stageIndex, stage:S, arena:S.arena, enemies:enemyTeam(team.members.length) });
 }
 
 function battleEnd(win){
@@ -19,11 +20,15 @@ function battleEnd(win){
   if(c.mode === 'solo'){
     const t = Save.team(c.teamId), next = c.stageIndex + 1 < STAGES.length;
     if(win){
-      Save.clear(c.size, c.stageIndex);
-      menu(`<h1>🏆 Victoire !</h1><p>${esc(STAGES[c.stageIndex].name)} terminé</p><div class='row'>
+      const first = c.stageIndex >= Save.cleared(c.size), rw = soloReward(c.stageIndex, G.et.length, first), before = Save.coins();
+      Save.clear(c.size, c.stageIndex); Save.addCoins(rw.total);
+      menu(`<h1>🏆 Victoire !</h1><p>${esc(STAGES[c.stageIndex].name)} terminé</p>
+        <div class='gain'><b>+${money(rw.total)}</b>${rw.bonus ? `<small>Victoire ${money(rw.win)} + premier passage ${money(rw.bonus)}</small>` : ''}</div>
+        <p>Solde : <span id='gsol'>${money(before)}</span></p><div class='row'>
         ${next ? `<button class='btn' id='nx'>Niveau suivant</button>` : '<p>Tous les niveaux sont terminés !</p>'}
         <button class='btn2' id='rp'>Rejouer</button><button class='btn2' id='mn'>Menu</button></div>`);
       bind('nx', () => startSolo(t, c.stageIndex + 1));
+      countUp(document.getElementById('gsol'), before, Save.coins());
     } else {
       menu(`<h1>Défaite</h1><p>${G.wave} adversaire(s) battu(s) sur ${G.et.length}</p><div class='row'>
         <button class='btn' id='rp'>Réessayer</button><button class='btn2' id='mn'>Menu</button></div>`);
@@ -45,3 +50,10 @@ function showPauseMenu(){
 function resumeGame(){ if(!G) return; G.paused = false; menu(''); last = performance.now(); }
 document.getElementById('pauseBtn').addEventListener('pointerdown', () => { if(G && G.paused) resumeGame(); else pauseGame(); });
 addEventListener('keydown', e => { if(e.target && e.target.tagName === 'INPUT') return; if(canon(e.code) === 'Escape'){ if(G && G.paused) resumeGame(); else pauseGame(); } });
+
+// compteur de Pokédollars qui défile (écran de victoire)
+function countUp(el, a, b){
+  if(!el) return; const t0 = performance.now(), D = 900;
+  const f = now => { if(!el.isConnected) return; const t = Math.min(1, (now - t0)/D); el.textContent = money(a + (b - a)*(1 - Math.pow(1 - t, 3))); if(t < 1) requestAnimationFrame(f); else coinSfx(); };
+  setTimeout(() => requestAnimationFrame(f), 350);
+}

@@ -221,3 +221,60 @@ body{position:fixed;inset:0;width:100%;overscroll-behavior:none;touch-action:man
 #fsHelp p{margin:4px 0}#fsHelp ol{margin:6px 0;padding-left:20px}#fsHelp li{margin:3px 0}
 #fsHelp .sub{opacity:.7;font-size:10px}#fsHelp .btn{display:block;margin:8px auto 0}
 .ios-sh{display:inline-block;border:1px solid #fff8;border-radius:3px;padding:0 3px;font-size:10px}
+
+/* v0.10 : Pokédollars, caisse à emplacements, inventaire Objets / Classeur, objets tenus */
+.hd{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:620px;flex-wrap:wrap}
+.hd h1{flex:none}
+.coin{display:inline-flex;align-items:center;gap:4px;background:#2b2410;border:2px solid #ffd23f;color:#ffe27a;border-radius:20px;padding:1px 9px 1px 4px;font-size:12px;white-space:nowrap}
+.coin i{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6c0,#ffd23f 45%,#b8861e);box-shadow:0 0 0 1px #6a4a10}
+.hint{font-size:9px;opacity:.75}.hint.bad{color:#ff8a7a;opacity:1}
+.btn2.sm{padding:3px 8px;font-size:10px}
+.btn2:disabled,.btn:disabled{opacity:.4;cursor:default}
+.row.left{justify-content:flex-start}
+.tabs{display:flex;gap:4px}
+.idesc{font-size:11px;color:#fff;background:#ffffff14;border-radius:6px;padding:4px 6px;margin:4px 0}
+/* aperçu de caisse : emplacements */
+.crr.scroll{max-height:none;flex:1 1 auto;align-self:stretch;min-height:0}
+.mc>.crv{flex:1 1 auto;min-height:0;align-items:stretch}
+.crl{justify-content:center}
+.slt{background:#ffffff0d;border-left:4px solid var(--rc);border-radius:4px;padding:3px 5px;margin:0 0 4px}
+.slh{display:flex;justify-content:space-between;font-size:11px}.slh span{color:var(--rc);filter:brightness(1.5)}
+.slp{justify-content:flex-start;margin-top:2px;gap:3px}
+.itc.mini{width:34px;height:38px;border-width:1px}.itc.mini>img{width:32px;height:32px;top:44%}.itc.mini .bar{height:3px}
+.itc.cd.mini{width:38px;height:56px}
+.itc>img{image-rendering:pixelated}
+.peek{display:flex;align-items:center;justify-content:center;gap:20px;width:100%}
+.pkv{min-width:120px;display:flex;justify-content:center}
+.qbig{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:2px dashed var(--rc);border-radius:6px;font-size:24px;color:#fff6}
+/* classeur */
+.bnd .left{flex:0 0 62%!important}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:5px}
+.bpg{background:linear-gradient(#26324a,#1b2436);border:2px solid #0a0e14;border-radius:6px;padding:3px 4px 4px;box-shadow:inset 0 1px #ffffff1a}
+.bn{font-size:10px;display:flex;gap:4px;align-items:baseline;white-space:nowrap;overflow:hidden}.bn span{opacity:.55;font-size:9px}.bn em{margin-left:auto;font-style:normal;font-size:9px;opacity:.7}
+.bpk{display:flex;gap:4px;justify-content:space-between;margin-top:2px}
+.pk{position:relative;width:52px;height:76px;padding:2px;border:1px solid #0a0e14;border-radius:4px;background:#0d131e;box-shadow:inset 0 2px 4px #0008;cursor:pointer;font:inherit;color:#fff;flex:none;overflow:hidden}
+.pk .cw{margin:0}
+.pk.off{opacity:.25;cursor:default}
+.pk.miss{display:flex;align-items:center;justify-content:center;border:1px dashed color-mix(in srgb,var(--rc) 70%,#fff3)}
+.pk.miss img{width:64px;height:64px;image-rendering:pixelated;filter:brightness(0);opacity:.45}
+.pk .sym{position:absolute;right:3px;bottom:1px;font-size:10px;color:var(--rc)}
+.pk .cnt{position:absolute;right:2px;top:2px;font-size:9px;background:#000b;border-radius:3px;padding:0 2px;z-index:3}
+.pk.foc{box-shadow:0 0 0 2px #ffd23f}
+.pk.big{width:102px;height:153px;cursor:default}.pk.big img{width:120px;height:120px}.pk.big .sym{font-size:16px}
+.bdv{display:flex;gap:8px;align-items:flex-start;font-size:11px}.bdv p{margin:3px 0}
+/* objets tenus : équipe et éditeur */
+.th2{position:relative;display:inline-block}
+.th2 .hi{position:absolute;right:-3px;bottom:-3px;width:18px!important;height:18px!important;image-rendering:pixelated;filter:drop-shadow(0 0 1px #000)}
+.slot .th2 .hi{width:20px!important;height:20px!important}
+.held{display:flex;align-items:center;gap:5px;background:#ffd23f1a;border:1px solid #ffd23f55;border-radius:6px;padding:3px 5px;margin:4px 0;font-size:10px}
+.held>span{font-size:9px;opacity:.75;flex:none}
+.held img{width:32px;height:32px;image-rendering:pixelated;flex:none}
+.held div{flex:1;min-width:0}.held div b{display:block;font-size:11px}.held small{display:block;font-size:9px;opacity:.85}
+.hpk{display:flex;flex-direction:column;gap:3px}.hpk>b{font-size:11px;color:#ffd23f}
+.hit{display:flex;align-items:center;gap:5px;text-align:left;background:#ffffff12;border:1px solid #ffffff22;border-left:3px solid var(--rc,#fff4);border-radius:5px;padding:2px 5px;color:#fff;font:inherit;cursor:pointer}
+.hit img{width:32px;height:32px;image-rendering:pixelated;flex:none}.hit b{font-size:11px}.hit em{font-style:normal;opacity:.6;font-size:9px}.hit small{display:block;font-size:9px;opacity:.8}
+.hit.on{background:#ffd23f33;border-color:#ffd23f}.hit:disabled{opacity:.4;cursor:default}
+/* combat : attaque bloquée par un objet Choix */
+.ab.lk{opacity:.35;filter:grayscale(1)}
+/* victoire : gain de Pokédollars */
+.gain{display:flex;flex-direction:column;align-items:center;margin:4px 0}.gain b{font-size:20px;color:#ffe27a;text-shadow:0 0 8px #ffd23f88}.gain small{font-size:10px;opacity:.8}

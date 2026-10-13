@@ -1,15 +1,19 @@
 // ============================================================
-//  MAGASIN — raretés, caisses, objets. Tout est piloté par les données.
+//  MAGASIN — raretés, cartes, caisses. Tout est piloté par les données.
 //
 //  Rareté (RARITY, de la plus rare à la plus commune) :
-//    odds = probabilité de tirage sur UN tirage (1/50 = 2 %). La dernière (odds:null) prend « le reste ».
+//    odds = probabilité de tirer cette rareté (1/50 = 2 %). La dernière (odds:null) prend « le reste ».
+//    Si une caisse ne contient rien d'une rareté, sa chance passe à la rareté juste en dessous.
 //
-//  Caisse (CRATES) : { id, name, desc, price, items:[...] }
-//    price : 0 = gratuit (la monnaie n'existe pas encore : un prix > 0 est affiché « Bientôt »)
-//    items : { id, name, r (rareté), icon (forme de ICON_SHAPES), desc? }
-//    → Pour ajouter un objet : une ligne dans items. Pour une nouvelle caisse : une entrée dans CRATES + une dans SHOP.
+//  Cartes : chaque Pokémon du jeu a une carte par rareté de CARD_RARITIES (visibles dans Inventaire → Classeur).
 //
-//  Magasin (SHOP) : une entrée = une offre affichée dans l'écran Magasin.
+//  Caisse (CRATES) : { id, name, desc, price, slots:[…] }
+//    Ouverture : on tire une rareté, puis un EMPLACEMENT (slot) de cette rareté, puis un objet au hasard dans cet emplacement.
+//    Un emplacement : { r, label, w?, …contenu }   w = poids (1 par défaut) : w:2 = 2 fois plus de chances que ses voisins
+//      cards:['farfuret', …]   → une carte de rareté r d'un de ces Pokémon (cards:'all' = tous les Pokémon)
+//      held:true               → un objet tenu de rareté r (data/items.js)
+//      items:['restes', …]     → un objet précis parmi cette liste
+//    → Nouvel emplacement : une ligne dans slots. Nouvelle caisse : une entrée dans CRATES + une dans SHOP.
 // ============================================================
 const RARITY = [
   { id:'UR', label:'Ultra rare', col:'#eb4b4b', odds:1/50 },
@@ -18,61 +22,87 @@ const RARITY = [
   { id:'C',  label:'Commun',     col:'#4b69ff', odds:null }
 ];
 const RAR = Object.fromEntries(RARITY.map(r => [r.id, r]));
+const CARD_RARITIES = ['C', 'PC', 'R'];
 
-// Formes des icônes provisoires (# = pixel). Contour sombre et ombrage 3 tons ajoutés automatiquement.
-const ICON_SHAPES = {
-  gem:    ['....######....', '...########...', '..##########..', '.############.', '##############', '.############.', '..##########..', '...########...', '....######....', '.....####.....', '......##......'],
-  orb:    ['....####....', '..########..', '.##########.', '.##########.', '############', '############', '############', '############', '.##########.', '.##########.', '..########..', '....####....'],
-  star:   ['......#......', '......#......', '.....###.....', '.....###.....', '#############', '.###########.', '..#########..', '...#######...', '...#######...', '..####.####..', '..###...###..', '.##.......##.'],
-  shield: ['############', '############', '############', '############', '############', '############', '.##########.', '.##########.', '..########..', '...######...', '....####....', '.....##.....'],
-  flask:  ['....####....', '....####....', '.....##.....', '.....##.....', '....####....', '...######...', '..########..', '.##########.', '.##########.', '.##########.', '..########..', '...######...']
-};
-const SHAPE_ORDER = Object.keys(ICON_SHAPES);
+// Les 7 Pokémon du « grand départ »
+const STARTERS = ['farfuret', 'dracaufeu', 'tortank', 'florizarre', 'lucario', 'raichu', 'fouinar'];
 
-// Une caisse : name, desc, price, items (objets fixes), cards (raretés pour lesquelles on crée UNE carte par Pokémon du jeu).
-//   → un nouveau Pokémon dans data/pokemon*.js obtient automatiquement ses cartes dans les caisses.
 const CRATES = [
-  { id:'caisse1', name:'Caisse de l\'Arène', desc:'Ta première caisse', price:0,
-    cards:['C', 'PC', 'R'],              // cartes Pokémon : commune, peu commune, rare
-    items:[
-      { id:'c1-ur1', name:'Objet rouge 1', r:'UR', icon:'star' }     // ultra rare : provisoire, à remplacer plus tard
+  { id:'depart', name:'Caisse du grand départ', desc:'Cartes des 7 Pokémon de départ et objets tenus', price:100,
+    slots:[
+      { r:'C',  label:'Carte commune',          cards:STARTERS },
+      { r:'C',  label:'Objet tenu commun',      held:true },
+      // { r:'C',  label:'Commun 3 — à définir' },
+      // { r:'C',  label:'Commun 4 — à définir' },
+      // { r:'C',  label:'Commun 5 — à définir' },
+      { r:'PC', label:'Carte peu commune',      cards:STARTERS },
+      { r:'PC', label:'Objet tenu peu commun',  held:true },
+      // { r:'PC', label:'Peu commun 3 — à définir' },
+      { r:'R',  label:'Carte rare',             cards:STARTERS },
+      { r:'R',  label:'Objet tenu rare',        held:true }
     ] }
 ];
 
 const SHOP = [
-  { id:'caisse1', type:'crate', crate:'caisse1', label:'Caisse de l\'Arène', desc:'Ouvre-la pour gagner un objet' }
+  { id:'depart', type:'crate', crate:'depart', label:'Caisse du grand départ', desc:'Cartes de départ et objets tenus' }
 ];
 
 // ---------- accès pratiques ----------
 const CRATE = Object.fromEntries(CRATES.map(c => [c.id, c]));
 const ITEM = {};
-// (Re)construit les objets : objets fixes + une carte par Pokémon (ORDER) et par rareté de c.cards. À appeler avant d'utiliser ITEM.
+// (Re)construit le catalogue : une carte par Pokémon (ORDER) et par rareté + les objets tenus, puis le contenu de chaque emplacement.
 function shopBuild(){
   const key = ORDER.join(',');
   if(shopBuild.key === key) return; shopBuild.key = key;
   for(const k in ITEM) delete ITEM[k];
-  CRATES.forEach(c => {
-    if(!c.base) c.base = c.items;
-    const cards = [];
-    (c.cards || []).forEach(r => ORDER.forEach(pid => cards.push({ id:`card:${pid}:${r}`, kind:'card', poke:pid, name:'Carte ' + (NAME[pid] || pid), r })));
-    c.items = c.base.concat(cards);
-    c.items.forEach(it => { it.crate = c.id; ITEM[it.id] = it; });
-  });
+  ORDER.forEach(pid => CARD_RARITIES.forEach(r => {
+    ITEM[`card:${pid}:${r}`] = { id:`card:${pid}:${r}`, kind:'card', poke:pid, name:'Carte ' + (NAME[pid] || pid), r, crates:[] };
+  }));
+  HELD.forEach(h => { ITEM[h.id] = { ...h, kind:'held', crates:[] }; });
+  CRATES.forEach(c => c.slots.forEach(s => {
+    let pool = [];
+    if(s.cards) pool = (s.cards === 'all' ? ORDER : s.cards.filter(pid => ORDER.includes(pid))).map(pid => ITEM[`card:${pid}:${s.r}`]);
+    else if(s.held) pool = HELD.filter(h => h.r === s.r).map(h => ITEM[h.id]);
+    else if(s.items) pool = s.items.map(id => ITEM[id]);
+    s.pool = pool.filter(Boolean);
+    s.pool.forEach(it => { if(!it.crates.includes(c.id)) it.crates.push(c.id); });
+  }));
 }
 const RANK = { C:0, PC:1, R:2, UR:3 };                                       // pour trier
 const byRarity = (a, b) => RANK[b.r] - RANK[a.r];
 
-// Pourcentage réel de chaque rareté (UR 2 %, R 5 %, PC ≈16,7 %, C = le reste)
+// Pourcentage théorique de chaque rareté (UR 2 %, R 5 %, PC ≈16,7 %, C = le reste)
 function rarityPct(id){
   let used = 0;
   for(const r of RARITY){ const p = r.odds == null ? 1 - used : r.odds; if(r.id === id) return p; used += p; }
   return 0;
 }
-// Tire une rareté, puis un objet au hasard dans cette rareté (repli sur la rareté inférieure si la caisse n'en a pas)
-function rollItem(crate){
-  const x = Math.random(); let acc = 0, start = RARITY.length - 1;
-  for(let i = 0; i < RARITY.length; i++){ if(RARITY[i].odds == null){ start = i; break; } acc += RARITY[i].odds; if(x < acc){ start = i; break; } }
-  for(let i = start; i < RARITY.length; i++){ const pool = crate.items.filter(it => it.r === RARITY[i].id); if(pool.length) return pool[Math.floor(Math.random()*pool.length)]; }
-  for(let i = start - 1; i >= 0; i--){ const pool = crate.items.filter(it => it.r === RARITY[i].id); if(pool.length) return pool[Math.floor(Math.random()*pool.length)]; }
-  return crate.items[0];
+// Chances RÉELLES d'une caisse : une rareté absente donne sa chance à la rareté juste en dessous (sinon au-dessus)
+function crateOdds(c){
+  shopBuild();
+  const has = r => c.slots.some(s => s.r === r && s.pool.length), out = {};
+  RARITY.forEach(r => out[r.id] = 0);
+  RARITY.forEach((r, i) => {
+    let j = i; while(j < RARITY.length && !has(RARITY[j].id)) j++;
+    if(j >= RARITY.length){ j = i; while(j >= 0 && !has(RARITY[j].id)) j--; }
+    if(j >= 0) out[RARITY[j].id] += rarityPct(r.id);
+  });
+  return out;
+}
+// Chance d'un emplacement précis
+function slotPct(c, s){
+  const same = c.slots.filter(x => x.r === s.r && x.pool.length), tw = same.reduce((a, x) => a + (x.w || 1), 0);
+  return s.pool.length ? crateOdds(c)[s.r]*(s.w || 1)/tw : 0;
+}
+// Tirage : rareté → emplacement → objet
+function rollItem(c){
+  shopBuild();
+  const odds = crateOdds(c), pick = a => a[Math.floor(Math.random()*a.length)];
+  let x = Math.random(), r = 'C';
+  for(const R of RARITY){ if(x < odds[R.id]){ r = R.id; break; } x -= odds[R.id]; }
+  const slots = c.slots.filter(s => s.r === r && s.pool.length);
+  if(!slots.length) return pick(c.slots.find(s => s.pool.length).pool);
+  let y = Math.random()*slots.reduce((a, s) => a + (s.w || 1), 0), slot = slots[0];
+  for(const s of slots){ y -= s.w || 1; if(y < 0){ slot = s; break; } }
+  return pick(slot.pool);
 }
