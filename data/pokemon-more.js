@@ -24,7 +24,8 @@ Object.assign(POKEMON, {
       { name:'Pistolet à O', type:'eau', kind:'fan', power:10, share:.5, cooldown:.8,
         speed:380, count:3, spread:.07, jitter:.03, life:.9, anim:'Shoot' },
       { name:'Surf', type:'eau', kind:'tide', power:20, cooldown:3.2, speed:240 },        // vague perforante qui ralentit
-      { name:'Hydrocanon', type:'eau', kind:'meteor', power:26, cooldown:4, speed:300 }    // grosse bulle qui explose en 8 jets
+      { name:'Hydrocanon', type:'eau', kind:'stream', power:30, cooldown:4,               // v0.09 : jet continu qui se courbe (js/moves-plus.js)
+        time:.9, length:320, width:18, tick:.1, sweep:1.2, anim:'Shoot' }
     ]
   },
 

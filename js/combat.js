@@ -22,7 +22,7 @@ function fire(m,c,i){
   const p=G.p,e=G.e,A=AIM.take(i,p,e);
   lbl(0,m.n+(c>.5?' +':''),p.t);p.atk=p.atkD=.3;
   let tgt=e;
-  if(A.manual&&(m.k==='strike'||m.fly||m.pool))tgt={x:Math.max(30,Math.min(W-30,p.x+Math.cos(A.ang)*A.range)),y:Math.max(44,Math.min(H-34,p.y+Math.sin(A.ang)*A.range)),r:e.r};
+  if(A.manual&&(m.pt||m.fly||m.pool))tgt={x:Math.max(30,Math.min(W-30,p.x+Math.cos(A.ang)*A.range)),y:Math.max(44,Math.min(H-34,p.y+Math.sin(A.ang)*A.range)),r:e.r};
   cast(p,tgt,m,c,1,A.manual?1.25:1,A.ang)}
 function eFire(){
   // L'ennemi anticipe plus ou moins ton déplacement selon la difficulté du niveau (G.stage.aim : 0 à 1)

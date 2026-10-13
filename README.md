@@ -165,3 +165,52 @@ Il faut au moins 6 Pokémon chargés pour créer des équipes 6v6. Les équipes 
   endort (nouveau kind `song`, `js/pokemon-song.js`), recharge 9 s. Sprites : assets/pokemon/rondoudou/ (numéro 0039 sur sprites.pmdcollab.org).
 - **Statuts** : chances réduites et comptées PAR LANCER (répartie sur les projectiles d'un éventail) ; nouveau statut Sommeil. Réglages : `data/status.js`.
 - **ATH** : barres de vie adaptatives (plus de chevauchement), échelle automatique plus sobre. Options : mise en page sans chevauchement.
+
+## v0.09 — 6 nouveaux Pokémon, nouvelles mécaniques, lumières
+### Nouveaux Pokémon (`data/pokemon-vague2.js`)
+| Pokémon | N° PMD | Types | Capacité | A | B | C |
+|---|---|---|---|---|---|---|
+| Ectoplasma | 0094 | Spectre/Poison | Lévitation (immunisé Sol) | Ball'Ombre (boule à visage, suit un peu) | Ombre Portée (téléport DERRIÈRE la cible) | Pics Toxik (pièges qui empoisonnent) |
+| Alakazam | 0065 | Psy | Garde Magik (pas de dégâts de brûlure/poison/sable) | Choc Mental (onde rapide) | Téléport (prochaine attaque +30 %) | Psyko (implosion retardée) |
+| Carchacrok | 0445 | Dragon/Sol | Peau Dure (le contact blesse l'attaquant) | Draco-Griffe | Tunnel (sous terre puis surgit) | Draco-Météore (pluie de météores) |
+| Tyranocif | 0248 | Roche/Ténèbres | Sable Volant (tempête de sable) | Mâchouille | Lame de Roc (pics de roche en ligne) | Vibrobscur (onde en arc qui repousse) |
+| Cizayox | 0212 | Insecte/Acier | Technicien (puissance ≤ 10 : x1,5) | Poing Balle | Plaie-Croix (boomerang, 2 touches) | Danse-Lames (attaque +50 %, 6 s) |
+| Gardevoir | 0282 | Psy/Fée | Synchro (renvoie ses statuts) | Pouvoir Lunaire (éclate en étoiles) | Reflet Magik (bulle qui RENVOIE les tirs) | Choc Psy (rayon chargé) |
+
+Sprites : dossier `assets/pokemon/<nom>/` (déjà fournis dans la livraison, tirés de PMDCollab/SpriteCollab).
+**Tortank** : Hydrocanon devient un **jet continu qui se courbe** (comme le trailer de Pokémon Arena 2D).
+
+### Nouveaux kinds (`js/moves-plus.js`)
+| kind | Effet | Paramètres |
+|---|---|---|
+| `blink` | téléportation | `range`, `behind` (derrière la cible), `radius` (coup à l'arrivée si power > 0), `delay`, `invuln`, `effect`, `after:{dmg,time}` |
+| `burrow` | sous terre puis surgit | `time`, `speed`, `radius`, `anim` (animation de sortie) |
+| `shield` | bulle protectrice | `time`, `radius`, `reflect` (renvoie les projectiles) |
+| `trap` | pièges au sol | `count`, `spacing`, `radius`, `duration`, `status` |
+| `buff` | bonus temporaire | `time`, `dmg` (x), `speed` (x), `label` |
+| `boomerang` | part puis revient | `range`, `speed`, `radius` |
+| `pulse` | onde en anneau ou en arc | `range`, `speed`, `width`, `arc` (demi-angle, 3.14 = cercle complet), `knockback`, `status` |
+| `stream` | jet continu | `time`, `length`, `width`, `tick`, `sweep` (vitesse à laquelle le jet suit la cible) |
+
+Anciens kinds maintenant réglables : `strike` (`count`, `pattern` single/line/random, `radius`, `delay`, `gap`, `start`, `stagger`, `spread`,
+`look` implode/pillar/meteor/bolt, `share`, `exhaust`), `beam` (`width`, `length`, `delay`), `wave` (`count`, `amp`, `radius`, `life`, `speed`),
+`meteor` (`split`, `splitShare`, `splitSpeed`, `radius`, `color`, `look:'moon'`). Pour un `fan` : `look:'ghost'` ou `look:'moon'`.
+Nouveaux effets de contact (`effect`) : `bite`, `punch`, `xslash`, `shadow`, `psy`.
+
+### Nouvelles capacités (`js/abilities-plus.js`)
+`immune:['sol']`, `magicGuard:true`, `roughSkin:.05`, `technician:{max:10,mult:1.5}`, `synchro:true`, `sandStream:{dps:.5,resist:.8}`.
+
+### Lumières et reflets (`js/light.js`)
+- Chaque projectile, rayon, explosion éclaire le sol et les Pokémon autour (halo doux), avec un reflet lumineux au sol sous les tirs.
+- Arènes sombres (grotte, lave, ruines) légèrement assombries pour faire ressortir les lumières : tableau `AMBIENT`.
+- Reflet des Pokémon sur la banquise et la grotte de cristal : tableau `REFLECT`.
+- Impacts : anneaux de choc au sol, disque de poussière, étincelles. L'écran s'assombrit un instant pendant les grosses attaques.
+- Tous les rayons (Luminocanon, Lance-Soleil, Choc Psy) ont un nouveau rendu : cœur blanc, halo, énergie qui défile.
+- Options → **Lumières et reflets** (0 = désactivé pour les petits téléphones, jusqu'à 150 %).
+
+| Je veux… | Fichier |
+|---|---|
+| Ajouter un Pokémon avec les nouvelles mécaniques | `data/pokemon-vague2.js` (exemples de chaque kind) |
+| Modifier une nouvelle mécanique ou son dessin | `js/moves-plus.js` |
+| Modifier une capacité de la vague 2 | `js/abilities-plus.js` |
+| Régler les lumières / l'ambiance d'une arène | `js/light.js` |

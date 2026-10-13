@@ -4,6 +4,9 @@
 //  Tu n'as normalement pas besoin de modifier ce fichier.
 // ============================================================
 const LEGACY_KINDS = ['shot','leaf','bolt','flame','meteor','wave','tide','spore','drain','strike','beam'];
+// v0.09 : nouveaux kinds (js/moves-plus.js). POINT_KINDS = attaques qui visent un POINT au sol (glisser = choisir l'endroit)
+const PLUS_KINDS = ['blink','burrow','shield','trap','buff','boomerang','pulse','stream'];
+const POINT_KINDS = ['blink','burrow','trap','strike'];
 function toEngineMove(m){
   const o = { n:m.name, tp:m.type, d:m.power, cd:m.cooldown, s:0, k:m.kind };
   if(m.kind === 'melee')
@@ -13,8 +16,11 @@ function toEngineMove(m){
   else if(m.kind === 'fly') o.fly = { ...m };
   else if(m.kind === 'pool') o.pool = { ...m };
   else if(m.kind === 'song'){ o.song = { ...m }; o.big = true; }          // chant : signal d'attaque long chez l'ennemi
-  else if(LEGACY_KINDS.includes(m.kind)) o.s = m.speed || 300;   // kinds « moteur » : voir data/pokemon-more.js
+  else if(PLUS_KINDS.includes(m.kind)){ o.opt = { ...m }; o.s = m.speed || 300; }               // voir js/moves-plus.js
+  else if(LEGACY_KINDS.includes(m.kind)){ o.s = m.speed || 300; o.opt = { ...m }; }   // kinds « moteur » : réglages en plus dans o.opt (js/moves-plus.js)
   else throw new Error('kind inconnu pour ' + m.name + ' : ' + m.kind);
+  if(POINT_KINDS.includes(m.kind)) o.pt = true;
+  if(m.big !== undefined) o.big = m.big;
   return o;
 }
 

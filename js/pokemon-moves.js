@@ -1,6 +1,6 @@
 // ============================================================
 //  ATTAQUES DES POKÉMON : 'melee' (charge), 'fan' (éventail de projectiles), 'fly' (vol + plongeon)
-//  + effets visuels de coups (effect : claws, slash, dragon, quick, slam, ram, impact)
+//  + effets visuels de coups (effect : claws, slash, dragon, quick, slam, ram, impact, bite, punch, xslash, shadow, psy)
 //  Pour ajouter un NOUVEAU TYPE d'attaque : ajoute un `kind` dans data/pokemon.js,
 //  une conversion dans pokemon-register.js (toEngineMove) et une fonction ici + un `if` dans cast.
 // ============================================================
@@ -146,10 +146,12 @@ cast = function(s, d, m, c, own, sc, ang){
   }
   const PK = POKEMON[s.t];
   if(PK && m.tp && PK.types.includes(m.tp)) sc *= 1.3;     // STAB : bonus si l'attaque est du type du Pokémon
+  if(typeof castMult === 'function') sc *= castMult(s, m);     // capacités / bonus temporaires (js/abilities-plus.js)
   if(m.mel) return melee(s, d, m, c, own, sc, ang);
   if(m.fan) return fan(s, d, m, c, own, sc, ang);
   if(m.pool) return pool(s, d, m, c, own, sc);
   if(m.fly) return startFly(s, d, m, c, own, sc);
+  if(m.opt && typeof castPlus === 'function'){ const r = castPlus(s, d, m, c, own, sc, ang); if(r !== false) return r; }   // js/moves-plus.js
   return _cast(s, d, m, c, own, sc, ang);
 };
 
@@ -198,6 +200,25 @@ function drawSfx(){
       for(let j = -1; j <= 1; j++){ ctx.beginPath(); ctx.moveTo(-40*q, j*8); ctx.lineTo(10, j*8); ctx.stroke(); }
     } else if(f.k === 'slam'){
       ctx.strokeStyle = '#f2d9a0'; ctx.lineWidth = 6*(1 - k) + 1; ctx.beginPath(); ctx.ellipse(0, 6, 10 + k*54, 6 + k*24, 0, 0, 6.283); ctx.stroke();
+    } else if(f.k === 'bite'){                                   // mâchoires qui se referment (Mâchouille)
+      const o = 26*(1 - q) + 4, e = k < .5 ? 1 : 1 - (k - .5)*2;
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#2a1840'; ctx.lineWidth = 2;
+      for(const sg of [-1, 1]){ ctx.beginPath(); ctx.moveTo(-26, sg*o); for(let j = 0; j <= 6; j++){ const x = -26 + j*52/6; ctx.lineTo(x, sg*o + (j%2 ? -sg*10*e : 0)); } ctx.lineTo(26, sg*(o + 6)); ctx.lineTo(-26, sg*(o + 6)); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      if(k > .3){ ctx.strokeStyle = '#c8a0ff'; ctx.lineWidth = 3; for(let j = 0; j < 6; j++){ const a = j*1.047; ctx.beginPath(); ctx.moveTo(Math.cos(a)*10, Math.sin(a)*10); ctx.lineTo(Math.cos(a)*(16 + k*30), Math.sin(a)*(16 + k*30)); ctx.stroke(); } }
+    } else if(f.k === 'punch'){                                  // poing d'acier : étoile métallique + traits de vitesse
+      ctx.rotate(f.a); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+      for(let j = -2; j <= 2; j++){ ctx.beginPath(); ctx.moveTo(-50*q - 10, j*6); ctx.lineTo(-14, j*6); ctx.stroke(); }
+      ctx.fillStyle = '#e8eefc'; ctx.beginPath(); for(let j = 0; j < 8; j++){ const r = j%2 ? 6 : 14 + k*16, t = j*Math.PI/4; ctx.lineTo(Math.cos(t)*r, Math.sin(t)*r); } ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#9aa8c8'; ctx.beginPath(); ctx.arc(0, 0, 5*(1 - k) + 1, 0, 6.283); ctx.fill();
+    } else if(f.k === 'xslash'){                                 // croix tranchante (Plaie-Croix)
+      for(const sg of [-1, 1]){ ctx.save(); ctx.rotate(sg*.785); ctx.strokeStyle = '#d8ff70'; ctx.lineWidth = 8*(1 - k) + 1; ctx.beginPath(); ctx.moveTo(-34*q, 0); ctx.lineTo(34*q, 0); ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); }
+    } else if(f.k === 'shadow'){                                 // griffes d'ombre (Ombre Portée)
+      ctx.strokeStyle = '#3a1860'; ctx.lineWidth = 9*(1 - k) + 2;
+      for(let j = 0; j < 3; j++){ ctx.beginPath(); ctx.moveTo(-24 + j*12, 26); ctx.lineTo(-24 + j*12 + q*30, 26 - q*54); ctx.stroke(); }
+      ctx.strokeStyle = '#c8a0ff'; ctx.lineWidth = 2;
+      for(let j = 0; j < 3; j++){ ctx.beginPath(); ctx.moveTo(-24 + j*12, 26); ctx.lineTo(-24 + j*12 + q*30, 26 - q*54); ctx.stroke(); }
+    } else if(f.k === 'psy'){                                    // onde psychique
+      for(let j = 0; j < 3; j++){ ctx.strokeStyle = j%2 ? '#ffb0e0' : '#ff5ab0'; ctx.lineWidth = 3*(1 - k) + 1; ctx.beginPath(); ctx.ellipse(0, 0, 8 + (k + j*.18)*40, (8 + (k + j*.18)*40)*.7, 0, 0, 6.283); ctx.stroke(); }
     } else {   // 'ram' et effet générique : éclat de la couleur du type
       ctx.strokeStyle = f.k === 'ram' ? '#ffe08a' : col; ctx.lineWidth = 3;
       for(let j = 0; j < 8; j++){ const a = j*.785; ctx.beginPath(); ctx.moveTo(Math.cos(a)*8, Math.sin(a)*8); ctx.lineTo(Math.cos(a)*(14 + k*34), Math.sin(a)*(14 + k*34)); ctx.stroke(); }
