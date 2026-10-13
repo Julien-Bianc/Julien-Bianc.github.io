@@ -5,6 +5,7 @@
 //    • Les cartes Mewtwo ont leur page dans le Classeur, avec un cadre argenté spécial.
 //  Remplace l'écran « Défi : Mewtwo » de js/boss.js (à charger APRÈS js/boss.js et js/shop.js).
 // ============================================================
+const BOSS_TEAM_MAX = 3;                         // le défi se joue avec 3 Pokémon maximum
 const LIMITED = { mewtwo:BOSS_DIFFS.map(d => ({ r:d.card, diff:d.id, label:d.label })) };
 const diffOf = id => BOSS_DIFFS.find(d => d.id === id) || BOSS_DIFFS[0];
 const limCardId = (pid, diff) => `card:${pid}:${diffOf(diff).card}`;
@@ -55,8 +56,8 @@ const mm = MAIN_MENU.find(m => m.id === 'boss'); if(mm) mm.desc = '3 difficulté
 function showBossDefi(sel){
   sel = sel || {};
   if(!BOSSES.includes('mewtwo')) return showBoss();                       // message « sprites introuvables » de js/boss.js
-  const teams = Save.teams().filter(teamOk);
-  if(!teams.length) return showBoss();
+  const teams = Save.teams().filter(t => teamOk(t) && t.members.length <= BOSS_TEAM_MAX);
+  if(!teams.length){ menu(`<h1>Défi : Mewtwo</h1><p>Le défi se joue avec une équipe de ${BOSS_TEAM_MAX} Pokémon maximum.</p><p>Crée une équipe 3v3 dans Mes équipes.</p><div class='row'><button class='btn' id='mk'>Mes équipes</button><button class='btn2' id='back'>Retour</button></div>`); document.getElementById('mk').onclick = showTeams; document.getElementById('back').onclick = showMain; return; }
   shopBuild();
   const t = sel.team || teams.find(x => x.id === Save.lastTeam) || teams[0];
   const D = diffOf(sel.diff || Save.load().bossDiff || BOSS_DIFFS.find(d => !BossWins.has('mewtwo', d.id))?.id), P = POKEMON.mewtwo;
@@ -86,10 +87,12 @@ const AI_BASE = POKEMON.mewtwo ? { ...POKEMON.mewtwo.ai } : null;
 function setBossAI(D){ if(AI_BASE && POKEMON.mewtwo) POKEMON.mewtwo.ai = { ...AI_BASE, ...((D && D.ai) || {}) }; }
 startBoss = function(team, diff){
   const D = diffOf(diff); Save.lastTeam = team.id;
-  start({ mode:'boss', diff:D.id, team:team.members.slice(), size:team.size, teamId:team.id, stage:D.stage, arena:D.stage.arena, enemies:['mewtwo'] });
+  start({ mode:'boss', diff:D.id, team:team.members.slice(0, BOSS_TEAM_MAX), size:team.size, teamId:team.id, stage:D.stage, arena:D.stage.arena, enemies:['mewtwo'] });
 };
 const _startLim = start;
-start = function(cfg){ setBossAI(cfg && cfg.mode === 'boss' ? diffOf(cfg.diff) : null); return _startLim(cfg); };
+start = function(cfg){ setBossAI(cfg && cfg.mode === 'boss' ? diffOf(cfg.diff) : null); const r = _startLim(cfg);
+  if(cfg && cfg.mode === 'boss' && typeof musicSet === 'function') musicSet('boss');      // musique de boss pour Mewtwo
+  return r; };
 
 // ---------- fin du combat : récompenses de la première victoire ----------
 const _battleEndLim = battleEnd;

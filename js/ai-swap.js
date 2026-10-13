@@ -120,12 +120,11 @@ step = function(dt){
 // ---------- HUD : les Pokéballs adverses montrent qui est K.O. / en jeu / en réserve ----------
 const _hudAS = hud;
 hud = function(){
-  _hudAS();
-  if(!G.es) return;
+  if(!G.es) return _hudAS();
+  const et = G.et; G.et = []; try{ _hudAS(); } finally { G.et = et; }
   const HW = VW/UIK.hud;
   for(let i = 0; i < G.et.length; i++){
     const st = G.eko[i] || (G.es[i] && G.es[i].hp <= 0 && i !== G.ei) ? 2 : i === G.ei ? 1 : 0, cx = HW - 54 - i*18, cy = 58;
-    ctx.fillStyle = '#14101c'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 6.283); ctx.fill();
     ctx.fillStyle = st == 2 ? '#666' : '#e23b3b'; ctx.beginPath(); ctx.arc(cx, cy, 6, Math.PI, 6.283); ctx.fill();
     ctx.fillStyle = st == 2 ? '#999' : '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI); ctx.fill();
     ctx.strokeStyle = '#14101c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, 6.283); ctx.moveTo(cx - 6, cy); ctx.lineTo(cx + 6, cy); ctx.stroke();

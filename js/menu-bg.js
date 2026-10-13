@@ -117,6 +117,9 @@ function drawMenuScene(dt){
   // brume dorée
   const g = ctx.createLinearGradient(0, 250, 0, 300); g.addColorStop(0, 'rgba(255,170,110,0)'); g.addColorStop(1, 'rgba(255,150,100,.28)'); ctx.fillStyle = g; ctx.fillRect(0, 250, VW, 60);
   ctx.drawImage(L.hill, 0, 0);
+  // herbes du premier plan qui ondulent
+  for(let x = 240; x < VW; x += 3){ const top = L.hillTop(x) + 2, h = 3 + ((x*7) % 5), bend = Math.sin(t*1.8 + x*.08)*1.5;
+    ctx.fillStyle = (x % 2) ? '#3c5a3c' : '#4a6a40'; ctx.fillRect(Math.round(x + bend), Math.round(top - h), 1, h); }
   // l'équipe sur la colline (le chef regarde l'Arène)
   if(!MBG.team || MBG.team.key !== Save.lastTeam || MBG.team.ids.length < Math.min(3, (Save.team(Save.lastTeam) || Save.teams()[0] || { members:[1, 2, 3] }).members.length)){ MBG.team = { key:Save.lastTeam, ids:mbgTeam() }; }
   const spots = [[468, 3, 0], [420, 1, 1.3], [524, 7, 2.1]];
@@ -137,9 +140,6 @@ function drawMenuScene(dt){
     if(p.k === 0){ const a = .5 + .5*Math.sin(t*4 + p.ph); ctx.fillStyle = `rgba(255,230,140,${a})`; ctx.fillRect(p.x | 0, p.y | 0, 2, 2); ctx.fillStyle = `rgba(255,200,100,${a*.25})`; ctx.fillRect((p.x | 0) - 1, (p.y | 0) - 1, 4, 4); }
     else { ctx.fillStyle = Math.sin(t*5 + p.ph) > 0 ? '#ff9ac8' : '#e86aa8'; ctx.fillRect(p.x | 0, p.y | 0, 2, Math.sin(t*5 + p.ph) > 0 ? 2 : 1); }
   }
-  // herbes du premier plan qui ondulent
-  for(let x = 240; x < VW; x += 3){ const top = L.hillTop(x) + 2, h = 3 + ((x*7) % 5), bend = Math.sin(t*1.8 + x*.08)*1.5;
-    ctx.fillStyle = (x % 2) ? '#3c5a3c' : '#4a6a40'; ctx.fillRect(Math.round(x + bend), Math.round(top - h), 1, h); }
   ctx.restore();
 }
 // silhouette colorée d'un sprite (mise en cache)

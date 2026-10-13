@@ -7,7 +7,7 @@
 :root{
   --gold:#ffd23f; --gold2:#ffe9a0; --gold3:#b8861e;
   --glass:rgba(22,16,44,.82); --glass2:rgba(40,30,74,.78); --line:rgba(255,220,160,.28);
-  --txt:#f4ead6; --txt2:#c9bcd8; --font:"Pixelify Sans","Courier New",monospace;
+  --txt:#f4ead6; --txt2:#c9bcd8; --font:"Silkscreen","Pixelify Sans","Courier New",monospace;   /* Silkscreen = chiffres seulement */
 }
 body{font-family:var(--font);font-weight:600;color:var(--txt)}
 #menu{font-family:var(--font);background:radial-gradient(ellipse at 50% 45%,rgba(26,18,52,.72),rgba(8,6,18,.92));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
@@ -105,3 +105,35 @@ input#tn{background:rgba(10,8,24,.85);color:var(--txt);border:1px solid var(--li
 #app.nogame #ui,#app.nogame #pauseBtn{display:none}
 /* écran développeur */
 .devs .row{margin:3px 0}
+
+/* ============================================================ v0.11 */
+/* choix du premier Pokémon */
+.st-sub{max-width:560px;color:var(--txt2)}
+.st-grid{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.st-c{width:88px;padding:4px 2px 5px;background:linear-gradient(180deg,color-mix(in srgb,var(--tc) 35%,#1e1636),rgba(22,16,44,.9));border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--txt);font-family:var(--font);cursor:pointer;transition:transform .12s,border-color .12s}
+.st-c img{width:56px;height:56px;image-rendering:pixelated;display:block;margin:0 auto;filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+.st-c b{display:block;font-size:11px}.st-c small{display:block;margin-top:2px}
+.st-c:hover{transform:translateY(-2px);border-color:var(--gold)}
+.st-c.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,210,63,.4);transform:translateY(-3px)}
+.st-c.on img{animation:stb .6s ease-in-out infinite alternate}@keyframes stb{to{transform:translateY(-3px)}}
+.st-det{max-height:120px;max-width:560px;text-align:left;background:rgba(10,8,24,.4);border-radius:8px;padding:4px 8px}
+.st-win{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:520px}
+.st-win img{width:96px;height:96px;image-rendering:pixelated;animation:stb .5s ease-in-out infinite alternate;filter:drop-shadow(0 0 12px rgba(255,210,63,.6))}
+/* Pokémon verrouillés dans l'éditeur d'équipe */
+.card.locked{opacity:.55;position:relative}.card.locked img{filter:grayscale(1) brightness(.6)}
+.card .lk{position:absolute;right:3px;top:2px;font-size:11px}.card.got{opacity:.5;position:relative}
+/* Safari */
+.sf-inv{display:flex;gap:10px;justify-content:center;align-items:center;font-size:12px}
+.sf-inv span{display:inline-flex;align-items:center;gap:2px;background:rgba(10,8,24,.5);border:1px solid var(--line);border-radius:12px;padding:0 8px 0 2px}
+.sf-inv img{height:20px;image-rendering:pixelated}
+.sf-ed .left{flex:0 0 44%}
+.sf-shop{max-width:560px;display:flex;flex-direction:column;gap:4px}
+.sf-off{display:flex;align-items:center;gap:6px;background:var(--glass2);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 8px;text-align:left}
+.sf-off img{width:36px;height:auto;image-rendering:pixelated;flex:none}.sf-off>div{flex:1;min-width:0}
+.sf-off b{display:block;font-size:12px}.sf-off small{display:block;font-size:10px;color:var(--txt2)}.sf-off em{font-size:10px;font-style:normal;color:var(--gold)}
+/* bouton Ball (6e case des commandes) */
+.ab.ballb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-color:#e8403c}
+.ab.ballb img{width:16px;height:16px;image-rendering:pixelated}
+.ab.ballb b{font-size:8px}.ab.ballb small{font-size:9px;color:#ffe86a;font-weight:700}
+.ab.ballb .bsw{position:absolute;right:1px;top:0;font-size:10px;padding:0 2px;background:#0008;border-radius:4px}
+.ab.ballb.cd{opacity:.5}

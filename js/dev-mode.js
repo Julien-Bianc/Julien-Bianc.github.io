@@ -4,6 +4,7 @@
 //  Outils (chacun s'active / se désactive) :
 //    • Argent infini (tu ne paies plus rien, ton vrai solde n'est pas touché)
 //    • Tous les niveaux Solo débloqués
+//    • Tous les Pokémon débloqués (sans passer par le Safari)
 //    • Pokémon boss jouables (Mewtwo dans l'éditeur d'équipe) — recharge la page
 //    • Rareté forcée des caisses (commun → ultra rare) pour tester les animations d'ouverture
 //    • Invincible en combat, recharges instantanées, bouton « Gagner le combat » dans la pause
@@ -101,7 +102,7 @@ function showDev(){
   menu(`<div class='hd'><h1>⚙ Développeur</h1>${walletHtml()}</div>
     <div class='scroll opts devs'>
       <h3>Progression</h3>
-      <div class='row left'>${tg('money', 'Argent infini')}${tg('levels', 'Tous les niveaux Solo')}${tg('bosses', 'Pokémon boss jouables')}</div>
+      <div class='row left'>${tg('money', 'Argent infini')}${tg('levels', 'Tous les niveaux Solo')}${tg('allmons', 'Tous les Pokémon débloqués')}${tg('bosses', 'Pokémon boss jouables')}</div>
       <p class='hint'>Pokémon boss jouables : la page se recharge pour ajouter Mewtwo à l'éditeur d'équipe.</p>
       <h3>Caisses — rareté forcée</h3>
       <div class='row left'>${[[null, 'Aléatoire'], ...RARITY.slice().reverse().map(r => [r.id, r.label])].map(([id, l]) => `<button class='btn2 sm ${D.rarity === id ? 'on' : ''}' data-rar='${id || ''}' ${id ? `style='border-color:${RAR[id].col}'` : ''}>${l}</button>`).join('')}

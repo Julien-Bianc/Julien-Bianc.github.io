@@ -93,3 +93,23 @@ spawn = function(){ const r = _spawnFx(); AIM.on = [0, 0, 0]; if(G && G.p && G.e
 cv.addEventListener('mousemove', () => { if(G && !G.over && !G.paused) MOUSE_FIGHT = true; });
 const _aimKeyFx = AIM.key;
 AIM.key = function(i){ if(!MOUSE_FIGHT) return; return _aimKeyFx.call(AIM, i); };
+
+// ============================================================ v0.11
+// 4. Crash « Cannot read properties of undefined (reading '3') » dans melee : l'animation de l'attaque
+//    au corps à corps n'existe pas dans le dossier du Pokémon → on prend une animation qui existe.
+const _meleeFx = melee;
+melee = function(s, d, m, c, own, sc, ang){
+  const S = SPR[s.t], M = m.mel;
+  if(S && M){
+    let an = resolveAnim(S, M.an || 'Attack');
+    if(!an || !S.CUM[an]) an = ['Attack', 'Strike', 'QuickStrike', 'MultiScratch', 'Swing', 'Shoot', 'Charge', 'Idle'].map(n => resolveAnim(S, n)).find(n => n && S.CUM[n]);
+    if(!an) return;
+    const nf = S.CUM[an].length, hf = (M.hf || [S.D.anim[an].hit ?? Math.min(3, nf - 1)]).map(f => Math.max(0, Math.min(nf - 1, f)));
+    if(an !== M.an || !M.hf || hf.some((f, i) => f !== M.hf[i])) m = { ...m, mel:{ ...M, an, hf } };
+  }
+  return _meleeFx(s, d, m, c, own, sc, ang);
+};
+// 5. Bandeau d'infos en haut du combat plus petit par défaut (réglable dans Options → Taille de l'ATH)
+const _uiAutoFx = uiAuto;
+uiAuto = function(){ const r = _uiAutoFx(); r.hud = .8; return r; };
+applyUI();
