@@ -40,6 +40,9 @@ const Save = {
   // Objet tenu par un Pokémon d'une équipe : team.items = { idPokémon: idObjet }
   // Règle : un même objet ne peut être porté que par UN Pokémon de l'équipe (comme en compétition).
   teamItem(t, pid){ return t && t.items && t.items[pid] && HELD_BY_ID[t.items[pid]] && this.itemCount(t.items[pid]) > 0 ? t.items[pid] : null; },
+  // Capsule Ball d'un Pokémon d'une équipe : team.caps = { idPokémon: idCapsule } (la même capsule peut servir à plusieurs Pokémon)
+  teamCap(t, pid){ const id = t && t.caps && t.caps[pid]; return id && CAPSULE_BY_ID[id] && this.itemCount(id) > 0 ? id : null; },
+  capHolders(capId){ return this.teams().flatMap(t => Object.entries(t.caps || {}).filter(([pid, c]) => c === capId && t.members.includes(pid)).map(([pid]) => ({ team:t, pid }))); },
   holders(itemId){ return this.teams().flatMap(t => Object.entries(t.items || {}).filter(([pid, it]) => it === itemId && t.members.includes(pid)).map(([pid]) => ({ team:t, pid }))); },
   get lastTeam(){ return this.load().lastTeam; },
   set lastTeam(v){ this.load().lastTeam = v; this.save(); },
@@ -52,6 +55,8 @@ const Save = {
       const it = {}, used = new Set();                                         // objets tenus : Pokémon présent, objet possédé, pas de doublon
       Object.entries(t.items || {}).forEach(([pid, id]) => { if(t.members.includes(pid) && HELD_BY_ID[id] && this.itemCount(id) > 0 && !used.has(id)){ it[pid] = id; used.add(id); } });
       t.items = it;
+      const cp = {}; Object.entries(t.caps || {}).forEach(([pid, id]) => { if(t.members.includes(pid) && CAPSULE_BY_ID[id] && this.itemCount(id) > 0) cp[pid] = id; });
+      t.caps = cp;
     });
     if(!d.teams.length && ORDER.length >= 3){
       const prefer = ['farfuret', 'dracaufeu', 'fouinar'].filter(id => ORDER.includes(id));

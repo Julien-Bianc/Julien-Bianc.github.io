@@ -107,7 +107,10 @@ function cardHtml(it, s){
     <u class='rb'></u><u class='sh'></u><u class='sp'></u></div></div>`;
 }
 // image d'un objet (objet tenu → PNG de assets/items/, sinon la caisse)
-const imgOf = it => it.img ? 'assets/items/' + it.img + '.png' : crateImg();
+const imgOf = it => it.kind === 'capsule' ? capIcon(it) : it.img ? 'assets/items/' + it.img + '.png' : crateImg();
+// aperçu animé d'une Capsule Ball (js/capsules.js) ; pid = Pokémon de démonstration
+const demoPoke = () => STARTERS.find(id => ORDER.includes(id)) || ORDER[0];
+const capPrev = (id, w, h, pid) => `<canvas class='cprev' width='${w || 260}' height='${h || 150}' data-cap='${id}' data-poke='${pid || demoPoke()}'></canvas>`;
 // visuel d'un objet : carte (échelle s) ou image
 const itemVisual = (it, s) => it.kind === 'card' ? cardHtml(it, s) : `<img src='${imgOf(it)}'>`;
 const crateNames = it => (it.crates || []).map(id => CRATE[id] && CRATE[id].name).filter(Boolean);
@@ -205,10 +208,11 @@ function showCrate(id){
 function showItemPeek(itemId, back){
   const it = ITEM[itemId]; if(!it) return back();
   const n = Save.itemCount(it.id);
-  menu(`<div class='peek' style='${rarCss(it.r)}'><div class='pkv r-${it.r}'>${it.kind === 'card' ? cardHtml(it, 1) : `<img class='ric' src='${imgOf(it)}'>`}</div>
+  menu(`<div class='peek' style='${rarCss(it.r)}'><div class='pkv r-${it.r}'>${it.kind === 'card' ? cardHtml(it, 1) : it.kind === 'capsule' ? capPrev(it.id) : `<img class='ric' src='${imgOf(it)}'>`}</div>
     <div class='rvt'><b class='rn' style='color:${RAR[it.r].col}'>${esc(it.name)}</b><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
     ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}<p>${n ? 'Possédé : ×' + n : 'Pas encore obtenu'}</p>
     <div class='row'><button class='btn2' id='back'>Retour</button></div></div></div>`);
+  mountCapPreviews();
   document.getElementById('back').onclick = back;
 }
 
@@ -258,14 +262,14 @@ function showReveal(win, isNew, id){
   const R = RAR[win.r], c = CRATE[id], shake = win.r === 'UR' ? 'shk2' : win.r === 'R' ? 'shk1' : '';
   const status = () => { const n = Save.itemCount(win.id); return isNew && n === 1 ? 'Nouveau !' : 'Possédé · ×' + n; };
   menu(`<div class='rv r-${win.r} ${shake}' style='${rarCss(win.r)}'>
-    <div class='rvc'><div class='rays'></div>${win.kind === 'card' ? cardHtml(win, 1.3) : `<img class='ric' src='${imgOf(win)}'>`}</div>
+    <div class='rvc'><div class='rays'></div>${win.kind === 'card' ? cardHtml(win, 1.3) : win.kind === 'capsule' ? capPrev(win.id, 280, 170) : `<img class='ric' src='${imgOf(win)}'>`}</div>
     <div class='rvt'><small>${esc(c.name)}</small><b class='rn' style='color:${R.col}'>${esc(win.name)}</b>
-      <div><span class='tag' style='background:${R.col};color:#fff'>${R.label}</span> ${win.kind === 'held' ? `<span class='tag'>Objet tenu</span>` : ''}</div>
+      <div><span class='tag' style='background:${R.col};color:#fff'>${R.label}</span> ${win.kind === 'held' ? `<span class='tag'>Objet tenu</span>` : win.kind === 'capsule' ? `<span class='tag'>Capsule Ball</span>` : ''}</div>
       ${win.desc ? `<p class='idesc'>${esc(win.desc)}</p>` : ''}
       <p id='rst'>${status()}</p>
       <div class='row'><button class='btn' id='again'>Rouvrir${c.price ? ' — ' + money(c.price) : ''}</button><button class='btn2' id='sell'></button></div>
       <div class='row'><button class='btn2' id='inv'>Inventaire</button><button class='btn2' id='cl'>Fermer</button>${walletHtml()}</div></div></div>`);
-  shopReveal(win.r); shopConfetti(win.r);
+  shopReveal(win.r); shopConfetti(win.r); mountCapPreviews();
   const sb = document.getElementById('sell'), ag = document.getElementById('again');
   const upd = () => {
     const s = Save.sellable(win.id); sb.disabled = !s; sb.textContent = s ? `Vendre le doublon (+${money(sellPrice(win))})` : 'Pas de doublon';
@@ -289,10 +293,10 @@ function showInventory(o){
   o = Object.assign({ tab:'items', sel:null, back:showMain, filter:'all' }, o && typeof o === 'object' ? o : {});
   if(typeof o.back !== 'function') o.back = showMain;
   const inv = Save.inv(), all = Object.values(ITEM);
-  const cards = all.filter(it => it.kind === 'card'), helds = all.filter(it => it.kind !== 'card');
+  const cards = all.filter(it => it.kind === 'card'), helds = all.filter(it => it.kind === 'held'), caps = all.filter(it => it.kind === 'capsule');
   const nHave = list => list.filter(it => inv[it.id] > 0).length;
-  const tabs = `<div class='tabs'><button class='btn2 ${o.tab === 'items' ? 'on' : ''}' data-tab='items'>Objets ${nHave(helds)}/${helds.length}</button><button class='btn2 ${o.tab === 'binder' ? 'on' : ''}' data-tab='binder'>Classeur ${nHave(cards)}/${cards.length}</button></div>`;
-  const body = o.tab === 'binder' ? binderBody(o, inv) : itemsBody(o, inv, helds);
+  const tabs = `<div class='tabs'><button class='btn2 ${o.tab === 'items' ? 'on' : ''}' data-tab='items'>Objets ${nHave(helds)}/${helds.length}</button><button class='btn2 ${o.tab === 'caps' ? 'on' : ''}' data-tab='caps'>Capsules ${nHave(caps)}/${caps.length}</button><button class='btn2 ${o.tab === 'binder' ? 'on' : ''}' data-tab='binder'>Classeur ${nHave(cards)}/${cards.length}</button></div>`;
+  const body = o.tab === 'binder' ? binderBody(o, inv) : itemsBody(o, inv, o.tab === 'caps' ? caps : helds);
   menu(`<div class='hd'><h1>Inventaire</h1>${tabs}${walletHtml()}</div>${body}<div class='row'><button class='btn2' id='back'>Retour</button></div>`);
   bindAll('[data-tab]', el => showInventory({ ...o, tab:el.dataset.tab, sel:null }));
   bindAll('[data-f]', el => showInventory({ ...o, filter:el.dataset.f }));
@@ -302,6 +306,7 @@ function showInventory(o){
   if(s1) s1.onclick = () => { if(Save.sell(sel.id, 1, sellPrice(sel))){ coinSfx(); showInventory(o); } };
   if(sa) sa.onclick = () => { if(Save.sell(sel.id, Save.sellable(sel.id), sellPrice(sel))){ coinSfx(); showInventory(o); } };
   const fs = document.querySelector('.invw .foc'); if(fs) fs.scrollIntoView({ block:'nearest' });
+  mountCapPreviews();
   document.getElementById('back').onclick = o.back;
 }
 
@@ -315,17 +320,20 @@ const whereTxt = it => { const w = crateNames(it); return w.length ? 'Trouvable 
 
 // ---------- onglet Objets ----------
 function itemsBody(o, inv, helds){
-  const list = helds.slice().sort((a, b) => byRarity(a, b) || HELD.findIndex(h => h.id === a.id) - HELD.findIndex(h => h.id === b.id));
-  const it = o.sel && ITEM[o.sel] && ITEM[o.sel].kind !== 'card' ? ITEM[o.sel] : null;
-  let detail = `<p>Touche un objet pour voir son effet.</p><p>Les objets tenus s'équipent dans <b>Mes équipes</b> (un objet par Pokémon).</p><p>Caisses ouvertes : ${Save.opened()}</p>`;
+  const isCap = o.tab === 'caps', order = isCap ? CAPSULES : HELD;
+  const list = helds.slice().sort((a, b) => byRarity(a, b) || order.findIndex(h => h.id === a.id) - order.findIndex(h => h.id === b.id));
+  const it = o.sel && ITEM[o.sel] && list.includes(ITEM[o.sel]) ? ITEM[o.sel] : null;
+  let detail = isCap
+    ? `<p>Les <b>Capsules Ball</b> changent l'arrivée de ton Pokémon dans l'arène (effet quand la Pokéball s'ouvre). Purement visuelles.</p><p>Équipe-les dans <b>Mes équipes</b> : une capsule par Pokémon, la même peut servir à plusieurs.</p>`
+    : `<p>Touche un objet pour voir son effet.</p><p>Les objets tenus s'équipent dans <b>Mes équipes</b> (un objet par Pokémon).</p><p>Caisses ouvertes : ${Save.opened()}</p>`;
   if(it && inv[it.id] > 0){
-    const hold = Save.holders(it.id);
+    const hold = isCap ? Save.capHolders(it.id) : Save.holders(it.id);
     detail = `<div class='dh big'><img src='${imgOf(it)}'><div><b style='color:${RAR[it.r].col}'>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span></div></div>
-      <p class='idesc'>${esc(it.desc || '')}</p><p>Possédé : ×${inv[it.id]}</p>
-      <p>${hold.length ? 'Porté par : ' + hold.map(h => esc(NAME[h.pid] || h.pid) + ' (' + esc(h.team.name) + ')').join(', ') : 'Porté par personne'}</p>
+      ${isCap ? capPrev(it.id, 240, 140) : ''}<p class='idesc'>${esc(it.desc || '')}</p><p>Possédé : ×${inv[it.id]}</p>
+      <p>${hold.length ? (isCap ? 'Équipée sur : ' : 'Porté par : ') + hold.map(h => esc(NAME[h.pid] || h.pid) + ' (' + esc(h.team.name) + ')').join(', ') : (isCap ? 'Équipée sur aucun Pokémon' : 'Porté par personne')}</p>
       <p class='hint'>${whereTxt(it)}</p>${sellRow(it)}`;
   } else if(it){
-    detail = `<div class='dh big'><span class='qbig' style='${rarCss(it.r)}'>?</span><div><b>Objet inconnu</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span></div></div><p class='hint'>${whereTxt(it)}</p>`;
+    detail = `<div class='dh big'><span class='qbig' style='${rarCss(it.r)}'>?</span><div><b>${isCap ? 'Capsule inconnue' : 'Objet inconnu'}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span></div></div><p class='hint'>${whereTxt(it)}</p>`;
   }
   return `<div class='edit invw'><div class='scroll left igrid'>${list.map(x => inv[x.id] > 0 ? itemCard(x, { n:inv[x.id], cls:x.id === o.sel ? 'foc' : '' }) : itemCard(x, { locked:true, cls:x.id === o.sel ? 'foc' : '' })).join('')}</div>
     <div class='scroll right'>${detail}</div></div>`;

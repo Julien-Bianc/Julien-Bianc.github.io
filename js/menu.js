@@ -60,9 +60,25 @@ function heldPicker(ed){
       : `<p>Tu n'as encore aucun objet tenu : ouvre des caisses au Magasin !</p>`}
     <div class='row'><button class='btn2' id='hq'>Annuler</button></div></div>`;
 }
+// ---------- Capsule Ball dans l'éditeur d'équipe (js/capsules.js) ----------
+function capBox(ed){
+  const c = CAPSULE_BY_ID[ed.caps[ed.focus]];
+  return `<div class='held cap'><span>Capsule Ball</span>${c ? `<img src='${capIcon(c)}'><div><b style='color:${RAR[c.r].col}'>${esc(c.name)}</b><small>${esc(c.desc)}</small></div>` : `<div><i>Aucune (Pokéball classique)</i></div>`}
+    <button class='btn2 sm' id='cc'>${c ? 'Changer' : 'Équiper'}</button>${c ? `<button class='btn2 sm' id='cx'>✕</button>` : ''}</div>
+    ${c ? `<canvas class='cprev sm' width='220' height='120' data-cap='${c.id}' data-poke='${ed.focus}'></canvas>` : ''}`;
+}
+function capPicker(ed){
+  const inv = Save.inv(), mine = CAPSULES.filter(h => inv[h.id] > 0).sort((a, b) => RANK[b.r] - RANK[a.r]);
+  return `<div class='hpk'><b>Capsule Ball pour ${esc(NAME[ed.focus])}</b>
+    <button class='hit' data-capsel=''><div><b>Aucune capsule</b><small>Pokéball classique</small></div></button>
+    ${mine.length ? mine.map(h => `<button class='hit ${ed.caps[ed.focus] === h.id ? 'on' : ''}' data-capsel='${h.id}' style='${rarCss(h.r)}'><img src='${capIcon(h)}'><div><b>${esc(h.name)} <em>${RAR[h.r].label}</em></b><small>${esc(h.desc)}</small></div></button>`).join('')
+      : `<p>Tu n'as encore aucune Capsule Ball : ouvre des caisses au Magasin !</p>`}
+    <div class='row'><button class='btn2' id='cq'>Annuler</button></div></div>`;
+}
 function showTeamEditor(team){
   const ed = { id:team.id, name:team.name, size:team.size, members:team.members.filter(id => ORDER.includes(id)), focus:null, pick:false };
   ed.items = {}; ed.members.forEach(id => { const it = Save.teamItem(team, id); if(it) ed.items[id] = it; });
+  ed.caps = {}; ed.members.forEach(id => { const c = Save.teamCap(team, id); if(c) ed.caps[id] = c; });
   ed.focus = ed.members[0] || ORDER[0];
   const sync = () => { const el = document.getElementById('tn'); if(el) ed.name = el.value; };
   const render = () => {
@@ -73,24 +89,29 @@ function showTeamEditor(team){
       ${Array.from({ length:ed.size }, (_, i) => `<div class='slot' data-rm='${i}'>${ed.members[i] ? thumbH(ed.members[i], ed.items[ed.members[i]]) : '+'}</div>`).join('')}</div>
     <div class='edit'>
       <div class='scroll left'><div class='grid2c'>${ORDER.map(id => `<button class='card ${ed.members.includes(id) ? 'sel' : ''} ${id === ed.focus ? 'foc' : ''}' data-add='${id}'>${thumb(id)}<small>${NAME[id]}</small></button>`).join('')}</div></div>
-      <div class='scroll right'>${ed.pick && inTeam ? heldPicker(ed) : `<button class='btn2 ${inTeam ? 'on' : ''}' id='tg'>${inTeam ? 'Retirer de l\'équipe' : (ed.members.length < ed.size ? 'Ajouter à l\'équipe' : 'Équipe pleine')}</button>${inTeam ? heldBox(ed) : ''}${pokeDetail(ed.focus)}`}</div>
+      <div class='scroll right'>${ed.pick === 'held' && inTeam ? heldPicker(ed) : ed.pick === 'cap' && inTeam ? capPicker(ed) : `<button class='btn2 ${inTeam ? 'on' : ''}' id='tg'>${inTeam ? 'Retirer de l\'équipe' : (ed.members.length < ed.size ? 'Ajouter à l\'équipe' : 'Équipe pleine')}</button>${inTeam ? heldBox(ed) + capBox(ed) : ''}${pokeDetail(ed.focus)}`}</div>
     </div>
     <div class='row'><button class='btn' id='sv'>Enregistrer (${ed.members.length}/${ed.size})</button><button class='btn2' id='cn'>Annuler</button></div>`);
     bindAll('[data-size]', el => { sync(); ed.size = +el.dataset.size; ed.members = ed.members.slice(0, ed.size); render(); });
-    bindAll('[data-rm]', el => { sync(); const id = ed.members.splice(+el.dataset.rm, 1)[0]; delete ed.items[id]; ed.pick = false; render(); });
+    bindAll('[data-rm]', el => { sync(); const id = ed.members.splice(+el.dataset.rm, 1)[0]; delete ed.items[id]; delete ed.caps[id]; ed.pick = false; render(); });
     bindAll('[data-add]', el => { sync(); ed.focus = el.dataset.add; ed.pick = false; render(); });                // toucher une carte = voir ses statistiques
     const tg = document.getElementById('tg');
     if(tg) tg.onclick = () => {
       sync(); const i = ed.members.indexOf(ed.focus);
-      if(i >= 0){ ed.members.splice(i, 1); delete ed.items[ed.focus]; } else if(ed.members.length < ed.size) ed.members.push(ed.focus);
+      if(i >= 0){ ed.members.splice(i, 1); delete ed.items[ed.focus]; delete ed.caps[ed.focus]; } else if(ed.members.length < ed.size) ed.members.push(ed.focus);
       render();
     };
     // objet tenu
-    const hc = document.getElementById('hc'); if(hc) hc.onclick = () => { sync(); ed.pick = true; render(); };
+    const hc = document.getElementById('hc'); if(hc) hc.onclick = () => { sync(); ed.pick = 'held'; render(); };
+    const cc = document.getElementById('cc'); if(cc) cc.onclick = () => { sync(); ed.pick = 'cap'; render(); };
+    const cx = document.getElementById('cx'); if(cx) cx.onclick = () => { sync(); delete ed.caps[ed.focus]; render(); };
+    bindAll('[data-capsel]', el => { sync(); const v = el.dataset.capsel; if(v) ed.caps[ed.focus] = v; else delete ed.caps[ed.focus]; ed.pick = false; render(); });
+    const cq = document.getElementById('cq'); if(cq) cq.onclick = () => { sync(); ed.pick = false; render(); };
+    if(typeof mountCapPreviews === 'function') mountCapPreviews();
     const hx = document.getElementById('hx'); if(hx) hx.onclick = () => { sync(); delete ed.items[ed.focus]; render(); };
     bindAll('[data-hold]', el => { sync(); const v = el.dataset.hold; if(v) ed.items[ed.focus] = v; else delete ed.items[ed.focus]; ed.pick = false; render(); });
     const hq = document.getElementById('hq'); if(hq) hq.onclick = () => { sync(); ed.pick = false; render(); };
-    document.getElementById('sv').onclick = () => { sync(); if(!ed.members.length){ alert('Ajoute au moins 1 Pokémon.'); return; } Save.saveTeam({ id:ed.id, name:ed.name.trim() || 'Équipe', size:ed.size, members:ed.members, items:{ ...ed.items } }); showTeams(); };
+    document.getElementById('sv').onclick = () => { sync(); if(!ed.members.length){ alert('Ajoute au moins 1 Pokémon.'); return; } Save.saveTeam({ id:ed.id, name:ed.name.trim() || 'Équipe', size:ed.size, members:ed.members, items:{ ...ed.items }, caps:{ ...ed.caps } }); showTeams(); };
     document.getElementById('cn').onclick = showTeams;
   };
   render();

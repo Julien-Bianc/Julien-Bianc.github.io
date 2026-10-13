@@ -268,3 +268,41 @@ Le Pokémon est recadré au pixel près et centré dans l'illustration. Chaque r
 **commune** = au repos de face, **peu commune** = en pleine attaque, **rare** = attaque spéciale / pose de puissance.
 Réglages par défaut : `CARD_POSE` dans `js/shop.js`. Pour imposer une pose à un Pokémon, ajoute dans son entrée de `data/pokemon*.js` :
 `cards:{ PC:{ anim:'Strike', frame:2, dir:1 }, R:{ anim:'Pose' } }` (dir : 0 bas, 1 bas-droite … 7 bas-gauche).
+
+## v0.12 — Pokéball 3D et Capsules Ball
+### Pokéball 3D (`js/pokeball.js`)
+- La Pokéball est calculée en **vraie 3D** (lancer de rayons pixel par pixel) : moitié rouge, moitié blanche, bande noire, bouton,
+  ombrage, reflet brillant et contour sombre comme les sprites. Elle **roule sur elle-même** en vol et **s'ouvre vraiment** :
+  le couvercle pivote sur sa charnière arrière et on voit l'intérieur lumineux.
+- **Envoi** : lancer en cloche avec ombre au sol → ouverture en l'air → faisceau de lumière → le Pokémon se matérialise
+  (petite silhouette lumineuse qui descend et grandit, puis prend ses couleurs) → la ball repart vers le dresseur.
+- **Rappel** : la ball apparaît au-dessus du Pokémon, s'ouvre, le rayon rouge l'aspire, elle se referme et repart.
+- Utilisé partout : **première entrée du combat** (nouveau), relève, entrée après un K.O., arrivée et relève des ennemis.
+- Durées : `PB_T` ; inclinaison de la caméra : `PB_VIEW` ; taille de la ball : `PB_R` (en haut de `js/pokeball.js`).
+
+### Capsules Ball (`data/capsules.js` + `js/capsules.js`)
+Personnalisent l'arrivée d'un Pokémon : l'effet se déclenche quand la Pokéball s'ouvre, et la lumière de la ball prend la couleur
+de la capsule. **Purement visuelles** (aucun effet sur le combat). Plus l'effet est impressionnant, plus la capsule est rare :
+
+| Rareté | Capsules |
+|---|---|
+| Commune | Étincelles, Bulles, Feuilles, Fumée, Confettis |
+| Peu commune | Flammes (cercle de feu), Vague (anneau d'eau), Éclair (3 éclairs), Blizzard (pics de glace) |
+| Rare | Psy (ondes + orbes), Ténèbres (vortex obscur), Dragon (rubans + onde de choc), Brillant (éclat chromatique) |
+| Ultra rare | Arc-en-ciel (pilier prismatique), Légendaire (cercle runique doré, pilier, couronne d'éclairs) |
+
+- **Caisse du grand départ** : les emplacements « à définir » sont devenus des capsules : Commun 3 = capsule commune,
+  Peu commun 3 = capsule peu commune, + Rare 3 = capsule rare et un emplacement **Ultra rare** (2 %) = capsule ultra rare.
+- **Équiper** : Mes équipes → Modifier → toucher un Pokémon de l'équipe → « Capsule Ball ». La même capsule peut servir à plusieurs
+  Pokémon. Un aperçu animé montre l'entrée de CE Pokémon avec la capsule.
+- **Inventaire** : nouvel onglet **Capsules** (aperçu animé, sur quels Pokémon elle est équipée, revente des doublons).
+  Toucher un aperçu active son son.
+- Les capsules et objets tenus de l'équipe sont maintenant appliqués dans **tous** les modes (Solo, Défi Mewtwo…).
+- Nouvelle capsule : une ligne dans `CAPSULES` (avec un `fx` existant). Nouvel effet : une entrée dans `CAP_FX` (`js/capsules.js`),
+  avec `under` (au sol) et `over` (par-dessus), `dur`, et en option `sfx`, `flash`, `shake`.
+
+| Je veux… | Fichier |
+|---|---|
+| Changer la Pokéball 3D ou les animations d'envoi / de rappel | `js/pokeball.js` |
+| Ajouter / renommer une Capsule Ball, changer sa rareté ou sa couleur | `data/capsules.js` |
+| Modifier ou créer un effet d'arrivée | `js/capsules.js` (`CAP_FX`) |

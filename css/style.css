@@ -283,3 +283,11 @@ body{position:fixed;inset:0;width:100%;overscroll-behavior:none;touch-action:man
 .ta img{width:94px!important;height:78px!important;margin:0!important;image-rendering:pixelated}
 .pk.miss img{width:50px!important;height:42px!important}
 .pk.big img{width:94px!important;height:78px!important}
+
+/* v0.12 : Capsules Ball (aperçus animés) */
+canvas.cprev{display:block;width:240px;max-width:100%;height:auto;aspect-ratio:26/15;image-rendering:pixelated;border:2px solid #0a0e14;border-radius:6px;background:#141c18;margin:4px 0;cursor:pointer}
+canvas.cprev.sm{width:200px;aspect-ratio:22/12}
+.rvc canvas.cprev{width:300px;z-index:1;box-shadow:0 0 18px var(--rc)}
+.pkv canvas.cprev{width:280px}
+.held.cap{background:#7ad0ff14;border-color:#7ad0ff55}
+.tabs .btn2{padding:7px 9px}

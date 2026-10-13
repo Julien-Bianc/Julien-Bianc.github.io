@@ -12,6 +12,7 @@
 //    Un emplacement : { r, label, w?, …contenu }   w = poids (1 par défaut) : w:2 = 2 fois plus de chances que ses voisins
 //      cards:['farfuret', …]   → une carte de rareté r d'un de ces Pokémon (cards:'all' = tous les Pokémon)
 //      held:true               → un objet tenu de rareté r (data/items.js)
+//      caps:true               → une Capsule Ball de rareté r (data/capsules.js)
 //      items:['restes', …]     → un objet précis parmi cette liste
 //    → Nouvel emplacement : une ligne dans slots. Nouvelle caisse : une entrée dans CRATES + une dans SHOP.
 // ============================================================
@@ -28,23 +29,25 @@ const CARD_RARITIES = ['C', 'PC', 'R'];
 const STARTERS = ['farfuret', 'dracaufeu', 'tortank', 'florizarre', 'lucario', 'raichu', 'fouinar'];
 
 const CRATES = [
-  { id:'depart', name:'Caisse du grand départ', desc:'Cartes des 7 Pokémon de départ et objets tenus', price:100,
+  { id:'depart', name:'Caisse du grand départ', desc:'Cartes des 7 Pokémon de départ, objets tenus et Capsules Ball', price:100,
     slots:[
       { r:'C',  label:'Carte commune',          cards:STARTERS },
       { r:'C',  label:'Objet tenu commun',      held:true },
-      // { r:'C',  label:'Commun 3 — à définir' },
+      { r:'C',  label:'Capsule Ball commune',   caps:true },
       // { r:'C',  label:'Commun 4 — à définir' },
       // { r:'C',  label:'Commun 5 — à définir' },
       { r:'PC', label:'Carte peu commune',      cards:STARTERS },
       { r:'PC', label:'Objet tenu peu commun',  held:true },
-      // { r:'PC', label:'Peu commun 3 — à définir' },
+      { r:'PC', label:'Capsule Ball peu commune', caps:true },
       { r:'R',  label:'Carte rare',             cards:STARTERS },
-      { r:'R',  label:'Objet tenu rare',        held:true }
+      { r:'R',  label:'Objet tenu rare',        held:true },
+      { r:'R',  label:'Capsule Ball rare',      caps:true },
+      { r:'UR', label:'Capsule Ball ultra rare', caps:true }
     ] }
 ];
 
 const SHOP = [
-  { id:'depart', type:'crate', crate:'depart', label:'Caisse du grand départ', desc:'Cartes de départ et objets tenus' }
+  { id:'depart', type:'crate', crate:'depart', label:'Caisse du grand départ', desc:'Cartes, objets tenus et Capsules Ball' }
 ];
 
 // ---------- accès pratiques ----------
@@ -59,10 +62,12 @@ function shopBuild(){
     ITEM[`card:${pid}:${r}`] = { id:`card:${pid}:${r}`, kind:'card', poke:pid, name:'Carte ' + (NAME[pid] || pid), r, crates:[] };
   }));
   HELD.forEach(h => { ITEM[h.id] = { ...h, kind:'held', crates:[] }; });
+  CAPSULES.forEach(h => { ITEM[h.id] = { ...h, kind:'capsule', crates:[] }; });
   CRATES.forEach(c => c.slots.forEach(s => {
     let pool = [];
     if(s.cards) pool = (s.cards === 'all' ? ORDER : s.cards.filter(pid => ORDER.includes(pid))).map(pid => ITEM[`card:${pid}:${s.r}`]);
     else if(s.held) pool = HELD.filter(h => h.r === s.r).map(h => ITEM[h.id]);
+    else if(s.caps) pool = CAPSULES.filter(h => h.r === s.r).map(h => ITEM[h.id]);
     else if(s.items) pool = s.items.map(id => ITEM[id]);
     s.pool = pool.filter(Boolean);
     s.pool.forEach(it => { if(!it.crates.includes(c.id)) it.crates.push(c.id); });
