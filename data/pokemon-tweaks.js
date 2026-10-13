@@ -40,3 +40,10 @@ function moveDesc(m){
   if(k === 'pool') return 'Flaque persistante qui blesse.';
   return KIND_LABEL[k] ? KIND_LABEL[k] + ' (attaque spéciale).' : 'Attaque spéciale.';
 }
+
+// v0.07 : chances de statut des attaques (par LANCER, répartie sur les projectiles)
+if(typeof POKEMON !== 'undefined'){
+  if(POKEMON.farfuret) POKEMON.farfuret.moves[1].status = { kind:'slow', chance:.2 };      // Vent Glace : ralentit
+  if(POKEMON.dracaufeu) POKEMON.dracaufeu.moves[2].status = { kind:'burn', chance:.35 };   // Surchauffe : brûle
+  if(POKEMON.raichu) POKEMON.raichu.moves[2].status = { kind:'par', chance:.3 };           // Électacle : paralyse
+}

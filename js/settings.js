@@ -83,7 +83,7 @@ if('serviceWorker' in navigator && (location.protocol === 'https:' || location.h
 const UIK = { menu:1, hud:1 };
 function uiAuto(){
   const w = Math.max(innerWidth, innerHeight), h = Math.min(innerWidth, innerHeight);      // le menu doit tenir en largeur ET en hauteur
-  return { menu:Math.max(1, Math.min(3, w/900, h/500)), hud:Math.max(1, Math.min(1.8, w/1100, h/620)) };
+  return { menu:Math.max(1, Math.min(3, w/900, h/500)), hud:Math.max(1, Math.min(1.35, w/1400, h/700)) };
 }
 function applyUI(){
   const s = Settings.get(), a = uiAuto();

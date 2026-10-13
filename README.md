@@ -159,3 +159,9 @@ Il faut au moins 6 Pokémon chargés pour créer des équipes 6v6. Les équipes 
 - **Options** : indications de visée (oui/non + opacité). **Menus** : l'échelle automatique tient maintenant en largeur ET en hauteur (plus de menu décalé).
 - **K.O.** : nouvelle typographie (Impact penché, bande noire, voile rouge, secousse).
 - **Correctif** : erreur « reading 'age' » en entraînement quand le mannequin était K.O.
+
+## v0.07
+- **Rondoudou** (`data/pokemon-rondoudou.js`) : Normal/Fée, capacité Joli Sourire (20 % de confusion au contact). Berceuse = chant en cône qui
+  endort (nouveau kind `song`, `js/pokemon-song.js`), recharge 9 s. Sprites : assets/pokemon/rondoudou/ (numéro 0039 sur sprites.pmdcollab.org).
+- **Statuts** : chances réduites et comptées PAR LANCER (répartie sur les projectiles d'un éventail) ; nouveau statut Sommeil. Réglages : `data/status.js`.
+- **ATH** : barres de vie adaptatives (plus de chevauchement), échelle automatique plus sobre. Options : mise en page sans chevauchement.

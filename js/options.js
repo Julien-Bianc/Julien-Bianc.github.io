@@ -14,9 +14,9 @@ function showOptions(back){
       <button class='btn2 ${s.autoFs ? 'on' : ''}' id='o-afs'>Plein écran auto : ${s.autoFs ? 'oui' : 'non'}</button></div>
     ${slider('o-shake', 'Secousses et chocs', s.shake, 1.5, .05, pct)}
     <div class='row'><button class='btn2 ${s.aimGuides ? 'on' : ''}' id='o-aim'>Indications de visée : ${s.aimGuides ? 'oui' : 'non'}</button></div>
-    ${slider('o-aimo', 'Opacité des indications', s.aimOpacity, 1, .05, pct)}
+    ${slider('o-aimo', 'Opacité de la visée', s.aimOpacity, 1, .05, pct)}
     ${slider('o-uim', 'Taille des menus', s.uiMenu, 3, .25, mult)}
-    ${slider('o-uih', 'Taille de l\'ATH (barres de vie)', s.uiHud, 3, .25, mult)}
+    ${slider('o-uih', 'Taille de l\'ATH', s.uiHud, 3, .25, mult)}
     <h3>Touches du clavier</h3>
     <div class='kgrid'>${Object.keys(DEFAULT_KEYS).map(a => `<button class='kbtn' data-k='${a}'><small>${KEY_LABELS[a]}</small><b>${keyName(s.keys[a])}</b></button>`).join('')}</div>
     <p>Clique une action, puis appuie sur la touche voulue (Échap = annuler).</p>

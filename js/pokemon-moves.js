@@ -56,12 +56,13 @@ function fan(s, d, m, c, own, sc, ang){
   const F = m.fan, a = ang ?? Math.atan2(d.y - s.y, d.x - s.x), R = Math.random;
   const sp = (F.speed || 260) * (own ? 1 : (.85 + Math.min(G.wave, 3)*.03) * G.stage.pspeed), dm = m.d * (F.share ?? .5) * (1 + c*.9) * sc;
   const n = F.count || 5, mid = (n - 1)/2;
+  const stat = F.status ? { ...F.status, chance:1 - Math.pow(1 - (F.status.chance ?? 1), 1/n) } : undefined;   // chance par lancer répartie sur les projectiles
   s.ann = { an:F.anim || 'Shoot', t0:G.time };
   for(let i = 0; i < n; i++){
     const an = a + (i - mid)*(F.spread || .15) + (R() - .5)*(F.jitter ?? .05), v = sp*(.8 + R()*.4);
     bullets.push({ x:s.x + Math.cos(a)*16, y:s.y + Math.sin(a)*16, vx:Math.cos(an)*v, vy:Math.sin(an)*v,
       r:(F.radius || 5) + (F.radiusJitter ? R()*F.radiusJitter : 0), d:dm, t:m.tp, k:'fan', own,
-      life:F.life || 1, hit:0, age:0, status:F.status, home:F.home, col:F.color });
+      life:F.life || 1, hit:0, age:0, status:stat, n, home:F.home, col:F.color });
   }
   if(F.exhaust) s.exh = G.time + F.exhaust;      // ralentit le lanceur après l'attaque
 }

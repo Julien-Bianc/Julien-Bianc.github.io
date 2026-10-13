@@ -35,6 +35,7 @@ cv.addEventListener('mousemove', e => {
 
 // ---------- aperçu au sol : cône / ligne / zone transparente de l'attaque en cours de visée ou de charge ----------
 function aimShape(p, m, c){
+  if(m.song) return { k:'cone', half:m.song.half || .6, rng:(m.song.range || 230)*(1 + c*.25) };
   if(m.fan){ const F = m.fan, n = F.count || 5; return { k:'cone', half:Math.max(.06, ((n - 1)/2)*(F.spread || .15) + (F.jitter || .05)), rng:(F.speed || 260)*(F.life || 1)*.95 }; }
   if(m.mel) return { k:'line', w:34, rng:m.mel.rng || 240, end:true };
   if(m.fly) return { k:'circle', r:(m.fly.radius || 46) };

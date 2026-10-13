@@ -12,6 +12,7 @@ function toEngineMove(m){
   else if(m.kind === 'fan') o.fan = { ...m };
   else if(m.kind === 'fly') o.fly = { ...m };
   else if(m.kind === 'pool') o.pool = { ...m };
+  else if(m.kind === 'song'){ o.song = { ...m }; o.big = true; }          // chant : signal d'attaque long chez l'ennemi
   else if(LEGACY_KINDS.includes(m.kind)) o.s = m.speed || 300;   // kinds « moteur » : voir data/pokemon-more.js
   else throw new Error('kind inconnu pour ' + m.name + ' : ' + m.kind);
   return o;
