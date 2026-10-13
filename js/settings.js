@@ -48,8 +48,15 @@ addEventListener('keydown', e => {
 }, true);
 
 // ---------- plein écran ----------
+// iPhone : Safari n'autorise PAS le plein écran pour une page web (seulement pour les vidéos).
+// La seule solution est d'installer le jeu sur l'écran d'accueil : il s'ouvre alors sans barres, comme une appli.
+// (iPad : le plein écran classique fonctionne.)
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_APP = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+const fsOk = () => !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
 async function toggleFullscreen(){
+  if(!fsEl() && !fsOk()){ showInstallHelp(); return; }
   const el = document.documentElement;
   try{
     if(!fsEl()){
@@ -59,21 +66,37 @@ async function toggleFullscreen(){
       await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
       if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
     }
-  }catch(e){
-    alert("Le plein écran n'est pas disponible sur ce navigateur.\nSur iPhone : Partager → « Sur l'écran d'accueil », puis ouvre le jeu depuis l'icône.");
-  }
+  }catch(e){ showInstallHelp(); }
+}
+// fenêtre d'aide : comment installer le jeu pour l'avoir en plein écran
+function showInstallHelp(){
+  if(document.getElementById('fsHelp')) return;
+  const d = document.createElement('div');
+  d.id = 'fsHelp';
+  d.innerHTML = IS_IOS
+    ? `<div><h2>Plein écran sur iPhone</h2>
+       <p>Safari ne permet pas le plein écran pour les jeux web.<br>Installe le jeu, il s'ouvrira <b>sans aucune barre</b>, comme une vraie appli :</p>
+       <ol><li>Touche <b>Partager</b> <span class='ios-sh'>⬆︎</span> (ou <b>⋯</b> puis <b>Partager</b>)</li>
+       <li>Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b></li>
+       <li>Lance le jeu depuis sa nouvelle icône</li></ol>
+       <p class='sub'>Ta progression et tes équipes sont à refaire une fois dans l'appli (le stockage est séparé de Safari).</p>
+       <button class='btn' id='fsHelpOk'>OK</button></div>`
+    : `<div><h2>Plein écran indisponible</h2><p>Ce navigateur ne permet pas le plein écran.<br>Essaie le menu du navigateur → <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.</p>
+       <button class='btn' id='fsHelpOk'>OK</button></div>`;
+  document.getElementById('app').appendChild(d);
+  document.getElementById('fsHelpOk').onclick = () => d.remove();
 }
 const fsBtn = document.getElementById('fsBtn');
 if(fsBtn){
   fsBtn.addEventListener('click', toggleFullscreen);
-  if(matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) fsBtn.style.display = 'none';
+  if(IS_APP()) fsBtn.style.display = 'none';            // déjà lancé depuis l'icône : déjà en plein écran
 }
 addEventListener('keydown', e => {
   if(e.repeat || (e.target && e.target.tagName === 'INPUT')) return;
   if(canon(e.code) === DEFAULT_KEYS.fullscreen) toggleFullscreen();
 });
-// plein écran automatique au premier toucher (option)
-addEventListener('pointerdown', () => { if(!fsEl() && Settings.get().autoFs) toggleFullscreen(); }, { once:true });
+// plein écran automatique au premier toucher (option) — pas de fenêtre d'aide imposée sur iPhone
+addEventListener('pointerdown', () => { if(!fsEl() && fsOk() && Settings.get().autoFs) toggleFullscreen(); }, { once:true });
 
 // ---------- PWA (installation sur l'écran d'accueil, plein écran comme une appli) ----------
 if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
