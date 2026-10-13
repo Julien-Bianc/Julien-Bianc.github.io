@@ -199,3 +199,25 @@ input#tn{background:#fff;color:#222;border:2px solid #fff4;border-radius:8px;pad
 .rv.shk1{animation:shk .5s}.rv.shk2{animation:shk 1.2s}
 @keyframes shk{0%,100%{transform:none}10%{transform:translate(-7px,4px)}20%{transform:translate(6px,-5px)}30%{transform:translate(-5px,-4px)}40%{transform:translate(5px,5px)}50%{transform:translate(-4px,2px)}60%{transform:translate(3px,-3px)}75%{transform:translate(-2px,2px)}}
 .cfx{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;z-index:9}
+
+/* Patch iOS : taille réelle de l'écran visible (barres de Safari) + encoche / Dynamic Island */
+body{position:fixed;inset:0;width:100%;overscroll-behavior:none;touch-action:manipulation;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
+#app{width:100vw;height:100vh;height:100dvh}
+@media (orientation:portrait){#app{width:100vh;width:100dvh;height:100vw;height:100dvw;transform:translateX(100vw) rotate(90deg);transform:translateX(100dvw) rotate(90deg)}}
+/* paysage : l'encoche est à gauche ou à droite, la barre d'accueil en bas */
+#ui{padding-left:calc(18px + env(safe-area-inset-left,0px));padding-right:calc(18px + env(safe-area-inset-right,0px))}
+#pauseBtn,#fsBtn{bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+#menu{padding-left:calc(10px + env(safe-area-inset-left,0px));padding-right:calc(10px + env(safe-area-inset-right,0px))}
+/* portrait (jeu pivoté) : l'encoche se retrouve à gauche du jeu, la barre d'accueil à droite */
+@media (orientation:portrait){
+  #ui{padding-left:calc(18px + env(safe-area-inset-top,0px));padding-right:calc(18px + env(safe-area-inset-bottom,0px));padding-bottom:8px}
+  #pauseBtn,#fsBtn{bottom:10px}
+  #menu{padding-left:calc(10px + env(safe-area-inset-top,0px));padding-right:calc(10px + env(safe-area-inset-bottom,0px))}
+}
+/* fenêtre d'aide plein écran / installation */
+#fsHelp{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#000c;padding:10px}
+#fsHelp>div{max-width:420px;background:#1c2533;border:2px solid #ffd23f;border-radius:10px;padding:12px 16px;text-align:left;font-size:12px;transform:scale(min(var(--ui,1),1.6))}
+#fsHelp h2{margin:0 0 6px;font-size:15px;color:#ffd23f;text-align:center}
+#fsHelp p{margin:4px 0}#fsHelp ol{margin:6px 0;padding-left:20px}#fsHelp li{margin:3px 0}
+#fsHelp .sub{opacity:.7;font-size:10px}#fsHelp .btn{display:block;margin:8px auto 0}
+.ios-sh{display:inline-block;border:1px solid #fff8;border-radius:3px;padding:0 3px;font-size:10px}
