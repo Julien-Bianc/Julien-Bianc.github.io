@@ -47,30 +47,86 @@ function crateImg(){
   return _shopCache.crate = c.toDataURL();
 }
 
-// ---------- cartes ----------
+// ---------- carte de collection (format carte Pokémon, en HTML pour de beaux effets holo) ----------
+const spriteURL = id => _shopCache['sp' + id] || (_shopCache['sp' + id] = spr(id).toDataURL());
+const SYM = { C:'●', PC:'◆', R:'★', UR:'✦' };
+function cardHtml(it, s){
+  const D = POKEMON[it.poke]; if(!D) return '';
+  const c0 = COL[D.types[0]] || '#999', R = RAR[it.r];
+  const body = mixHex(c0, '#ffffff', .4), a1 = mixHex(c0, '#ffffff', .15), a2 = mixHex(c0, '#000000', .72);
+  const dots = D.types.map(t => `<i class='td' style='background:${COL[t] || '#999'}'></i>`).join('');
+  const mv = D.moves.map(m => `<div class='tm'><i class='td' style='background:${m.color || COL[m.type] || '#999'}'></i><span>${esc(m.name)}</span><b>${m.power || '—'}</b></div>`).join('');
+  const no = String(ORDER.indexOf(it.poke) + 1).padStart(2, '0') + '/' + String(ORDER.length).padStart(2, '0');
+  return `<div class='cw r-${it.r}' style='--cs:${s}'><div class='tcg'><div class='tin' style='background:${body}'>
+    <div class='th'><b>${esc(D.name)}</b><span>PV ${D.hp}${dots}</span></div>
+    <div class='ta' style='background:radial-gradient(ellipse at 50% 90%,${a1},${a2})'><img src='${spriteURL(it.poke)}'></div>
+    <div class='ti'>${D.types.map(t => TN[t] || t).join('/')} · Vit. ${D.speed}</div>
+    <div class='tmv'>${mv}</div>
+    <div class='tf'><span>${no}</span><span class='ts' style='color:${R.col}'>${SYM[it.r]}</span></div></div>
+    <u class='rb'></u><u class='sh'></u><u class='sp'></u></div></div>`;
+}
+// visuel d'un objet : carte (échelle s) ou icône pixel art
+const itemVisual = (it, s) => it.kind === 'card' ? cardHtml(it, s) : `<img src='${itemIcon(it)}'>`;
+
+// ---------- cartes de la grille / de la bande ----------
 const rarCss = r => `--rc:${RAR[r].col}`;
 function itemCard(it, o){
   o = o || {};
-  if(o.locked) return `<button class='itc locked' data-id='${it.id}' style='${rarCss(it.r)}'><span class='q'>?</span><i class='bar'></i></button>`;
-  return `<button class='itc ${o.cls || ''}' data-id='${it.id}' style='${rarCss(it.r)}'><img src='${itemIcon(it)}'>${o.n > 1 ? `<span class='cnt'>×${o.n}</span>` : ''}<i class='bar'></i></button>`;
+  const cd = it.kind === 'card' ? 'cd ' : '';
+  if(o.locked) return `<button class='itc ${cd}locked' data-id='${it.id}' style='${rarCss(it.r)}'><span class='q'>?</span><i class='bar'></i></button>`;
+  return `<button class='itc ${cd}r-${it.r} ${o.cls || ''}' data-id='${it.id}' style='${rarCss(it.r)}'>${itemVisual(it, o.s || .4)}${o.n > 1 ? `<span class='cnt'>×${o.n}</span>` : ''}<i class='bar'></i></button>`;
 }
 const pctTxt = p => (p*100).toFixed(p*100 % 1 === 0 ? 0 : 1).replace('.', ',') + ' %';
 const rateChips = () => RARITY.map(r => `<span class='tag' style='background:${r.col};color:#fff'>${r.label} ${pctTxt(rarityPct(r.id))}</span>`).join(' ');
 
-// ---------- sons ----------
+// ---------- sons : de plus en plus spectaculaires avec la rareté ----------
 const shopTick = () => { if(!AU.ctx) return; tone(1400, .025, 'square', .05); tone(520, .04, 'triangle', .07, -120); };
+function shopSuspense(r){ if(!AU.ctx || r === 'C') return; tone(180, r === 'UR' ? 1.6 : .9, 'sawtooth', .04, r === 'UR' ? 900 : 400); }
 function shopReveal(r){
   if(!AU.ctx) return;
-  const seq = { C:[660, 880], PC:[660, 880, 1100], R:[523, 659, 784, 1047], UR:[392, 523, 659, 784, 1047, 1319] }[r] || [660];
-  seq.forEach((f, i) => { tone(f, .22, 'square', .08, 0, i*.09); tone(f/2, .22, 'triangle', .1, 0, i*.09); });
-  if(r === 'R' || r === 'UR'){ noise(.5, .16, 7000, 1500, 'highpass', .05); }
-  if(r === 'UR'){ tone(98, .8, 'sawtooth', .12, 40); noise(.8, .2, 2500, 200, 'lowpass'); }
+  const arp = (fr, step, v) => fr.forEach((f, i) => { tone(f, .24, 'square', v, 0, i*step); tone(f/2, .24, 'triangle', v*1.2, 0, i*step); });
+  if(r === 'C'){ arp([660, 880], .09, .07); }
+  else if(r === 'PC'){ arp([660, 880, 1100], .09, .08); noise(.25, .1, 6000, 2000, 'highpass', .1); }
+  else if(r === 'R'){ arp([523, 659, 784, 1047, 1319], .08, .09); noise(.6, .2, 7000, 1200, 'highpass', .05); tone(110, .4, 'sine', .25, -40); }
+  else { arp([392, 523, 659, 784, 1047, 1319, 1568, 2093], .07, .1); noise(1.1, .3, 3000, 150, 'lowpass'); tone(70, .9, 'sine', .45, -30); tone(98, .8, 'sawtooth', .1, 60, .1); [0, .3, .6].forEach(d => noise(.4, .22, 8000, 1500, 'highpass', d + .1)); }
+}
+
+// ---------- confettis (canvas demi-résolution = gros pixels, comme le reste du jeu) ----------
+const CONF = {
+  C:  { waves:[[0, 22]],                                  cols:['#4b69ff', '#9fb4ff', '#ffffff'],                         v:[90, 230],  sz:[2, 3], fl:0 },
+  PC: { waves:[[0, 55]],                                  cols:['#8847ff', '#c9a8ff', '#ffffff'],                         v:[120, 320], sz:[2, 4], fl:.25 },
+  R:  { waves:[[0, 90], [.3, 80]],                        cols:['#d32ce6', '#ff9af0', '#ffe27a', '#ffffff'],              v:[150, 400], sz:[2, 4], fl:.5 },
+  UR: { waves:[[0, 150], [.25, 150], [.55, 150], [.9, 170]], rain:2.6, cols:['#eb4b4b', '#ff7b7b', '#b01e1e', '#ffd0d0', '#ffb43c'], v:[200, 700], sz:[2, 5], fl:.95 }
+};
+function shopConfetti(r){
+  const m = document.getElementById('menu'), cf = CONF[r]; if(!m || !cf) return;
+  const cv = document.createElement('canvas'); cv.className = 'cfx'; cv.width = Math.ceil(m.clientWidth/2); cv.height = Math.ceil(m.clientHeight/2); m.appendChild(cv);
+  const x = cv.getContext('2d'), W = cv.width, H = cv.height, P = [], rnd = (a, b) => a + Math.random()*(b - a), pick = a => a[Math.floor(Math.random()*a.length)];
+  const waves = cf.waves.map(w => ({ t:w[0], n:w[1], done:false }));
+  const piece = (px, py, vx, vy) => P.push({ x:px, y:py, vx, vy, w:Math.round(rnd(cf.sz[0], cf.sz[1])), h:Math.round(rnd(cf.sz[0], cf.sz[1])), c:pick(cf.cols), ph:rnd(0, 6.28), vph:rnd(6, 14) });
+  let t0 = performance.now(), prev = t0, rainAcc = 0;
+  const frame = now => {
+    if(!cv.isConnected) return;
+    const dt = Math.min(.05, (now - prev)/1000), t = (now - t0)/1000; prev = now;
+    waves.forEach(w => { if(!w.done && t >= w.t){ w.done = true; for(let i = 0; i < w.n; i++){ const a = rnd(0, 6.283), v = rnd(cf.v[0], cf.v[1])/2; piece(W/2, H*.5, Math.cos(a)*v*1.3, Math.sin(a)*v - v*.35); } } });
+    if(cf.rain && t < cf.rain){ rainAcc += dt*70; while(rainAcc >= 1){ rainAcc--; piece(rnd(0, W), -4, rnd(-12, 12), rnd(20, 70)); } }
+    x.clearRect(0, 0, W, H);
+    if(cf.fl && t < .45){ x.fillStyle = r === 'UR' ? `rgba(255,60,60,${cf.fl*(1 - t/.45)})` : `rgba(255,255,255,${cf.fl*(1 - t/.45)*.5})`; x.fillRect(0, 0, W, H); }
+    for(let i = P.length - 1; i >= 0; i--){
+      const q = P[i]; q.vy += 260*dt; q.vx *= 1 - .9*dt; q.vy *= 1 - .25*dt; q.x += q.vx*dt; q.y += q.vy*dt; q.ph += q.vph*dt;
+      if(q.y > H + 6){ P.splice(i, 1); continue; }
+      x.fillStyle = q.c; x.fillRect(Math.round(q.x), Math.round(q.y), Math.max(1, Math.round(q.w*Math.abs(Math.cos(q.ph)))), q.h);   // « bascule » du confetti
+    }
+    if(P.length || t < (cf.rain || 0) || waves.some(w => !w.done)) requestAnimationFrame(frame); else cv.remove();
+  };
+  requestAnimationFrame(frame);
 }
 
 // ============================================================
 //  ÉCRAN MAGASIN
 // ============================================================
 function showShop(){
+  shopBuild();
   menu(`<h1>Magasin</h1><div class='mlist shoplist'>${SHOP.map(o => {
       const c = CRATE[o.crate], free = !c.price;
       return `<button class='mbtn offer' data-o='${o.id}'><img class='cr' src='${crateImg()}'><b>${esc(o.label)}</b><small>${esc(o.desc || '')}</small><span class='tag'>${free ? 'Gratuit' : c.price}</span></button>`;
@@ -83,10 +139,11 @@ function showShop(){
 
 // ---------- aperçu d'une caisse : contenu + probabilités ----------
 function showCrate(id){
+  shopBuild();
   const c = CRATE[id], free = !c.price, items = c.items.slice().sort(byRarity);
   menu(`<h1>${esc(c.name)}</h1>
     <div class='crv'><div class='crl'><img class='cr big' src='${crateImg()}'><div class='crates'>${rateChips()}</div></div>
-    <div class='crr'><small>Objets possibles dans cette caisse</small><div class='scroll igrid'>${items.map(it => itemCard(it, { cls:'sm' })).join('')}</div></div></div>
+    <div class='crr'><small>Objets possibles dans cette caisse</small><div class='scroll igrid'>${items.map(it => itemCard(it, { s:.4 })).join('')}</div></div></div>
     <div class='row'><button class='btn' id='op' ${free ? '' : 'disabled'}>${free ? 'Ouvrir — Gratuit' : 'Bientôt'}</button><button class='btn2' id='back'>Retour</button></div>`);
   document.getElementById('op').onclick = () => openCrate(id);
   document.getElementById('back').onclick = showShop;
@@ -97,16 +154,16 @@ function showCrate(id){
 //  Une bande défile vers la gauche, ralentit, et s'arrête sous la ligne jaune : l'objet sous la ligne est gagné.
 //  Le tirage est fait AVANT l'animation et l'objet est ajouté tout de suite à l'inventaire (quitter ne fait rien perdre).
 // ============================================================
-const SHOP_CW = 72, SHOP_DUR = 6500;
+const SHOP_CW = 72, SHOP_DUR = 6500, SUSPENSE = { C:500, PC:900, R:1300, UR:2000 };
 function openCrate(id){
+  shopBuild();
   const c = CRATE[id]; if(!c || c.price) return;
   const win = rollItem(c), isNew = Save.itemCount(win.id) === 0, n = Save.addItem(win.id); Save.countOpen();
   const N = 54, wi = 42 + Math.floor(Math.random()*6);                       // position de l'objet gagnant dans la bande
   const strip = Array.from({ length:N }, (_, i) => i === wi ? win : rollItem(c));
 
   menu(`<h1>Ouverture de la caisse</h1><small class='sub'>${esc(c.name)} · caisse gratuite</small>
-    <div class='sview' id='sv'><div class='strip' id='st'>${strip.map((it, i) => itemCard(it, { cls:'sc' + (i === wi ? ' win' : '') })).join('')}</div><div class='sline'></div></div>
-    <div class='res' id='res'></div>
+    <div class='sview' id='sv' style='${rarCss(win.r)}'><div class='strip' id='st'>${strip.map((it, i) => itemCard(it, { s:.5, cls:'sc' + (i === wi ? ' win' : '') })).join('')}</div><div class='sline'></div></div>
     <div class='row' id='act'><button class='btn2' id='skip'>Passer</button></div>`);
 
   const sv = document.getElementById('sv'), st = document.getElementById('st'), vw = sv.offsetWidth || 480;
@@ -115,24 +172,14 @@ function openCrate(id){
   document.getElementById('skip').onclick = () => { skip = true; };
 
   const finish = () => {
-    done = true; st.style.transform = `translate3d(${-target}px,0,0)`; sv.classList.add('done');
-    const R = RAR[win.r];
-    document.getElementById('res').innerHTML = `<div class='rr' style='${rarCss(win.r)}'><img src='${itemIcon(win)}'><div><b style='color:${R.col}'>${esc(win.name)}</b><br><span class='tag' style='background:${R.col};color:#fff'>${R.label}</span> <small>${isNew ? 'Nouveau !' : 'Déjà possédé · ×' + n}</small></div></div>`;
-    document.getElementById('res').classList.add('on');
-    for(let i = 0; i < (win.r === 'UR' ? 40 : win.r === 'R' ? 28 : 16); i++){   // éclats autour de la ligne
-      const p = document.createElement('b'), a = Math.random()*6.283, d = 40 + Math.random()*90;
-      p.className = 'pp'; p.style.cssText = `--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d*.7}px;background:${i % 3 ? R.col : '#fff'}`; sv.appendChild(p);
-    }
-    if(win.r === 'UR' || win.r === 'R'){ sv.classList.add('flash'); }
-    shopReveal(win.r);
-    document.getElementById('act').innerHTML = `<button class='btn' id='again'>Rouvrir</button><button class='btn2' id='inv'>Inventaire</button><button class='btn2' id='cl'>Fermer</button>`;
-    document.getElementById('again').onclick = () => openCrate(id);
-    document.getElementById('inv').onclick = () => showInventory(win.id, () => showCrate(id));
-    document.getElementById('cl').onclick = () => showCrate(id);
+    done = true; st.style.transform = `translate3d(${-target}px,0,0)`; sv.classList.add('done', 'z-' + win.r);
+    document.getElementById('act').innerHTML = '';
+    shopSuspense(win.r);
+    setTimeout(() => { if(sv.isConnected) showReveal(win, isNew, n, id); }, SUSPENSE[win.r] || 600);
   };
   const frame = now => {
     if(!st.isConnected || done) return;                                       // écran quitté : on arrête
-    let t = skip ? 1 : Math.min(1, (now - t0)/SHOP_DUR);
+    const t = skip ? 1 : Math.min(1, (now - t0)/SHOP_DUR);
     const e = 1 - Math.pow(1 - t, 4), x = target*e;                          // départ rapide, longue décélération
     st.style.transform = `translate3d(${-x}px,0,0)`;
     const idx = Math.floor((x + vw/2)/SHOP_CW); if(idx !== lastIdx){ lastIdx = idx; if(!skip) shopTick(); }
@@ -141,15 +188,31 @@ function openCrate(id){
   requestAnimationFrame(frame);
 }
 
+// ---------- révélation : grande carte + confettis selon la rareté ----------
+function showReveal(win, isNew, n, id){
+  const R = RAR[win.r], shake = win.r === 'UR' ? 'shk2' : win.r === 'R' ? 'shk1' : '';
+  menu(`<div class='rv r-${win.r} ${shake}' style='${rarCss(win.r)}'>
+    <div class='rvc'><div class='rays'></div>${win.kind === 'card' ? cardHtml(win, 1.3) : `<img class='ric' src='${itemIcon(win)}'>`}</div>
+    <div class='rvt'><small>${esc(CRATE[win.crate].name)}</small><b class='rn' style='color:${R.col}'>${esc(win.name)}</b>
+      <div><span class='tag' style='background:${R.col};color:#fff'>${R.label}</span></div>
+      <p>${isNew ? 'Nouveau !' : 'Déjà possédé · ×' + n}</p>
+      <div class='row'><button class='btn' id='again'>Rouvrir</button><button class='btn2' id='inv'>Inventaire</button><button class='btn2' id='cl'>Fermer</button></div></div></div>`);
+  shopReveal(win.r); shopConfetti(win.r);
+  document.getElementById('again').onclick = () => openCrate(id);
+  document.getElementById('inv').onclick = () => showInventory(win.id, () => showCrate(id));
+  document.getElementById('cl').onclick = () => showCrate(id);
+}
+
 // ============================================================
 //  INVENTAIRE : tous les objets du jeu ; ceux qu'on n'a pas encore sont cachés (« ? »).
 // ============================================================
 function showInventory(sel, back){
+  shopBuild();
   back = typeof back === 'function' ? back : showMain;
   const all = Object.values(ITEM).sort(byRarity), inv = Save.inv(), have = all.filter(it => inv[it.id] > 0).length;
   const it = sel && ITEM[sel] && inv[sel] > 0 ? ITEM[sel] : null;
   const detail = it
-    ? `<div class='dh big'><img src='${itemIcon(it)}'><div><b style='color:${RAR[it.r].col}'>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span></div></div>
+    ? `<div class='dh big'>${it.kind === 'card' ? cardHtml(it, .85) : `<img src='${itemIcon(it)}'>`}<div><b style='color:${RAR[it.r].col}'>${esc(it.name)}</b><br><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span></div></div>
        <p>Possédé : ×${inv[it.id]}</p><p>Caisse : ${esc(CRATE[it.crate].name)}</p>${it.desc ? `<p>${esc(it.desc)}</p>` : ''}`
     : `<p>Touche un objet pour voir ses détails.</p><p>Caisses ouvertes : ${Save.opened()}</p>`;
   menu(`<h1>Inventaire <small>${have}/${all.length}</small></h1>

@@ -29,24 +29,14 @@ const ICON_SHAPES = {
 };
 const SHAPE_ORDER = Object.keys(ICON_SHAPES);
 
+// Une caisse : name, desc, price, items (objets fixes), cards (raretés pour lesquelles on crée UNE carte par Pokémon du jeu).
+//   → un nouveau Pokémon dans data/pokemon*.js obtient automatiquement ses cartes dans les caisses.
 const CRATES = [
-  { id:'caisse1', name:'Caisse de l\'Arène', desc:'Ta première caisse', price:0, items:[
-    // 5 bleus (communs)
-    { id:'c1-c1',  name:'Objet bleu 1',   r:'C',  icon:'gem'    },
-    { id:'c1-c2',  name:'Objet bleu 2',   r:'C',  icon:'orb'    },
-    { id:'c1-c3',  name:'Objet bleu 3',   r:'C',  icon:'star'   },
-    { id:'c1-c4',  name:'Objet bleu 4',   r:'C',  icon:'shield' },
-    { id:'c1-c5',  name:'Objet bleu 5',   r:'C',  icon:'flask'  },
-    // 3 violets (peu communs)
-    { id:'c1-pc1', name:'Objet violet 1', r:'PC', icon:'gem'    },
-    { id:'c1-pc2', name:'Objet violet 2', r:'PC', icon:'star'   },
-    { id:'c1-pc3', name:'Objet violet 3', r:'PC', icon:'shield' },
-    // 2 roses (rares)
-    { id:'c1-r1',  name:'Objet rose 1',   r:'R',  icon:'orb'    },
-    { id:'c1-r2',  name:'Objet rose 2',   r:'R',  icon:'flask'  },
-    // 1 rouge (ultra rare)
-    { id:'c1-ur1', name:'Objet rouge 1',  r:'UR', icon:'star'   }
-  ] }
+  { id:'caisse1', name:'Caisse de l\'Arène', desc:'Ta première caisse', price:0,
+    cards:['C', 'PC', 'R'],              // cartes Pokémon : commune, peu commune, rare
+    items:[
+      { id:'c1-ur1', name:'Objet rouge 1', r:'UR', icon:'star' }     // ultra rare : provisoire, à remplacer plus tard
+    ] }
 ];
 
 const SHOP = [
@@ -56,7 +46,19 @@ const SHOP = [
 // ---------- accès pratiques ----------
 const CRATE = Object.fromEntries(CRATES.map(c => [c.id, c]));
 const ITEM = {};
-CRATES.forEach(c => c.items.forEach(it => { it.crate = c.id; ITEM[it.id] = it; }));
+// (Re)construit les objets : objets fixes + une carte par Pokémon (ORDER) et par rareté de c.cards. À appeler avant d'utiliser ITEM.
+function shopBuild(){
+  const key = ORDER.join(',');
+  if(shopBuild.key === key) return; shopBuild.key = key;
+  for(const k in ITEM) delete ITEM[k];
+  CRATES.forEach(c => {
+    if(!c.base) c.base = c.items;
+    const cards = [];
+    (c.cards || []).forEach(r => ORDER.forEach(pid => cards.push({ id:`card:${pid}:${r}`, kind:'card', poke:pid, name:'Carte ' + (NAME[pid] || pid), r })));
+    c.items = c.base.concat(cards);
+    c.items.forEach(it => { it.crate = c.id; ITEM[it.id] = it; });
+  });
+}
 const RANK = { C:0, PC:1, R:2, UR:3 };                                       // pour trier
 const byRarity = (a, b) => RANK[b.r] - RANK[a.r];
 
