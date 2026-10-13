@@ -14,9 +14,9 @@ const SAFARI = {
   zones:[
     { id:'depart', name:'Safari du Grand Départ', desc:'Les 7 Pokémon du grand départ vivent ici.',
       pokemon:['farfuret', 'dracaufeu', 'tortank', 'florizarre', 'lucario', 'raichu', 'fouinar'],
-      ticket:{ id:'ticket:depart', name:'Ticket Safari — Grand Départ', price:150, col:'#5aa845' },
+      ticket:{ id:'ticket:depart', name:'Ticket Safari — Grand Départ', price:200, col:'#5aa845' },
       // combat contre le Pokémon sauvage (même format que data/stages.js) — hp élevé : il faut le temps de l'affaiblir
-      stage:{ name:'Safari', level:2, hp:1.6, dmg:.75, speed:.95, pspeed:.95, rate:1.15, tele:1.1, aim:.3, boss:1 } }
+      stage:{ name:'Safari', level:4, hp:2.0, dmg:.95, speed:1.1, pspeed:1.05, rate:1.0, tele:1.0, aim:.45, boss:1 } }
   ],
   // Balls vendues au Magasin. mult = multiplicateur de capture
   balls:[

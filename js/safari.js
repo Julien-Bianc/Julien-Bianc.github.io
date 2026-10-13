@@ -95,7 +95,7 @@ function showSafari(sel){
         return `<button class='card ${id === pid ? 'foc sel' : ''} ${own ? 'got' : ''}' data-pid='${id}' ${own ? 'disabled' : ''}>${thumb(id)}<small>${NAME[id]}</small>${own ? `<span class='lk'>✔</span>` : ''}</button>`; }).join('')}</div></div>
       <div class='scroll right'>${pid ? `<div class='dh'>${thumb(pid)}<div><b>${esc(NAME[pid])} sauvage</b><br>${typesOf(pid).map(tp => `<span class='tc' style='background:${COL[tp]}'>${TN[tp] || tp}</span>`).join('')}</div></div>
         <p>Carte : <b>${esc(M.name)}</b></p>
-        <p class='hint'>Affaiblis-le sans le mettre K.O., puis lance une Ball (bouton « Ball » ou touche E, R pour changer de Ball). S'il tombe K.O., il s'enfuit !</p>`
+        <p class='hint'>Affaiblis-le sans le mettre K.O., puis lance une Ball (bouton « Ball » ou touche E, R pour changer de Ball — modifiables dans Options). S'il tombe K.O., il s'enfuit !</p>`
         : `<p><b>Bravo !</b> Tu as capturé tous les Pokémon de ce Safari.</p>`}
         ${!tk ? `<p class='hint bad'>Il te faut un ${esc(z.ticket.name)} (Magasin → Safari).</p>` : ''}${!nb ? `<p class='hint bad'>Il te faut des Poké Balls (Magasin → Safari).</p>` : ''}
       </div></div>
@@ -120,7 +120,7 @@ function startSafari(team, z, pid){
 const ballBtn = (() => { const b = document.createElement('button'); b.className = 'ab ballb'; b.id = 'b5'; b.style.display = 'none';
   document.getElementById('btns').appendChild(b); return b; })();
 ballBtn.addEventListener('pointerdown', e => { e.preventDefault(); if(e.target.closest('.bsw')) cycleBall(); else throwBall(); });
-addEventListener('keydown', e => { if(!G || !G.safari || e.repeat || (e.target && e.target.tagName === 'INPUT')) return; if(e.code === 'KeyE') throwBall(); else if(e.code === 'KeyR') cycleBall(); });
+addEventListener('keydown', e => { if(!G || !G.safari || e.repeat || (e.target && e.target.tagName === 'INPUT')) return; const k = canon(e.code); if(k === 'KeyE') throwBall(); else if(k === 'KeyR') cycleBall(); /* touches réglables (Options) */ });
 function cycleBall(){
   if(!G || !G.safari) return; const L = SAFARI.balls.filter(b => Save.itemCount(b.id) > 0); if(!L.length) return;
   const i = L.findIndex(b => b.id === G.safari.ball); G.safari.ball = L[(i + 1) % L.length].id; playSfx('click');
