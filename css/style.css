@@ -96,3 +96,44 @@ input#tn{background:#fff;color:#222;border:2px solid #fff4;border-radius:8px;pad
 #menu{padding-bottom:46px!important}
 /* boutons pause et plein écran côte à côte, sans se chevaucher quand l'interface est agrandie */
 #fsBtn{left:calc(50% + 26px + 24px*min(var(--ui,1),1.6))!important}
+
+/* v0.07 : magasin, ouverture de caisse (façon CS2), inventaire */
+.itc{position:relative;flex:none;width:58px;height:66px;padding:0;background:linear-gradient(#2a3447,#171e2b);border:2px solid #0a0e14;border-radius:4px;overflow:hidden;cursor:pointer;font:inherit;color:#fff}
+.itc::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,color-mix(in srgb,var(--rc) 55%,transparent),transparent 60%);pointer-events:none}
+.itc img{position:absolute;left:50%;top:46%;width:48px;height:48px;transform:translate(-50%,-50%);image-rendering:pixelated;z-index:1}
+.itc .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--rc);z-index:2}
+.itc .cnt{position:absolute;right:3px;top:2px;font-size:10px;z-index:3;text-shadow:0 1px 1px #000}
+.itc.sm{width:46px;height:54px}.itc.sm img{width:36px;height:36px}
+.itc.locked{cursor:default;opacity:.55}.itc.locked::after{background:linear-gradient(to top,color-mix(in srgb,var(--rc) 25%,transparent),transparent 50%)}
+.itc .q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff6;z-index:1}
+.itc.foc{box-shadow:0 0 0 2px #ffd23f}
+.igrid{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-content:flex-start}
+.cr{image-rendering:pixelated;width:80px;height:64px}.cr.big{width:120px;height:96px}
+.shoplist{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));max-width:340px}
+.offer{display:flex;flex-direction:column;align-items:center;gap:2px}
+.crv{display:flex;gap:10px;align-items:center;width:100%;max-width:600px;text-align:left}
+.crl{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px}
+.crates{display:flex;flex-direction:column;gap:2px;align-items:stretch;text-align:center}
+.crr{flex:1;min-width:0}.crr small{font-size:10px;opacity:.8}.crr .igrid{max-height:150px;margin-top:3px}
+.sub{font-size:10px;opacity:.75;margin-top:-2px}
+.sview{position:relative;width:100%;max-width:560px;height:92px;overflow:hidden;background:#0b1018;border:2px solid #0008;border-radius:6px}
+.sview::before,.sview::after{content:"";position:absolute;top:0;bottom:0;width:22%;z-index:4;pointer-events:none}
+.sview::before{left:0;background:linear-gradient(90deg,#10151c,transparent)}.sview::after{right:0;background:linear-gradient(270deg,#10151c,transparent)}
+.strip{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;will-change:transform}
+.strip .itc{width:72px;height:84px;margin:0;border-radius:0;border-width:0 1px}.strip .itc img{width:56px;height:56px}
+.sline{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffd23f;z-index:5;box-shadow:0 0 6px #ffd23f}
+.sline::before,.sline::after{content:"";position:absolute;left:-4px;border:5px solid transparent}
+.sline::before{top:0;border-top-color:#ffd23f}.sline::after{bottom:0;border-bottom-color:#ffd23f}
+.sview.done .strip .itc:not(.win){opacity:.28;transition:opacity .5s}
+.sview.done .itc.win{box-shadow:inset 0 0 0 2px var(--rc);animation:wpulse .7s ease-in-out infinite alternate}
+@keyframes wpulse{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+.pp{position:absolute;left:50%;top:50%;width:4px;height:4px;z-index:6;animation:pp .8s ease-out forwards}
+@keyframes pp{to{transform:translate(var(--dx),var(--dy));opacity:0}}
+.sview.flash::after{background:#fff;width:auto;left:0;right:0;opacity:.8;animation:fl .5s ease-out forwards}
+@keyframes fl{to{opacity:0}}
+.res{min-height:62px;width:100%;max-width:560px;opacity:0;transition:opacity .4s}.res.on{opacity:1}
+.rr{display:flex;align-items:center;gap:10px;justify-content:center;font-size:13px;text-align:left}
+.rr img{width:56px;height:56px;image-rendering:pixelated;filter:drop-shadow(0 0 6px var(--rc))}
+.invw .left{flex:0 0 58%!important}.invw .right{font-size:11px}
+.dh.big img{width:48px;height:48px}
+#menu h1 small{font-size:11px;opacity:.7}

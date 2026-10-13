@@ -1,5 +1,5 @@
 // ============================================================
-//  SAUVEGARDE (localStorage du navigateur) : équipes + progression du mode Solo
+//  SAUVEGARDE (localStorage du navigateur) : équipes + progression du mode Solo + inventaire (objets du magasin)
 // ============================================================
 const Save = {
   KEY:'arene.save.v1', data:null,
@@ -21,6 +21,12 @@ const Save = {
   deleteTeam(id){ const d = this.load(); d.teams = d.teams.filter(t => t.id !== id); this.save(); },
   cleared(size){ return this.load().progress[size] || 0; },                // nombre de niveaux terminés
   clear(size, idx){ const d = this.load(); d.progress[size] = Math.max(d.progress[size] || 0, idx + 1); this.save(); },
+  // Inventaire : { idObjet: quantité }
+  inv(){ const d = this.load(); if(!d.inv) d.inv = {}; return d.inv; },
+  itemCount(id){ return this.inv()[id] || 0; },
+  addItem(id, n){ const v = this.inv(); v[id] = (v[id] || 0) + (n || 1); this.save(); return v[id]; },
+  opened(){ return this.load().opened || 0; },                             // nombre de caisses ouvertes
+  countOpen(){ const d = this.load(); d.opened = (d.opened || 0) + 1; this.save(); },
   get lastTeam(){ return this.load().lastTeam; },
   set lastTeam(v){ this.load().lastTeam = v; this.save(); },
   // Répare les équipes dont des Pokémon n'existent plus, puis crée 2 équipes de départ s'il n'y en a aucune
