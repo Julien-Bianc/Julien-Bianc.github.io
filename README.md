@@ -149,3 +149,13 @@ Il faut au moins 6 Pokémon chargés pour créer des équipes 6v6. Les équipes 
 - **Écrans 2K/4K** : Options → taille des menus et de l'ATH (Auto par défaut).
 - **Aurasphère** : projectile bleu (champ `color` d'une attaque de kind 'fan').
 - **Sécurité** : si le jeu rencontre une erreur, il se met en pause et affiche un rapport à copier au lieu de se figer.
+
+## v0.06
+- **Statuts** (`data/status.js`, `js/status.js`) : les attaques ont une petite chance d'infliger un statut selon leur type.
+  Feu → brûlure (10 %), Poison → poison (30 %), Glace → gel (8 %), Électrik → paralysie (10 %), Psy → confusion (10 %), Spectre → confusion (8 %).
+  Brûlure : dégâts sur la durée et attaques -15 %. Poison : dégâts sur la durée. Gel : immobile et sans action (dégel avec une attaque Feu).
+  Paralysie : ralenti, 1 attaque sur 4 échoue. Confusion : titube et tire de travers. Immunités (ex. un type Feu ne brûle pas).
+  Une attaque peut définir son propre `status:{kind, chance}` dans `data/pokemon*.js`.
+- **Options** : indications de visée (oui/non + opacité). **Menus** : l'échelle automatique tient maintenant en largeur ET en hauteur (plus de menu décalé).
+- **K.O.** : nouvelle typographie (Impact penché, bande noire, voile rouge, secousse).
+- **Correctif** : erreur « reading 'age' » en entraînement quand le mannequin était K.O.

@@ -185,14 +185,24 @@ function drawScreenFx(){
   const n = performance.now();
   if(FLASH.a > .01){ ctx.fillStyle = `rgba(255,255,255,${FLASH.a})`; ctx.fillRect(-20, -20, VW + 40, VH + 40); }
   for(let i = KOFX.length - 1; i >= 0; i--){
-    const f = KOFX[i], t = (n - f.t0)/1000; if(t > 1.7){ KOFX.splice(i, 1); continue; }
-    const pop = t < .2 ? .4 + 2.6*t/.2*(1 - .25*t/.2) : 1 + Math.max(0, .12*Math.sin((t - .2)*14)), al = t > 1.3 ? 1 - (t - 1.3)/.4 : 1;
-    ctx.save(); ctx.globalAlpha = Math.max(0, al); ctx.translate(VW/2, VH*.4); ctx.rotate(-.08); ctx.scale(pop, pop);
-    ctx.font = 'italic 900 54px "Courier New",monospace'; ctx.textAlign = 'center'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#14101c'; ctx.lineWidth = 12; ctx.strokeText('K.O. !', 0, 0); ctx.strokeStyle = '#ff3b3b'; ctx.lineWidth = 6; ctx.strokeText('K.O. !', 0, 0);
-    ctx.fillStyle = '#fff6c0'; ctx.fillText('K.O. !', 0, 0);
-    ctx.font = 'italic 900 15px "Courier New",monospace'; ctx.lineWidth = 4; ctx.strokeStyle = '#14101c'; ctx.strokeText(f.name + ' est K.O. !', 0, 30); ctx.fillStyle = '#fff'; ctx.fillText(f.name + ' est K.O. !', 0, 30);
+    const f = KOFX[i], t = (n - f.t0)/1000; if(t > 1.8){ KOFX.splice(i, 1); continue; }
+    const al = t > 1.4 ? 1 - (t - 1.4)/.4 : 1, slam = t < .14 ? 4.2 - 3.2*(t/.14) : 1 + Math.max(0, .1*Math.sin((t - .14)*18)*(1 - t/1.2));
+    const jx = t < .5 ? (Math.random() - .5)*10*(1 - t*2) : 0, jy = t < .5 ? (Math.random() - .5)*8*(1 - t*2) : 0;
+    ctx.save(); ctx.globalAlpha = Math.max(0, al);
+    // voile rouge sang qui pulse sur les bords
+    const g = ctx.createRadialGradient(VW/2, VH/2, VH*.25, VW/2, VH/2, VW*.65); g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, `rgba(150,0,0,${.55*al})`); ctx.fillStyle = g; ctx.fillRect(-20, -20, VW + 40, VH + 40);
+    // bande noire en diagonale + traits d'impact
+    ctx.translate(VW/2 + jx, VH*.42 + jy); ctx.rotate(-.1); ctx.fillStyle = 'rgba(8,4,10,.82)'; ctx.fillRect(-VW, -34, VW*2, 78);
+    ctx.strokeStyle = '#d4141c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-VW, -34); ctx.lineTo(VW, -34); ctx.moveTo(-VW, 44); ctx.lineTo(VW, 44); ctx.stroke();
+    for(let k = 0; k < 14; k++){ const a = k*.4 + .2, r0 = 70 + (k%3)*14, r1 = r0 + 40*Math.min(1, t*6); ctx.strokeStyle = k%2 ? '#ffffff' : '#d4141c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(Math.cos(a)*r0*2.2, Math.sin(a)*r0*.7); ctx.lineTo(Math.cos(a)*r1*2.2, Math.sin(a)*r1*.7); ctx.stroke(); }
+    ctx.scale(slam, slam); ctx.transform(1, 0, -.18, 1, 0, 0);                                    // lettres penchées, écrasantes
+    ctx.font = '900 84px Impact, Haettenschweiler, "Arial Black", "Franklin Gothic Heavy", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'miter'; ctx.miterLimit = 3;
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 16; ctx.strokeText('K.O.', 4, 7);
+    ctx.strokeStyle = '#d4141c'; ctx.lineWidth = 9; ctx.strokeText('K.O.', 0, 0);
+    const gr = ctx.createLinearGradient(0, -36, 0, 36); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.55, '#ffe9a0'); gr.addColorStop(1, '#ff9a3c'); ctx.fillStyle = gr; ctx.fillText('K.O.', 0, 0);
     ctx.restore();
+    ctx.save(); ctx.globalAlpha = Math.max(0, al)*Math.min(1, t*6); ctx.translate(VW/2, VH*.42 + 62); ctx.rotate(-.1);
+    ctx.font = '900 14px Impact, "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#d4141c'; ctx.fillText((f.name + ' — HORS COMBAT').toUpperCase(), 0, 0); ctx.restore();
   }
 }
 // décroissance (appelée à chaque image de jeu)

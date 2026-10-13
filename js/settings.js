@@ -5,7 +5,7 @@
 // Touches par défaut (le moteur utilise ces codes en interne ; tes touches personnalisées sont converties par canon())
 const DEFAULT_KEYS = { up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', a:'KeyJ', b:'KeyK', c:'KeyL', dash:'Space', swap:'KeyQ', pause:'Escape', fullscreen:'KeyF' };
 const KEY_LABELS = { up:'Haut', down:'Bas', left:'Gauche', right:'Droite', a:'Attaque A', b:'Attaque B', c:'Attaque C', dash:'Esquive', swap:'Relève', pause:'Pause', fullscreen:'Plein écran' };
-const SETTINGS_DEFAULT = { master:.8, sfx:.9, music:.5, shake:.35, autoFs:false, uiMenu:0, uiHud:0 };   // uiMenu / uiHud : 0 = automatique, sinon facteur (1 = normal)
+const SETTINGS_DEFAULT = { master:.8, sfx:.9, music:.5, shake:.35, autoFs:false, uiMenu:0, uiHud:0, aimGuides:true, aimOpacity:.5 };   // uiMenu / uiHud : 0 = automatique, sinon facteur (1 = normal)
 
 const Settings = {
   get(){
@@ -81,7 +81,10 @@ if('serviceWorker' in navigator && (location.protocol === 'https:' || location.h
 
 // ---------- taille de l'interface (écrans 2K/4K) ----------
 const UIK = { menu:1, hud:1 };
-function uiAuto(){ const w = Math.max(innerWidth, innerHeight); return { menu:Math.max(1, Math.min(3, w/900)), hud:Math.max(1, Math.min(1.8, w/1100)) }; }
+function uiAuto(){
+  const w = Math.max(innerWidth, innerHeight), h = Math.min(innerWidth, innerHeight);      // le menu doit tenir en largeur ET en hauteur
+  return { menu:Math.max(1, Math.min(3, w/900, h/500)), hud:Math.max(1, Math.min(1.8, w/1100, h/620)) };
+}
 function applyUI(){
   const s = Settings.get(), a = uiAuto();
   UIK.menu = s.uiMenu || a.menu; UIK.hud = s.uiHud || a.hud;

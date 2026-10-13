@@ -81,3 +81,18 @@ input#tn{background:#fff;color:#222;border:2px solid #fff4;border-radius:8px;pad
 .mvd{background:#ffffff14;border-radius:6px;padding:3px 5px;margin:3px 0}
 .mvh{display:flex;align-items:center;gap:5px;font-size:11px}.mvh small{font-size:9px;opacity:.75;margin-left:auto}
 .mvd em{display:block;font-size:9px;font-style:normal;opacity:.9;margin-top:1px}
+
+/* v0.06 : le menu mis à l'échelle part du coin haut-gauche (corrige le décalage en bas à droite) */
+#menu{align-items:flex-start!important;justify-content:flex-start!important}
+.edit .left{flex:0 0 40%;min-width:0}
+.grid2c{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+.grid2c .card{min-width:0;padding:3px 2px;overflow:hidden}
+.grid2c .card img{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto}
+.grid2c .card small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* éditeur d'équipe : les deux colonnes occupent toute la hauteur disponible (rien n'est coupé) */
+.mc > .edit{flex:1 1 auto;min-height:0;align-items:stretch;max-height:none}
+.edit .left,.edit .right{max-height:none!important;height:100%;min-height:0}
+/* le contenu des menus s'arrête au-dessus des boutons pause / plein écran */
+#menu{padding-bottom:46px!important}
+/* boutons pause et plein écran côte à côte, sans se chevaucher quand l'interface est agrandie */
+#fsBtn{left:calc(50% + 26px + 24px*min(var(--ui,1),1.6))!important}

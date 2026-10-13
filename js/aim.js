@@ -55,9 +55,9 @@ function drawAimShape(p, i){
   const m = p.mv[i], c = p.ch[i] || 0, sh = aimShape(p, m, c), e = G.e, manual = !!AIM.on[i];
   const ang = manual ? AIM.a[i] : Math.atan2(e.y - p.y, e.x - p.x);
   const col = (m.fan && m.fan.color) || COL[m.tp || p.t] || '#ffffff';
-  const pulse = .8 + .2*Math.sin(G.time*10), A = (manual ? 1 : .65)*pulse;
+  const q = Settings.get().aimOpacity, pulse = .8 + .2*Math.sin(G.time*10), A = (manual ? .8 : .5)*pulse*(q/.5)*.6;
   ctx.save(); ctx.translate(p.x, p.y);
-  const stroke = (w, a) => { ctx.lineWidth = w + 2; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.stroke(); ctx.lineWidth = w; ctx.strokeStyle = hexA(col, a); ctx.stroke(); };
+  const stroke = (w, a) => { ctx.lineWidth = w + 2; ctx.strokeStyle = `rgba(0,0,0,${.35*A})`; ctx.stroke(); ctx.lineWidth = w; ctx.strokeStyle = hexA(col, a); ctx.stroke(); };
   if(sh.k === 'circle'){
     const dist = manual ? 60 + AIM.r[i]*260 : Math.hypot(e.x - p.x, e.y - p.y), cx = Math.cos(ang)*dist, cy = Math.sin(ang)*dist;
     ctx.setLineDash([7, 6]); ctx.beginPath(); ctx.moveTo(Math.cos(ang)*20, Math.sin(ang)*20); ctx.lineTo(cx, cy); stroke(2, .8*A); ctx.setLineDash([]);
@@ -71,13 +71,13 @@ function drawAimShape(p, i){
     if(sh.k === 'cone'){ ctx.moveTo(14, 0); ctx.arc(0, 0, rng, -sh.half, sh.half); ctx.closePath(); }
     else { const h = sh.w/2; ctx.moveTo(14, -h); ctx.lineTo(rng, -h); if(sh.end){ ctx.arc(rng, 0, Math.max(h, sh.endR || h), -Math.PI/2, Math.PI/2); } else ctx.lineTo(rng, h); ctx.lineTo(14, h); ctx.closePath(); }
     ctx.fillStyle = g; ctx.fill(); stroke(3, .95*A);
-    ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(rng, 0); ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(rng, 0); ctx.strokeStyle = `rgba(255,255,255,${.7*A})`; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = hexA(col, .95*A); for(let k = 0; k < 3; k++){ const x = 40 + ((G.time*140 + k*70) % (rng - 50)); ctx.beginPath(); ctx.moveTo(x + 9, 0); ctx.lineTo(x - 5, -7); ctx.lineTo(x - 5, 7); ctx.closePath(); ctx.fill(); }
   }
   ctx.restore();
 }
 function drawAim(){
-  if(!G || G.over || G.sw) return;
+  if(!G || G.over || G.sw || !Settings.get().aimGuides) return;
   const p = G.p;
   for(let i = 0; i < 3; i++) if(down[i] && p.cd[i] <= 0) drawAimShape(p, i);
 }

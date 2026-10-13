@@ -53,7 +53,7 @@ const _hPTr = hurtP; hurtP = function(d, b){ if(G && G.training && G.training.go
 const _hETr = hurtE;
 hurtE = function(d, b){
   const e = G && G.e, r = _hETr(d, b);
-  if(G && G.training){ e.lastHit = G.time; if(r){ e.hp = e.max; G.wait = 0; e.koDone = 0; } return 0; }
+  if(G && G.training){ e.lastHit = G.time; if(r){ e.hp = e.max; G.wait = 0; e.koDone = 0; } return r; }   // on renvoie r : la boucle des projectiles doit savoir que le tableau a été vidé
   return r;
 };
 // pause d'entraînement : réglages + changement de Pokémon
