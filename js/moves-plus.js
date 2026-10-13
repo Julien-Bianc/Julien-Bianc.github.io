@@ -51,7 +51,7 @@ function castPlus(s, d, m, c, own, sc, ang){
     case 'wave':      if(O.amp || O.count) return wave2(s, m, c, own, sc, a); return false;
     case 'meteor':    if(O.split) return meteor2(s, m, c, own, sc, a); return false;
   }
-  if(m.k === 'fan' || O.look) return false;
+  if(typeof castBoss === 'function') return castBoss(s, d, m, c, own, sc, a);    // attaques de boss (js/boss.js)
   return false;
 }
 // Ball'Ombre / Pouvoir Lunaire en 'fan' : on marque les projectiles pour leur dessin
@@ -248,6 +248,7 @@ function updStream(s, own, dt){
   S.nt -= dt; if(S.nt > 0 || !visible(tg)) return;
   for(const q of P) if(Math.hypot(tg.x - q[0], tg.y - q[1]) < S.w/2 + tg.r*.8){
     S.nt = S.tick;
+    if(typeMult(S.tp, tg.t) === 0){ if(!S.noEff){ S.noEff = 1; dmgTxt(tg.x, tg.y - 52, 'AUCUN EFFET', '#e8e0f0'); } break; }
     const inv0 = tg.inv, ko = hurtSide(own, S.dm, { t:S.tp, k:'stream', own, n:8 });
     if(ko) return;
     if(!own) tg.inv = Math.min(tg.inv, inv0 > 0 ? inv0 : .05);          // le jet touche en continu (pas d'invulnérabilité entre deux gouttes)

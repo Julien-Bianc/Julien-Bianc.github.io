@@ -5,7 +5,7 @@
 // ============================================================
 const LEGACY_KINDS = ['shot','leaf','bolt','flame','meteor','wave','tide','spore','drain','strike','beam'];
 // v0.09 : nouveaux kinds (js/moves-plus.js). POINT_KINDS = attaques qui visent un POINT au sol (glisser = choisir l'endroit)
-const PLUS_KINDS = ['blink','burrow','shield','trap','buff','boomerang','pulse','stream'];
+const PLUS_KINDS = ['blink','burrow','shield','trap','buff','boomerang','pulse','stream','prison','stasis','grab','megabeam'];   // les 4 derniers : js/boss.js
 const POINT_KINDS = ['blink','burrow','trap','strike'];
 function toEngineMove(m){
   const o = { n:m.name, tp:m.type, d:m.power, cd:m.cooldown, s:0, k:m.kind };
@@ -26,7 +26,7 @@ function toEngineMove(m){
 
 function registerPokemon(id){
   const D = POKEMON[id];
-  if(D.moves.length !== 3) console.warn(id + ' : il faut exactement 3 attaques');
+  if(D.moves.length !== 3 && !D.bossOnly) console.warn(id + ' : il faut exactement 3 attaques');
   NAME[id] = D.name;
   COL[id]  = COL[D.types[0]] || '#cccccc';
   TN[id]   = D.types.map(t => TN[t] || t).join('/');
