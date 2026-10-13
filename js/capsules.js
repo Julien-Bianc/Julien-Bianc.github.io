@@ -244,7 +244,7 @@ function capIcon(cap){
   if(CAP_ICON[cap.id]) return CAP_ICON[cap.id];
   const cv = document.createElement('canvas'); cv.width = cv.height = 32; const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
   c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.max(0, .9); c.drawImage(glow(cap.col), -6, -8, 44, 44); c.globalCompositeOperation = 'source-over'; c.globalAlpha = Math.max(0, 1);
-  const s = ballSprite(10, 0, -.3, .35, cap.col); c.drawImage(s, 16 - s.width/2 - 2, 15 - s.height/2);
+  const s = ballSprite(9, .3, -.3, .45, cap.col); c.drawImage(s, Math.round(15 - s.cx), Math.round(16 - s.cy));
   capSym(c, cap.sym, 24, 23, cap.col);
   return CAP_ICON[cap.id] = cv.toDataURL();
 }
@@ -303,7 +303,7 @@ function capsulePreview(cv, capId, pid){
   const cap = CAPSULE_BY_ID[capId]; if(!cv || !cap) return;
   const c = cv.getContext('2d'), F = CAP_FX[cap.fx], W2 = cv.width, H2 = cv.height, x = W2/2, y = H2*.62, k = 2, feet = 14*k;
   pid = pid && SPR[pid] ? pid : ORDER.find(id => SPR[id]);
-  const T = PB_T, tOpen = T.throw, tShow = tOpen + T.open + T.emerge, cycle = Math.max(tShow + T.leave, tOpen + F.dur) + .9;
+  const T = PB_T, tOpen = T.throw + (T.pop || 0), tShow = tOpen + T.open + T.emerge, cycle = Math.max(tShow + T.leave, tOpen + F.dur) + .9;
   const frameOf = tt => { const S = SPR[pid]; if(!S) return null; const an = 'Idle'; return snFrame(pid, an, 0, frameAt(S, an, tt*48, 1)); };
   const t0 = performance.now();
   const loop = now => {

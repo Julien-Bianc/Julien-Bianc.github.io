@@ -226,7 +226,7 @@ Nouveaux effets de contact (`effect`) : `bite`, `punch`, `xslash`, `shadow`, `ps
 - Il se téléporte si tu restes collé à lui. Les types restent respectés : Ténèbres est immunisé au Psy, Normal au Spectre.
 - Réglages : `data/boss-mewtwo.js` (stats, attaques, cerveau `ai`, `BOSS_STAGE`) ; code : `js/boss.js` (kinds `prison`, `stasis`, `grab`, `megabeam`).
 
-## v0.11 — Magasin : Pokédollars, caisse du grand départ, objets tenus, classeur
+## Patch — Magasin : Pokédollars, caisse du grand départ, objets tenus, classeur
 ### Monnaie : les Pokédollars (₽) — `data/economy.js`
 - Solde de départ : 100 ₽ (de quoi ouvrir une caisse). Le solde s'affiche dans le menu, le magasin et l'inventaire.
 - **Victoire en Solo** : gain selon le niveau (`soloWin`, prévu pour 3 adversaires, multiplié par adversaires/3 : 1 adversaire = 1/3, 6v6 = x2)
@@ -269,16 +269,17 @@ Le Pokémon est recadré au pixel près et centré dans l'illustration. Chaque r
 Réglages par défaut : `CARD_POSE` dans `js/shop.js`. Pour imposer une pose à un Pokémon, ajoute dans son entrée de `data/pokemon*.js` :
 `cards:{ PC:{ anim:'Strike', frame:2, dir:1 }, R:{ anim:'Pose' } }` (dir : 0 bas, 1 bas-droite … 7 bas-gauche).
 
-## v0.12 — Pokéball 3D et Capsules Ball
-### Pokéball 3D (`js/pokeball.js`)
-- La Pokéball est calculée en **vraie 3D** (lancer de rayons pixel par pixel) : moitié rouge, moitié blanche, bande noire, bouton,
-  ombrage, reflet brillant et contour sombre comme les sprites. Elle **roule sur elle-même** en vol et **s'ouvre vraiment** :
-  le couvercle pivote sur sa charnière arrière et on voit l'intérieur lumineux.
-- **Envoi** : lancer en cloche avec ombre au sol → ouverture en l'air → faisceau de lumière → le Pokémon se matérialise
-  (petite silhouette lumineuse qui descend et grandit, puis prend ses couleurs) → la ball repart vers le dresseur.
-- **Rappel** : la ball apparaît au-dessus du Pokémon, s'ouvre, le rayon rouge l'aspire, elle se referme et repart.
-- Utilisé partout : **première entrée du combat** (nouveau), relève, entrée après un K.O., arrivée et relève des ennemis.
-- Durées : `PB_T` ; inclinaison de la caméra : `PB_VIEW` ; taille de la ball : `PB_R` (en haut de `js/pokeball.js`).
+## Patch — Pokéball et Capsules Ball
+### Pokéball en pixel art avec volume (`js/pokeball.js`)
+- La ball est modélisée en 3D (sphère, couvercle qui pivote sur sa charnière, rotation) mais **rendue comme les sprites** :
+  demi-résolution agrandie x2, ombrage en paliers de 4 tons par couleur (rouge, blanc, bande, bouton), léger tramage aux transitions,
+  contour sombre d'1 pixel, reflet blanc et liseré de lumière. Palettes : `PB_PAL` ; taille à l'écran : `PB_R`.
+- **Envoi** : lancer en cloche (2 tours complets, traînée, ombre au sol) → la ball s'arrête en l'air et **frémit** (écrasement /
+  étirement) → elle s'ouvre d'un coup (couvercle rouge basculé, intérieur illuminé de la couleur de la capsule) avec **éclat en croix**
+  et rayons → faisceau → le Pokémon se matérialise → la ball se referme et repart en tournant.
+- **Rappel** : la ball surgit avec un rebond, s'ouvre, **rayon rouge en zigzag** qui aspire le Pokémon, se referme, frémit, repart.
+- Utilisé partout : première entrée du combat, relève, entrée après un K.O., arrivée et relève des ennemis.
+- Durées : `PB_T` (throw, pop = frémissement, open, emerge, leave) ; inclinaison de la vue : `PB_VIEW`.
 
 ### Capsules Ball (`data/capsules.js` + `js/capsules.js`)
 Personnalisent l'arrivée d'un Pokémon : l'effet se déclenche quand la Pokéball s'ouvre, et la lumière de la ball prend la couleur
@@ -303,6 +304,6 @@ de la capsule. **Purement visuelles** (aucun effet sur le combat). Plus l'effet 
 
 | Je veux… | Fichier |
 |---|---|
-| Changer la Pokéball 3D ou les animations d'envoi / de rappel | `js/pokeball.js` |
+| Changer la Pokéball, ses couleurs ou les animations d'envoi / de rappel | `js/pokeball.js` (`PB_PAL`, `PB_T`, `PB_R`) |
 | Ajouter / renommer une Capsule Ball, changer sa rareté ou sa couleur | `data/capsules.js` |
 | Modifier ou créer un effet d'arrivée | `js/capsules.js` (`CAP_FX`) |
