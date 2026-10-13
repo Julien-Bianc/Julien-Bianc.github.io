@@ -1,0 +1,107 @@
+/* ============================================================
+   menus.css — REFONTE DES MENUS (v0.12)
+   Charger APRÈS css/style.css. Police pixel « Pixelify Sans » (Google Fonts, repli Courier New hors ligne).
+   Thème : verre sombre violet nuit + or, comme un écran-titre de jeu (inspiration Edenfall / Dead Cells).
+   Couleurs : variables ci-dessous.
+   ============================================================ */
+:root{
+  --gold:#ffd23f; --gold2:#ffe9a0; --gold3:#b8861e;
+  --glass:rgba(22,16,44,.82); --glass2:rgba(40,30,74,.78); --line:rgba(255,220,160,.28);
+  --txt:#f4ead6; --txt2:#c9bcd8; --font:"Pixelify Sans","Courier New",monospace;
+}
+body{font-family:var(--font);font-weight:600;color:var(--txt)}
+#menu{font-family:var(--font);background:radial-gradient(ellipse at 50% 45%,rgba(26,18,52,.72),rgba(8,6,18,.92));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+#menu.ingame{background:radial-gradient(ellipse at 50% 45%,rgba(20,14,40,.66),rgba(6,4,14,.88))}
+#menu.home{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0!important}
+#menu p{font-size:12px;line-height:1.25}
+#menu .hint{font-size:10px}
+
+/* ---------- titres : lettres dorées + ornement ---------- */
+#menu h1{font-family:var(--font);font-weight:700;font-size:22px;letter-spacing:1px;color:var(--gold2);
+  background:linear-gradient(180deg,#fff6d0 0%,#ffd23f 55%,#d08a1a 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 0 #3a1d08) drop-shadow(0 0 8px rgba(255,180,60,.35));position:relative;padding-bottom:5px}
+#menu h1::after{content:"";position:absolute;left:10%;right:10%;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold) 70%,transparent)}
+#menu h1 small{-webkit-text-fill-color:var(--txt2);color:var(--txt2);font-size:12px}
+#menu h3{font-family:var(--font);color:var(--gold)!important;letter-spacing:1px;text-transform:uppercase;font-size:11px!important;border-bottom:1px solid var(--line);padding-bottom:2px}
+
+/* ---------- boutons ---------- */
+.btn{font-family:var(--font)!important;font-weight:700;background:linear-gradient(180deg,#ffe98a,#ffd23f 50%,#e8a820);color:#2a1606;border:2px solid #7a4a10;border-radius:6px;
+  box-shadow:0 3px 0 #7a4a10,0 0 12px rgba(255,190,60,.25),inset 0 1px 0 #fff8;text-shadow:0 1px 0 #fff6;letter-spacing:.5px;transition:transform .08s,filter .15s;cursor:pointer}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #7a4a10}
+.btn2{font-family:var(--font)!important;font-weight:600;background:linear-gradient(180deg,rgba(54,42,96,.92),rgba(30,22,58,.92));color:var(--txt);border:1px solid var(--line);border-radius:6px;
+  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .15s,transform .08s,filter .15s}
+.btn2:hover{border-color:var(--gold);filter:brightness(1.15)}.btn2:active{transform:translateY(1px)}
+.btn2.on{background:linear-gradient(180deg,#ffe98a,#ffd23f);color:#2a1606;border-color:#7a4a10}
+.btn2.bad{border-color:#d9503f;color:#ffb0a0}
+.devb{border-color:#4fd1c5!important;color:#a8fff4!important}
+
+/* ---------- cartes, niveaux, lignes : verre sombre ---------- */
+.card,.stg,.mbtn{background:var(--glass2);color:var(--txt);border:1px solid rgba(255,255,255,.12);box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.card:hover,.stg:not(:disabled):hover{border-color:var(--gold)}
+.card.sel{outline:2px solid var(--gold);background:rgba(255,210,63,.22)}
+.card.foc{box-shadow:0 0 0 2px #fff,0 0 10px rgba(255,255,255,.3)}
+.card .ty{color:var(--txt2)}
+.stg{border-width:1px}.stg.on{border-color:var(--gold);background:rgba(255,210,63,.22)}.stg .stars{color:var(--gold)}
+.trow{background:var(--glass2);border:1px solid rgba(255,255,255,.08)}
+.slot{border-color:var(--line);background:rgba(0,0,0,.25)}
+input#tn{background:rgba(10,8,24,.85);color:var(--txt);border:1px solid var(--line);font-family:var(--font)}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--gold3) transparent}
+.scroll::-webkit-scrollbar{width:6px;height:6px}.scroll::-webkit-scrollbar-thumb{background:var(--gold3);border-radius:3px}
+.edit .left,.edit .right{background:rgba(10,8,24,.35);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:4px}
+.coin{background:linear-gradient(180deg,#3a2a10,#1e1408);font-family:var(--font)}
+.tag{font-family:var(--font)}
+
+/* ============================================================ MENU PRINCIPAL */
+.mc:has(> .mm){padding:0}
+.mm{position:relative;width:100%;height:100%;text-align:left}
+.mm-side{position:absolute;left:0;top:0;bottom:0;width:min(44%,320px);padding:12px 16px 8px calc(20px + env(safe-area-inset-left,0px));display:flex;flex-direction:column;
+  background:linear-gradient(90deg,rgba(14,8,30,.9) 0%,rgba(14,8,30,.78) 62%,rgba(14,8,30,0) 100%)}
+.mm-side::before{content:"";position:absolute;left:0;top:10%;bottom:10%;width:3px;background:linear-gradient(180deg,transparent,var(--gold) 30%,var(--gold) 70%,transparent);opacity:.6}
+/* logo */
+.logo{display:flex;flex-direction:column;align-items:flex-start;position:relative;padding-left:2px;margin-bottom:6px}
+.logo b{font-family:var(--font);font-weight:700;font-size:40px;line-height:1;letter-spacing:3px;
+  background:linear-gradient(180deg,#fffbe6 0%,#ffe27a 40%,#ffb020 70%,#c86a10 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(2px 2px 0 #3a1406) drop-shadow(0 0 10px rgba(255,170,60,.5));animation:lglow 4s ease-in-out infinite}
+.logo small{font-family:var(--font);font-size:13px;letter-spacing:5px;text-transform:uppercase;color:var(--txt2);margin-top:1px;padding-left:3px}
+@keyframes lglow{50%{filter:drop-shadow(2px 2px 0 #3a1406) drop-shadow(0 0 16px rgba(255,190,80,.75))}}
+.lball{position:absolute;left:150px;top:-2px;width:22px;height:22px;border-radius:50%;border:2px solid #14101c;background:linear-gradient(180deg,#e8403c 0 47%,#14101c 47% 53%,#f4f4f4 53%);animation:lbs 6s ease-in-out infinite;box-shadow:0 0 10px rgba(255,90,70,.5)}
+.lball i{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:#fff;border:2px solid #14101c}
+@keyframes lbs{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-20deg)}90%{transform:rotate(16deg)}95%{transform:rotate(-8deg)}}
+/* liste */
+.mm-list{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin-top:4px}
+.mmi{position:relative;background:none;border:0;color:var(--txt);font:600 16px/1 var(--font);padding:4px 26px 4px 22px;margin:0;cursor:pointer;text-align:left;
+  text-shadow:0 2px 0 rgba(0,0,0,.6);transition:color .15s,padding .15s,background .15s;border-radius:3px;white-space:nowrap}
+.mmi .cur{position:absolute;left:4px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;border:2px solid #14101c;
+  background:linear-gradient(180deg,#e8403c 0 45%,#14101c 45% 55%,#f4f4f4 55%);opacity:0;transform:scale(.4) rotate(-90deg);transition:opacity .15s,transform .2s}
+.mmi.act{color:#fff;padding-left:28px;background:linear-gradient(90deg,rgba(255,210,63,.32),rgba(255,210,63,.08) 70%,transparent);
+  text-shadow:0 0 8px rgba(255,210,63,.6),0 2px 0 rgba(0,0,0,.6)}
+.mmi.act .cur{opacity:1;transform:scale(1) rotate(0);left:8px}
+.mmi.act::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+.mmi.dev{color:#a8fff4}
+.mm-desc{min-height:15px;margin:6px 0 0!important;font-size:11px!important;color:var(--txt2);font-style:italic}
+.mm-soon{margin:2px 0 0!important;font-size:10px!important;color:rgba(201,188,216,.55)}
+.mm-line{margin-top:auto;height:9px;position:relative}
+.mm-line::before{content:"";position:absolute;left:0;right:10%;top:4px;height:1px;background:linear-gradient(90deg,var(--gold),rgba(255,210,63,.4) 60%,transparent)}
+.mm-line i{position:absolute;left:44%;top:0;width:8px;height:8px;border:1px solid var(--gold);transform:rotate(45deg);background:#1a1030}
+.mm-ver{font-size:9px!important;color:rgba(201,188,216,.5);margin:2px 0 calc(2px + env(safe-area-inset-bottom,0px))!important}
+.devtag{color:#4fd1c5}
+.mm-top{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));top:10px}
+/* encart « Défi : Mewtwo » (comme les encarts d'annonce des écrans-titres) */
+.mm-feat{position:absolute;right:0;top:46%;display:flex;align-items:center;gap:6px;padding:5px calc(10px + env(safe-area-inset-right,0px)) 5px 6px;
+  background:linear-gradient(90deg,rgba(40,14,70,.85),rgba(14,8,30,.9));border:1px solid rgba(192,112,255,.5);border-right:0;border-radius:8px 0 0 8px;color:var(--txt);
+  cursor:pointer;font-family:var(--font);text-align:left;box-shadow:0 0 14px rgba(160,80,255,.3);animation:feat 3s ease-in-out infinite}
+.mm-feat img{width:34px;height:34px;image-rendering:pixelated;filter:drop-shadow(0 0 4px #c070ff)}
+.mm-feat b{display:block;font-size:12px;color:#e0c8ff}.mm-feat small{display:block;font-size:9px;color:var(--txt2)}
+.mm-feat:hover{border-color:#e0c8ff}
+@keyframes feat{50%{box-shadow:0 0 22px rgba(192,112,255,.55)}}
+.mm-warn{position:absolute;right:10px;bottom:46px;max-width:40%;font-size:9px}
+
+/* petits écrans (hauteur < 330 px) : liste plus serrée */
+@media (max-height:330px){ .logo b{font-size:30px}.logo small{font-size:10px}.mmi{font-size:14px;padding-top:3px;padding-bottom:3px}.mm-desc{display:none} }
+/* boutons pause / plein écran : thème */
+#pauseBtn,#fsBtn{background:linear-gradient(180deg,rgba(54,42,96,.85),rgba(30,22,58,.85));border:1px solid var(--line)}
+/* hors combat : le décor animé remplit tout l'écran, pas de commandes de combat */
+#app.nogame #cv{object-fit:cover}
+#app.nogame #ui,#app.nogame #pauseBtn{display:none}
+/* écran développeur */
+.devs .row{margin:3px 0}
