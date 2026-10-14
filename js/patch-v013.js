@@ -67,7 +67,7 @@ function syncFsBtn(){ const b = document.getElementById('fsBtn'); if(b) b.style.
 syncFsBtn();
 const _tfsV13 = toggleFullscreen; let FS_T = 0;
 toggleFullscreen = function(){ const n = performance.now(); if(n - FS_T < 900) return; FS_T = n; return _tfsV13(); };   // jamais 2 demandes d'affilée
-addEventListener('pointerdown', () => { if(Settings.get().autoFs && !fsEl() && fsOk()) toggleFullscreen(); });   // à CHAQUE retour (Chrome Android)
+['pointerup', 'click'].forEach(ev => addEventListener(ev, () => { if(Settings.get().autoFs && !fsEl() && fsOk()) toggleFullscreen(); }));   // à CHAQUE retour (Chrome Android) — pointerup/click : le navigateur l'autorise
 document.addEventListener('visibilitychange', () => { if(!document.hidden) syncFsBtn(); });
 
 // ---------- 7. menu oublié par-dessus un combat ----------

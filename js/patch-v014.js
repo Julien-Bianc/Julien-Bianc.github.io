@@ -59,14 +59,14 @@ showInventory = function(o){
   if(hd && total > 0){
     hd.insertAdjacentHTML('afterend', `<div class='row'><button class='btn2 sm' id='sellall'>Vendre tous les doublons (${list.reduce((n, it) => n + Save.sellable(it.id), 0)}) · +${money(total)}</button></div>`);
     document.getElementById('sellall').onclick = () => {
-      if(!confirm(`Vendre tous les doublons de cet onglet pour ${money(total)} ?\n(tu gardes toujours 1 exemplaire de chaque)`)) return;
-      list.forEach(it => Save.sell(it.id, Save.sellable(it.id), sellPrice(it))); if(typeof coinSfx === 'function') coinSfx(); showInventory(o);
+      gameConfirm(`Vendre tous les doublons de cet onglet ?`, `Tu gagnes <b>${money(total)}</b>. Tu gardes toujours 1 exemplaire de chaque.`, 'Vendre', () => {
+        list.forEach(it => Save.sell(it.id, Save.sellable(it.id), sellPrice(it))); if(typeof coinSfx === 'function') coinSfx(); showInventory(o); });
     };
   }
   if(o.tab === 'binder') document.querySelectorAll('#menu .bpg').forEach(pg => {
     const c = pg.querySelector('[data-id^="card:"]'); if(!c) return; const pid = c.dataset.id.split(':')[1];
     if(!claimable(pid)) return; const bn = pg.querySelector('.bn'); if(!bn) return;
-    bn.insertAdjacentHTML('beforeend', `<button class='btn2 sm claim' data-claim='${pid}'>🎁 +${money(CARD_SET_REWARD)}</button>`);
+    bn.insertAdjacentHTML('beforeend', `<button class='btn2 sm claim' data-claim='${pid}'><img class='gift' src='${giftIcon()}'> +${money(CARD_SET_REWARD)}</button>`);
   });
   document.querySelectorAll('[data-claim]').forEach(b => b.onclick = ev => { ev.stopPropagation(); claimSet(b.dataset.claim); showInventory(o); });
   markBadges();
@@ -82,8 +82,9 @@ menu = function(h){ _menuV14(h); if(h) markBadges(); };
 // ---------- 6. défaite en douceur ----------
 const _endV14 = battleEnd;
 battleEnd = function(win){
+  if(!win && G && G.endAt) return;                                       // v0.15 : un 2e appel (K.O. vérifié par rules.js) ne coupe plus l'animation
   if(!win && G && !G.endAt && G.p && G.p.hp <= 0 && !(G.cfg && G.cfg.mode === 'online')){
-    G.endAt = G.time + 2.2; G.over = 0; G.p.inv = 0; G.p.hid = false; menu(''); return;   // on laisse jouer l'animation du K.O.
+    G.endAt = G.time + 2.4; G.over = 0; G.p.inv = 0; G.p.hid = false; G.p.koDone = 1; menu(''); return;   // on laisse jouer l'animation du K.O.
   }
   return _endV14(win);
 };
