@@ -80,7 +80,7 @@ start = function(cfg){
   const D = cfg && DIFFICULTY[cfg.mode];
   if(D && cfg.stage){
     const S = cfg.stage;
-    cfg = { ...cfg, stage:{ ...S, dmg:+(S.dmg*D.dmg).toFixed(2), rate:+(S.rate*D.rate).toFixed(2), tele:+(S.tele*D.tele).toFixed(2), aim:Math.min(1, (S.aim || 0) + D.aim) } };
+    cfg = { ...cfg, stage:{ ...S, hp:+(S.hp*(D.hp || 1)).toFixed(2), dmg:+(S.dmg*D.dmg).toFixed(2), rate:+(S.rate*D.rate).toFixed(2), tele:+(S.tele*D.tele).toFixed(2), aim:Math.min(1, (S.aim || 0) + D.aim) } };
   }
   return _startV12(cfg);
 };

@@ -66,7 +66,7 @@ function step(dt){DT=dt;if(HS>0){HS-=dt;return}const p=G.p,e=G.e;G.time+=dt;if(G
   if(blk){if(b.split)explode(b);bullets.splice(i,1);continue}
   if(b.own){if(e.hp>0&&G.intro<=0&&!b.hit&&Math.hypot(b.x-e.x,b.y-e.y)<b.r+e.r){const spl=b.split;if(hurtE(b.d,b))ko=1;if(!b.pierce)bullets.splice(i,1);else b.hit=1;if(spl&&!ko)explode(b)}}
   else if(p.inv<=0&&p.dT<=0&&Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r*.7){const spl=b.split;bullets.splice(i,1);if(spl)explode(b);if(hurtP(b.d,b))return}}
- for(let i=zn.length-1;i>=0;i--){const z=zn[i];z.t-=dt;if(z.t<=0){bm.push({x:z.x,y:z.y,col:1,t:.3,mx:.3,tp:z.tp});fx.push({x:z.x,y:z.y,t:.4,mx:.4});HS=Math.max(HS,.04);G.shake=Math.max(G.shake,.2);const b={t:z.tp,k:'strike',own:z.own};zn.splice(i,1);if(z.own){if(G.e.hp>0&&Math.hypot(z.x-G.e.x,z.y-G.e.y)<z.r+G.e.r)hurtE(z.d,b)}else if(Math.hypot(z.x-G.p.x,z.y-G.p.y)<z.r+G.p.r*.6){if(hurtP(z.d,b))return}}}
+ for(let i=zn.length-1;i>=0;i--){const z=zn[i];if(!z)continue;z.t-=dt;if(z.t<=0){bm.push({x:z.x,y:z.y,col:1,t:.3,mx:.3,tp:z.tp});fx.push({x:z.x,y:z.y,t:.4,mx:.4});HS=Math.max(HS,.04);G.shake=Math.max(G.shake,.2);const b={t:z.tp,k:'strike',own:z.own};zn.splice(i,1);if(z.own){if(G.e.hp>0&&Math.hypot(z.x-G.e.x,z.y-G.e.y)<z.r+G.e.r)hurtE(z.d,b)}else if(Math.hypot(z.x-G.p.x,z.y-G.p.y)<z.r+G.p.r*.6){if(hurtP(z.d,b))return}}}
  for(let i=bm.length-1;i>=0;i--)if((bm[i].t-=dt)<=0)bm.splice(i,1);
  for(let i=fx.length-1;i>=0;i--)if((fx[i].t-=dt)<=0)fx.splice(i,1);lb.forEach(l=>l&&(l.ttl-=dt));
  for(let i=txt.length-1;i>=0;i--){txt[i].t-=dt;txt[i].y-=40*dt;if(txt[i].t<=0)txt.splice(i,1)}

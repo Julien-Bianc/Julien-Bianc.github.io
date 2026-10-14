@@ -111,5 +111,5 @@ melee = function(s, d, m, c, own, sc, ang){
 };
 // 5. Bandeau d'infos en haut du combat plus petit par défaut (réglable dans Options → Taille de l'ATH)
 const _uiAutoFx = uiAuto;
-uiAuto = function(){ const r = _uiAutoFx(); r.hud = .8; return r; };
+uiAuto = function(){ const r = _uiAutoFx(); r.hud = .9; return r; };
 applyUI();

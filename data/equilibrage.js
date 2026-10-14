@@ -1,19 +1,30 @@
 // ============================================================
-//  ÉQUILIBRAGE (v0.12) — difficulté générale, récompenses. Modifie les nombres à ta guise.
+//  ÉQUILIBRAGE (v0.13) — difficulté générale, récompenses. Modifie les nombres à ta guise.
 // ============================================================
-// Difficulté des combats Solo et Safari (multiplie les réglages des niveaux de data/stages.js / data/safari.js)
-//   dmg  : dégâts des ennemis (1.3 = +30 %)     rate : délai entre leurs attaques (plus petit = plus agressif)
-//   tele : durée du signal avant leurs attaques (plus petit = plus dur à esquiver)   aim : précision (0..1, ajouté)
+// Difficulté par mode (multiplie les réglages des niveaux : data/stages.js, data/safari.js, data/boss-defi.js)
+//   dmg  : dégâts des ennemis (1.6 = +60 %)       hp   : PV des ennemis
+//   rate : délai entre leurs attaques (plus petit = plus agressif)
+//   tele : durée du signal avant leurs attaques (plus petit = plus dur à esquiver)    aim : précision (0..1, ajouté)
 const DIFFICULTY = {
-  solo:   { dmg:1.3,  rate:.9,  tele:.92, aim:.1 },
-  safari: { dmg:1.45, rate:.8,  tele:.85, aim:.25 }
+  solo:   { dmg:1.6,  hp:1.2,  rate:.85, tele:.9,  aim:.15 },
+  safari: { dmg:1.75, hp:1.1,  rate:.75, tele:.82, aim:.3 },
+  boss:   { dmg:1.7,  hp:1.35, rate:.8,  tele:.85, aim:.2 }      // Défi : Mewtwo (les 3 difficultés)
+};
+// Invulnérabilité du joueur après un coup reçu (secondes). Avant : 0,6 s → on encaissait trop peu de coups.
+const PLAYER_IFRAMES = .35;
+// Plus d'immunité de type : une attaque qui n'avait « aucun effet » fait maintenant ce multiplicateur (peu efficace)
+const IMMUNITY_MULT = .5;
+// Ajustements d'attaques : { pokémon : { 'Nom de l'attaque' : { champ:valeur } } }
+const MOVE_TWEAKS = {
+  raichu:{ 'Éclair':{ cooldown:.5 } }                            // avant 0,22 s : trop facile à spammer
 };
 
 // Solo : nombre MINIMUM d'adversaires (même si ton équipe n'a que 1 ou 2 Pokémon)
 const SOLO_MIN_ENEMIES = 3;
 // Solo : en cas de DÉFAITE, tu gagnes quand même cette part du gain par Pokémon adverse battu (0.5 = la moitié)
-// (en victoire, le gain dépend déjà du nombre d'adversaires : 3 → gain normal, 6 → gain x2)
 const SOLO_DEFEAT_SHARE = .5;
 
 // Collection : récompense quand tu as les 3 cartes (commune, peu commune, rare) d'un même Pokémon — une fois par Pokémon
 const CARD_SET_REWARD = 100;
+// Cadeau de bienvenue : tickets Safari offerts (une seule fois)
+const FREE_TICKETS = 1;

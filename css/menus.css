@@ -137,3 +137,9 @@ input#tn{background:rgba(10,8,24,.85);color:var(--txt);border:1px solid var(--li
 .ab.ballb b{font-size:8px}.ab.ballb small{font-size:9px;color:#ffe86a;font-weight:700}
 .ab.ballb .bsw{position:absolute;right:1px;top:0;font-size:10px;padding:0 2px;background:#0008;border-radius:4px}
 .ab.ballb.cd{opacity:.5}
+
+/* ============================================================ v0.13 : indicateur de défilement */
+.scroll.can-scroll:not(.at-end)::after{content:"▼";display:block;position:sticky;bottom:0;left:0;right:0;flex:0 0 100%;width:100%;grid-column:1/-1;height:30px;margin-top:-30px;
+  background:linear-gradient(180deg,rgba(12,8,28,0),rgba(12,8,28,.95) 75%);color:var(--gold);font-size:12px;text-align:center;line-height:40px;pointer-events:none;
+  animation:sclb 1s ease-in-out infinite alternate;z-index:3}
+@keyframes sclb{to{line-height:34px}}
