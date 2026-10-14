@@ -367,3 +367,21 @@ canvas.cprev.sm{width:200px;aspect-ratio:22/12}
 .shc b{display:block;font-size:11px}.shc small{font-size:9px;color:#ffe27a}
 .shdone{display:flex;flex-direction:column;align-items:center;gap:4px}.shdone canvas{width:300px;height:212px;image-rendering:pixelated}
 .gold{color:#ffe27a;text-shadow:0 0 8px #ffb400}
+/* Patch : zoom de toutes les cartes, carte légendaire dans l'ombre, apparence Classique / Shiny */
+.cw.zoomable{cursor:zoom-in}
+.cw.zoomable::after{content:"🔍";position:absolute;right:-4px;bottom:-4px;font-size:11px;background:#14101ccc;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;box-shadow:0 0 0 1px #ffd23f;pointer-events:none;z-index:4}
+.czw{position:relative;transform-style:preserve-3d;cursor:zoom-in;border-radius:12px;box-shadow:0 0 30px color-mix(in srgb,var(--rc,#ffd23f) 70%,transparent);will-change:transform}
+.czw.mag{cursor:zoom-out}
+.czw .cw{position:absolute;left:0;top:0}
+.czw .cglare{position:absolute;inset:0;border-radius:12px;pointer-events:none;mix-blend-mode:screen;z-index:3}
+.czw.r-C{--rc:#4b69ff}.czw.r-PC{--rc:#8847ff}.czw.r-R{--rc:#d32ce6}.czw.r-UR{--rc:#eb4b4b}
+.itc.legsh .lsf{position:absolute;inset:3px;border-radius:4px;background:linear-gradient(135deg,#ffe27a,#c8901a 50%,#8a5a10);display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:1}
+.itc.legsh .lsf::before{content:"";position:absolute;inset:2px;border-radius:3px;background:radial-gradient(circle at 50% 40%,#4a1408,#0a0204)}
+.itc.legsh .lsf img{position:relative;width:110%;filter:brightness(0);opacity:.95;image-rendering:pixelated}
+.itc.legsh .lsf b{position:absolute;color:#ffb43c;font-size:14px;text-shadow:0 0 6px #ff6a20;animation:sq 1.4s ease-in-out infinite alternate}
+.itc.legsh.big{width:150px;height:225px;cursor:default}.itc.legsh.big .lsf b{font-size:44px}
+.held.look{background:#ffc83a14;border-color:#ffc83a66}.held.look img{width:28px;height:28px}
+.held.look .btn2.on{background:#ffc83a;color:#3a2400;border-color:#ffc83a}
+.czw{overflow:hidden}
+.czw .czp{position:absolute;left:0;top:0}
+.czw .czp .cw{position:relative}

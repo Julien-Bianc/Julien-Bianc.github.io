@@ -394,3 +394,13 @@ Ouvre le jeu dans **2 onglets** du même navigateur → Multijoueur → **Test l
 - **Zoom** : touche la grande carte (révélation, classeur) → plein écran ; touche-la encore → loupe x2 qui suit le doigt.
 - Classeur : la carte a sa case « ✦ Légendaire » sur la page du Pokémon (elle ne compte pas pour la récompense de collection).
 - Nouvelle carte légendaire : une ligne dans `LEGEND_CARDS` (`{ poke, theme }`) ; nouveau décor : un thème dans `LEGEND_THEMES`.
+
+### Correctifs : zoom des cartes, légendaire dans l'ombre, apparence Classique / Shiny
+- **Zoom sur toutes les cartes** : touche une grande carte (révélation, détail du Classeur, fiche d'objet) — icône 🔍 — pour l'ouvrir
+  en plein écran : elle s'incline sous le doigt avec un reflet ; touche-la encore pour la **loupe x2** (texte et pixels restent nets).
+  Code : `cardZoom` dans `js/legend-card.js` (les cartes légendaires gardent leur zoom animé).
+- **Carte légendaire cachée** : tant qu'elle n'est pas obtenue, elle n'apparaît que **dans l'ombre** (silhouette noire + « ? ») dans
+  l'aperçu de la caisse ; elle ne défile pas dans la bande d'ouverture (sauf si c'est elle que tu gagnes) et n'apparaît pas dans le Classeur.
+- **Miniatures shiny corrigées** : l'image est recolorée à taille réelle avant d'être réduite (`shinyThumb` dans `js/shiny.js`).
+- **Classique ou Shiny** : Mes équipes → Modifier → toucher un Pokémon shiny → « Apparence : Classique / ✦ Shiny » (choix par équipe,
+  Shiny par défaut). Le combat, la Pokéball, l'ATH et les miniatures de l'équipe suivent ce choix (`team.look`).

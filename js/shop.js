@@ -99,13 +99,17 @@ function cardHtml(it, s){
   const dots = D.types.map(t => `<i class='td' style='background:${COL[t] || '#999'}'></i>`).join('');
   const mv = D.moves.map(m => `<div class='tm'><i class='td' style='background:${m.color || COL[m.type] || '#999'}'></i><span>${esc(m.name)}</span><b>${m.power || '—'}</b></div>`).join('');
   const no = String(ORDER.indexOf(it.poke) + 1).padStart(2, '0') + '/' + String(ORDER.length).padStart(2, '0');
-  return `<div class='cw r-${it.r}' style='--cs:${s}'><div class='tcg'><div class='tin' style='background:${body}'>
+  return `<div class='cw r-${it.r}' data-card='${it.id}' style='--cs:${s}'><div class='tcg'><div class='tin' style='background:${body}'>
     <div class='th'><b>${esc(D.name)}</b><span>PV ${D.hp}${dots}</span></div>
     <div class='ta' style='background:radial-gradient(ellipse at 50% 90%,${a1},${a2})'><img src='${cardArt(it.poke, it.r)}'></div>
     <div class='ti'>${D.types.map(t => TN[t] || t).join('/')} · Vit. ${D.speed}</div>
     <div class='tmv'>${mv}</div>
     <div class='tf'><span>${no}</span><span class='ts' style='color:${R.col}'>${SYM[it.r]}</span></div></div>
     <u class='rb'></u><u class='sh'></u><u class='sp'></u></div></div>`;
+}
+// carte légendaire pas encore obtenue : cadre doré et silhouette noire du Pokémon (on ne la voit pas encore)
+function legShadow(it, size){
+  return `<button class='itc cd ${size === 'mini' ? 'mini' : ''} legsh ${size === 'big' ? 'big' : ''}' data-id='${it.id}' style='${rarCss(it.r)}'><span class='lsf'><img src='${cardArt(it.poke, 'R')}'><b>?</b></span><i class='bar'></i></button>`;
 }
 // image d'un objet (objet tenu → PNG de assets/items/, sinon la caisse)
 const imgOf = it => it.kind === 'capsule' ? capIcon(it) : it.img ? 'assets/items/' + it.img + '.png' : crateImg();
@@ -235,7 +239,7 @@ function showCrate(id){
     <div class='crr scroll'>${slots.map(s => `<div class='slt' style='${rarCss(s.r)}'>
       <div class='slh'><b>${esc(s.label)}</b><span>${pctTxt(slotPct(c, s))}</span></div>
       <div class='igrid slp'>${s.hidden || (RAR[s.r] && RAR[s.r].hidden) ? `<span class='secret-q'>?</span><small class='secret-t'>Contenu secret… À toi de le découvrir.</small>`
-        : s.pool.slice().sort((a, b) => (a.name > b.name) - (a.name < b.name)).map(it => itemCard(it, { s:.3, cls:'mini' })).join('')}</div></div>`).join('')}</div></div>
+        : s.pool.slice().sort((a, b) => (a.name > b.name) - (a.name < b.name)).map(it => it.legend && !(Save.itemCount(it.id) > 0) ? legShadow(it, 'mini') : itemCard(it, { s:.3, cls:'mini' })).join('')}</div></div>`).join('')}</div></div>
     <div class='row'><button class='btn' id='op' ${ok ? '' : 'disabled'}>${c.price ? 'Ouvrir — ' + money(c.price) : 'Ouvrir — Gratuit'}</button><button class='btn2' id='back'>Retour</button></div>
     ${ok ? '' : `<p class='hint bad'>Il te manque ${money(c.price - have)} : remporte des niveaux en Solo !</p>`}`);
   bindAll('.slp .itc', el => showItemPeek(el.dataset.id, () => showCrate(id)));
@@ -246,6 +250,13 @@ function showCrate(id){
 function showItemPeek(itemId, back){
   const it = ITEM[itemId]; if(!it) return back();
   const n = Save.itemCount(it.id);
+  if(it.legend && !n){                                                           // carte légendaire pas encore obtenue : seulement son ombre
+    menu(`<div class='peek' style='${rarCss(it.r)}'><div class='pkv'>${legShadow(it, 'big')}</div>
+      <div class='rvt'><b class='rn' style='color:${RAR[it.r].col}'>Carte Légendaire ???</b><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
+      <p>Une carte légendaire animée… Qui se cache dans l'ombre ? Ouvre des caisses pour le découvrir.</p>
+      <div class='row'><button class='btn2' id='back'>Retour</button></div></div></div>`);
+    document.getElementById('back').onclick = back; return;
+  }
   menu(`<div class='peek' style='${rarCss(it.r)}'><div class='pkv r-${it.r}'>${it.kind === 'card' ? cardHtml(it, 1) : it.kind === 'capsule' ? capPrev(it.id) : `<img class='ric' src='${imgOf(it)}'>`}</div>
     <div class='rvt'><b class='rn' style='color:${RAR[it.r].col}'>${esc(it.name)}</b><span class='tag' style='background:${RAR[it.r].col};color:#fff'>${RAR[it.r].label}</span>
     ${it.desc ? `<p>${esc(it.desc)}</p>` : ''}<p>${n ? 'Possédé : ×' + n : 'Pas encore obtenu'}</p>
@@ -267,7 +278,7 @@ function openCrate(id){
   if(c.price) coinSfx();
   const win = rollItem(c), isNew = Save.itemCount(win.id) === 0, n = Save.addItem(win.id); Save.countOpen();
   const N = 54, wi = 42 + Math.floor(Math.random()*6);                       // position de l'objet gagnant dans la bande
-  const filler = () => { let it; for(let k = 0; k < 20; k++){ it = rollItem(c); if(!(RAR[it.r] && RAR[it.r].hidden)) break; } return it; };   // jamais d'objet secret en décor
+  const filler = () => { let it; for(let k = 0; k < 20; k++){ it = rollItem(c); if(!(RAR[it.r] && RAR[it.r].hidden) && !(it.legend && !(Save.itemCount(it.id) > (it === win ? 1 : 0)))) break; } return it; };   // jamais d'objet secret en décor
   const strip = Array.from({ length:N }, (_, i) => i === wi ? win : filler());
 
   menu(`<h1>Ouverture de la caisse</h1><small class='sub'>${esc(c.name)} · ${c.price ? '−' + money(c.price) : 'gratuite'}</small>
@@ -390,7 +401,7 @@ function itemsBody(o, inv, helds){
 function binderBody(o, inv){
   const owned = id => inv[id] > 0;
   const show = id => o.filter === 'all' || (o.filter === 'have') === owned(id);
-  const rows = ORDER.filter(pid => CARD_RARITIES.some(r => show(`card:${pid}:${r}`)) || (ITEM[`card:${pid}:L`] && show(`card:${pid}:L`)));
+  const rows = ORDER.filter(pid => CARD_RARITIES.some(r => show(`card:${pid}:${r}`)) || (ITEM[`card:${pid}:L`] && owned(`card:${pid}:L`) && show(`card:${pid}:L`)));
   const pocket = (pid, r) => {
     const id = `card:${pid}:${r}`, it = ITEM[id], f = id === o.sel ? ' foc' : '';
     if(!show(id)) return `<span class='pk off'></span>`;
@@ -399,7 +410,7 @@ function binderBody(o, inv){
   };
   const legOf = pid => ITEM[`card:${pid}:L`];
   const legPocket = pid => {
-    const L = legOf(pid); if(!L || !show(L.id)) return '';
+    const L = legOf(pid); if(!L || !show(L.id) || !owned(L.id)) return '';                    // la carte légendaire reste secrète tant qu'elle n'est pas obtenue
     const f = L.id === o.sel ? ' foc' : '';
     return `<div class='bpl'><span>✦ Légendaire</span>${owned(L.id) ? `<button class='pk leg r-UR${f}' data-id='${L.id}'>${cardHtml(L, .4)}${inv[L.id] > 1 ? `<span class='cnt'>×${inv[L.id]}</span>` : ''}</button>`
       : `<button class='pk miss legm${f}' data-id='${L.id}' style='${rarCss('UR')}'><img src='${cardArt(pid, 'R')}'><span class='sym'>✦</span></button>`}</div>`;

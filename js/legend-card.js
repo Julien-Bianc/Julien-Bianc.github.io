@@ -262,3 +262,46 @@ function legendZoom(it){
   if(typeof playSfx === 'function' && typeof AU !== 'undefined' && AU.ctx) tone(880, .2, 'triangle', .05, 600);
   mountLegendCards();
 }
+
+// ============================================================
+//  ZOOM SUR TOUTES LES CARTES (cartes normales : commune, peu commune, rare)
+//  Toucher une grande carte (révélation, détail du classeur, fiche d'objet) → plein écran, inclinaison 3D + reflet
+//  qui suivent le doigt ; toucher la carte zoomée → loupe x2.
+// ============================================================
+function cardZoom(it){
+  if(!it) return; if(it.legend) return legendZoom(it);
+  const old = document.getElementById('lgzoom'); if(old) old.remove();
+  const app = document.getElementById('app'), z = document.createElement('div'); z.id = 'lgzoom';
+  const ch = Math.min(app.clientHeight*.86, app.clientWidth*.9*1.5), s = ch/180, cw = 120*s, R = RAR[it.r], MAG = 2.1;
+  // la carte est mise en page à sa vraie taille (propriété « zoom ») : texte et pixels restent nets, même à la loupe
+  z.innerHTML = `<div class='lgz-in'><div class='czw r-${it.r}' style='width:${cw}px;height:${ch}px'><div class='czp'>${cardHtml(it, 1)}</div><u class='cglare'></u></div>
+    <div class='lgz-side'><b>${esc(it.name)}</b><span class='tag' style='background:${R.col};color:#fff'>${R.label}</span>
+    <small>Bouge le doigt sur la carte pour l'incliner. Touche-la pour la loupe.</small><button class='btn2' id='lgz-x'>Fermer</button></div></div>`;
+  app.appendChild(z);
+  const w = z.querySelector('.czw'), pn = z.querySelector('.czp'), card = pn.firstElementChild, gl = z.querySelector('.cglare');
+  let tx = 0, ty = 0, mag = false, fx = .5, fy = .5;
+  const layout = () => {
+    const k = mag ? s*MAG : s; card.style.zoom = k;
+    pn.style.left = mag ? -fx*(cw*MAG - cw) + 'px' : '0px'; pn.style.top = mag ? -fy*(ch*MAG - ch) + 'px' : '0px';
+  };
+  const apply = () => { w.style.transform = `perspective(700px) rotateY(${tx*(mag ? 4 : 12)}deg) rotateX(${-ty*(mag ? 4 : 12)}deg)`;
+    gl.style.background = `radial-gradient(circle at ${50 + tx*45}% ${50 + ty*45}%, rgba(255,255,255,.38), rgba(255,255,255,0) 55%)`; };
+  w.addEventListener('pointermove', e => { const r = w.getBoundingClientRect(); fx = Math.min(1, Math.max(0, (e.clientX - r.left)/r.width)); fy = Math.min(1, Math.max(0, (e.clientY - r.top)/r.height)); tx = (fx - .5)*2; ty = (fy - .5)*2; w._hov = 1; if(mag) layout(); apply(); });
+  w.addEventListener('pointerleave', () => { w._hov = 0; tx = ty = 0; apply(); });
+  w.addEventListener('click', e => { e.stopPropagation(); const r = w.getBoundingClientRect(); fx = (e.clientX - r.left)/r.width; fy = (e.clientY - r.top)/r.height; mag = !mag; w.classList.toggle('mag', mag); layout(); apply(); });
+  z.addEventListener('click', e => { if(e.target === z || e.target.classList.contains('lgz-in')) z.remove(); });
+  document.getElementById('lgz-x').onclick = () => z.remove();
+  layout(); apply();
+  if(typeof AU !== 'undefined' && AU.ctx) tone(880, .2, 'triangle', .05, 600);
+  const t0 = performance.now(), idle = now => { if(!w.isConnected) return; if(!w._hov && !mag){ const t = (now - t0)/1000; tx = Math.sin(t*.8)*.35; ty = Math.cos(t*.6)*.25; apply(); } requestAnimationFrame(idle); };
+  requestAnimationFrame(idle);
+}
+// les grandes cartes affichées dans les menus deviennent zoomables
+const _menuZoom = menu;
+menu = function(h){
+  _menuZoom(h); if(!h) return;
+  document.querySelectorAll('.rvc .cw[data-card], .bdv .cw[data-card], .pkv .cw[data-card], .dh .cw[data-card]').forEach(c => {
+    if(c._zm) return; c._zm = 1; c.classList.add('zoomable');
+    c.addEventListener('click', e => { e.stopPropagation(); cardZoom(ITEM[c.dataset.card]); });
+  });
+};

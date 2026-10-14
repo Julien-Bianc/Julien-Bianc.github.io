@@ -4,15 +4,26 @@
 //      qui devient shiny pour toujours (sauvegardé). Un exemplaire est consommé.
 //    • Rendu : chaque image du Pokémon est recolorée à la volée avec sa palette shiny officielle (data/shiny.js).
 //      Ton Pokémon shiny l'est en combat, dans la Pokéball, dans les menus et les miniatures.
-//      Les Pokémon ADVERSES ne sont jamais shiny.
+//      Les Pokémon ADVERSES ne sont jamais shiny. Dans « Mes équipes », chaque Pokémon shiny peut jouer en Classique ou en Shiny
+//      (team.look = { idPokémon:'normal' } quand on choisit Classique ; Shiny par défaut).
 //    • À son entrée en combat, ton Pokémon shiny scintille (éclat chromatique + son, comme dans les jeux).
 // ============================================================
 const Shiny = {
   all(){ const d = Save.load(); if(!d.shiny || typeof d.shiny !== 'object') d.shiny = {}; return d.shiny; },
   has(pid){ return !!(pid && this.all()[pid] && SHINY_PAL[pid]); },
   can(pid){ return !!(SHINY_PAL[pid] && ORDER.includes(pid) && !this.has(pid)); },
-  add(pid){ this.all()[pid] = 1; Save.save(); }
+  add(pid){ this.all()[pid] = 1; Save.save(); },
+  // en combat : shiny débloqué ET pas mis en « Classique » dans l'équipe utilisée
+  battle(pid){ return this.has(pid) && !(G && G.cfg && G.cfg.look && G.cfg.look[pid] === 'normal'); },
+  // miniatures : idem + écran d'édition d'équipe (SHINY_VIEW) + jamais l'espèce adverse en combat
+  view(pid){
+    if(!this.has(pid)) return false;
+    if(SHINY_VIEW && SHINY_VIEW[pid] === 'normal') return false;
+    if(G && G.cfg){ if(G.cfg.look && G.cfg.look[pid] === 'normal') return false; if(G.e && G.e.t === pid && !(G.p && G.p.t === pid)) return false; }
+    return true;
+  }
 };
+let SHINY_VIEW = null;                                                           // apparences choisies dans l'éditeur d'équipe en cours
 
 // ---------- recoloration (mise en cache par image source) ----------
 const SH_CACHE = new WeakMap(), SH_MAPS = {};
@@ -35,28 +46,47 @@ function shinyCanvas(src, pid){
 }
 // combat : seulement TON Pokémon (en = 0)
 const _monSh = mon;
-mon = function(o, en){ const f = _monSh(o, en); return (!en && o && Shiny.has(o.t)) ? shinyCanvas(f, o.t) : f; };
-// miniatures : tes Pokémon shiny, sauf en combat quand l'adversaire est de la même espèce
+mon = function(o, en){ const f = _monSh(o, en); return (!en && o && Shiny.battle(o.t)) ? shinyCanvas(f, o.t) : f; };
+// miniature shiny : on recolore l'image À TAILLE RÉELLE avant de la réduire (sinon le lissage mélange les couleurs)
+const SH_TH = {};
+function shinyThumb(pid){
+  if(SH_TH[pid]) return SH_TH[pid];
+  const S = SPR[pid]; if(!S || !S.IM.Idle || !S.IM.Idle.naturalWidth) return _sprSh(pid);
+  const d = S.D.anim.Idle, src = document.createElement('canvas'); src.width = d.fw; src.height = d.fh;
+  src.getContext('2d').drawImage(S.IM.Idle, 0, 0, d.fw, d.fh, 0, 0, d.fw, d.fh);
+  const sh = shinyCanvas(src, pid), cv = document.createElement('canvas'); cv.width = cv.height = 48;
+  const k = Math.min(1, 48/Math.max(d.fw, d.fh)), w = d.fw*k, h = d.fh*k;
+  cv.getContext('2d').drawImage(sh, 0, 0, d.fw, d.fh, (48 - w)/2, (48 - h)/2, w, h);
+  return SH_TH[pid] = cv;
+}
 const _sprSh = spr;
-spr = function(t, b){
-  const f = _sprSh(t, b);
-  if(!Shiny.has(t) || b) return f;
-  if(G && G.e && G.e.t === t && !(G.p && G.p.t === t)) return f;
-  f._shv = (f._shv || 0) + 1;                                                    // spr() redessine toujours la même toile
-  return shinyCanvas(f, t);
+spr = function(t, b){ return (!b && Shiny.view(t)) ? shinyThumb(t) : _sprSh(t, b); };
+// au lancement d'un combat : apparence choisie dans l'équipe (Classique / Shiny)
+const _startSh = start;
+start = function(cfg){
+  const t = cfg && cfg.teamId && Save.team(cfg.teamId);
+  if(t && !cfg.look) cfg.look = { ...(t.look || {}) };
+  return _startSh(cfg);
 };
+// éditeur d'équipe : choix de l'apparence d'un Pokémon shiny
+function lookBox(ed){
+  const id = ed.focus; if(!Shiny.has(id)) return '';
+  const normal = ed.look && ed.look[id] === 'normal';
+  return `<div class='held look'><span>Apparence</span><img src='${_sprSh(id).toDataURL()}'><button class='btn2 sm ${normal ? 'on' : ''}' data-look='normal'>Classique</button>
+    <img src='${shinyThumb(id).toDataURL()}'><button class='btn2 sm ${normal ? '' : 'on'}' data-look='shiny'>✦ Shiny</button></div>`;
+}
 // éclat chromatique à l'entrée en combat
 const _cfSh = capsuleFire;
 capsuleFire = function(o, enemy){
   _cfSh(o, enemy);
-  if(enemy || !o || !Shiny.has(o.t) || typeof CAP_FX === 'undefined') return;
+  if(enemy || !o || !Shiny.battle(o.t) || typeof CAP_FX === 'undefined') return;
   CAP_ON.push({ fx:CAP_FX.brillant, x:o.x, gy:o.y + PB_FEET, t0:G.time + .1 }); capSfx('shiny');
 };
 // marque ✦ sur les Pokémon shiny dans les grilles de sélection
 const _menuSh = menu;
 menu = function(h){
   _menuSh(h); if(!h) return;
-  document.querySelectorAll('[data-add], [data-pk], [data-st]').forEach(el => { const id = el.dataset.add || el.dataset.pk || el.dataset.st; if(Shiny.has(id) && !el.querySelector('.shy')) el.insertAdjacentHTML('beforeend', `<span class='shy'>✦</span>`); });
+  document.querySelectorAll('[data-add], [data-pk], [data-st]').forEach(el => { const id = el.dataset.add || el.dataset.pk || el.dataset.st; if(Shiny.view(id) && !el.querySelector('.shy')) el.insertAdjacentHTML('beforeend', `<span class='shy'>✦</span>`); });
 };
 
 // ============================================================
@@ -66,7 +96,7 @@ function showShinySwap(back, sel){
   back = typeof back === 'function' ? back : () => showInventory();
   const n = Save.itemCount('shiny-swapper');
   const mine = ORDER.filter(id => SHINY_PAL[id] && (typeof Owned === 'undefined' || Owned.has(id)) && !(typeof BOSSES !== 'undefined' && BOSSES.includes(id)));
-  const img = (id, s) => `<img src='${(s ? shinyCanvas(_sprSh(id), id) : _sprSh(id)).toDataURL()}'>`;
+  const img = (id, s) => `<img src='${(s ? shinyThumb(id) : _sprSh(id)).toDataURL()}'>`;
   menu(`<div class='hd'><h1>Shiny Swapper</h1><span class='tag' style='background:${RAR.S.col};color:#3a2400'>×${n}</span></div>
     <p class='hint'>Choisis le Pokémon qui deviendra <b>shiny</b> pour toujours.</p>
     <div class='scroll'><div class='shgrid'>${mine.map(id => { const done = Shiny.has(id); return `<button class='shc ${id === sel ? 'on' : ''}' data-sh='${id}' ${done ? 'disabled' : ''}>
