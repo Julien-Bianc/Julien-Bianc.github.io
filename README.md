@@ -364,3 +364,33 @@ Ouvre le jeu dans **2 onglets** du même navigateur → Multijoueur → **Test l
 | Écrans Multijoueur : compte, amis, défis, échanges, test local | `js/online-social.js` |
 | Combat en ligne (synchronisation, compte à rebours, fin, revanche) | `js/online-battle.js` |
 | Style des écrans et notifications du multijoueur | `css/online.css` |
+
+## Patch — Rareté SECRÈTE, Shiny Swapper, Œuf Mystère, Carte LÉGENDAIRE
+### Rareté Secrète (or) — `data/shop.js`, `data/secret.js`
+- Nouvelle rareté **Secret** (couleur or) : **1 chance sur 200** (0,5 %) dans la Caisse du grand départ.
+- Son contenu n'est **jamais révélé** : dans l'aperçu de la caisse, l'emplacement s'appelle « ??? » ; les objets secrets ne passent
+  jamais dans la bande d'ouverture comme « décor », et n'apparaissent dans l'inventaire qu'une fois obtenus.
+- Ouverture : la bande tremble et brille d'or avec battements de cœur, puis l'écran plonge dans le noir, des particules dorées sont
+  aspirées vers une faille de lumière qui explose en flash, et la révélation arrive avec double rayons dorés, ondes de choc,
+  tampon « SECRET », pluie d'or et tremblement (`secretIntro`, `CONF.S`, `SUSPENSE.S` dans `js/shop.js`).
+- Contenu (`SPECIAL` dans `data/secret.js`) :
+  - **Shiny Swapper** : Inventaire → Objets → Utiliser → choisis un de tes Pokémon : il devient **shiny pour toujours**.
+  - **Œuf Mystère** : pour l'instant il ne fait rien… (il remue dans l'inventaire).
+- Revente d'un doublon secret : 600 ₽ (`ECONOMY.sell.S`).
+
+### Shiny — `js/shiny.js` + `data/shiny.js`
+- Les couleurs shiny sont les **palettes officielles** de PMDCollab : `data/shiny.js` contient, pour chaque Pokémon, la
+  correspondance couleur normale → couleur shiny (calculée en comparant les sprites). Le jeu recolore les images à la volée,
+  donc aucun sprite à télécharger.
+- Ton Pokémon shiny l'est en combat, à la sortie de la Pokéball, dans les miniatures et l'ATH (jamais les adversaires),
+  avec une marque ✦ dans les grilles et un **éclat chromatique** à chaque entrée en combat.
+- Nouveau Pokémon : sans palette dans `SHINY_PAL`, il ne peut pas devenir shiny.
+
+### Carte LÉGENDAIRE — `js/legend-card.js`
+- Nouvel emplacement **Ultra rare** (rouge) « Carte LÉGENDAIRE » : pour l'instant uniquement **Dracaufeu** (`LEGEND_CARDS`).
+- Carte animée dessinée en direct : ciel embrasé, soleil de feu et rayons, volcans et coulées de lave, mer de lave, braises,
+  flammes au premier plan, Dracaufeu qui respire puis crache un vrai **jet de flammes**, cadre doré qui miroite, gemmes,
+  ruban « LÉGENDAIRE », hologramme arc-en-ciel, paillettes, et la carte **s'incline en 3D** sous le doigt.
+- **Zoom** : touche la grande carte (révélation, classeur) → plein écran ; touche-la encore → loupe x2 qui suit le doigt.
+- Classeur : la carte a sa case « ✦ Légendaire » sur la page du Pokémon (elle ne compte pas pour la récompense de collection).
+- Nouvelle carte légendaire : une ligne dans `LEGEND_CARDS` (`{ poke, theme }`) ; nouveau décor : un thème dans `LEGEND_THEMES`.

@@ -13,10 +13,13 @@
 //      cards:['farfuret', …]   → une carte de rareté r d'un de ces Pokémon (cards:'all' = tous les Pokémon)
 //      held:true               → un objet tenu de rareté r (data/items.js)
 //      caps:true               → une Capsule Ball de rareté r (data/capsules.js)
-//      items:['restes', …]     → un objet précis parmi cette liste
+//      items:['restes', …]     → un objet précis parmi cette liste (objets tenus, capsules ou objets spéciaux de data/secret.js)
+//      legend:true             → une carte LÉGENDAIRE (LEGEND_CARDS, data/secret.js)
+//      hidden:true             → contenu caché dans l'aperçu (« ??? »)
 //    → Nouvel emplacement : une ligne dans slots. Nouvelle caisse : une entrée dans CRATES + une dans SHOP.
 // ============================================================
 const RARITY = [
+  { id:'S',  label:'Secret',     col:'#ffc83a', odds:1/200, hidden:true },    // contenu jamais révélé avant d'être obtenu
   { id:'UR', label:'Ultra rare', col:'#eb4b4b', odds:1/50 },
   { id:'R',  label:'Rare',       col:'#d32ce6', odds:1/20 },
   { id:'PC', label:'Peu commun', col:'#8847ff', odds:1/6  },
@@ -42,7 +45,9 @@ const CRATES = [
       { r:'R',  label:'Carte rare',             cards:STARTERS },
       { r:'R',  label:'Objet tenu rare',        held:true },
       { r:'R',  label:'Capsule Ball rare',      caps:true },
-      { r:'UR', label:'Capsule Ball ultra rare', caps:true }
+      { r:'UR', label:'Capsule Ball ultra rare', caps:true },
+      { r:'UR', label:'Carte LÉGENDAIRE',       legend:true },
+      { r:'S',  label:'???',                    items:['shiny-swapper', 'oeuf-mystere'], hidden:true }
     ] }
 ];
 
@@ -63,17 +68,22 @@ function shopBuild(){
   }));
   HELD.forEach(h => { ITEM[h.id] = { ...h, kind:'held', crates:[] }; });
   CAPSULES.forEach(h => { ITEM[h.id] = { ...h, kind:'capsule', crates:[] }; });
+  if(typeof SPECIAL !== 'undefined') SPECIAL.forEach(h => { ITEM[h.id] = { ...h, kind:'special', crates:[] }; });
+  if(typeof LEGEND_CARDS !== 'undefined') LEGEND_CARDS.filter(L => ORDER.includes(L.poke)).forEach(L => {
+    const id = `card:${L.poke}:L`; ITEM[id] = { id, kind:'card', legend:true, theme:L.theme, poke:L.poke, name:'Carte Légendaire ' + (NAME[L.poke] || L.poke), r:'UR', crates:[] };
+  });
   CRATES.forEach(c => c.slots.forEach(s => {
     let pool = [];
     if(s.cards) pool = (s.cards === 'all' ? ORDER : s.cards.filter(pid => ORDER.includes(pid))).map(pid => ITEM[`card:${pid}:${s.r}`]);
     else if(s.held) pool = HELD.filter(h => h.r === s.r).map(h => ITEM[h.id]);
     else if(s.caps) pool = CAPSULES.filter(h => h.r === s.r).map(h => ITEM[h.id]);
+    else if(s.legend) pool = Object.values(ITEM).filter(it => it.legend);
     else if(s.items) pool = s.items.map(id => ITEM[id]);
     s.pool = pool.filter(Boolean);
     s.pool.forEach(it => { if(!it.crates.includes(c.id)) it.crates.push(c.id); });
   }));
 }
-const RANK = { C:0, PC:1, R:2, UR:3 };                                       // pour trier
+const RANK = { C:0, PC:1, R:2, UR:3, S:4 };                                       // pour trier
 const byRarity = (a, b) => RANK[b.r] - RANK[a.r];
 
 // Pourcentage théorique de chaque rareté (UR 2 %, R 5 %, PC ≈16,7 %, C = le reste)

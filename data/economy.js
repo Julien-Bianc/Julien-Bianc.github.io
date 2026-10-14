@@ -12,7 +12,7 @@ const ECONOMY = {
   firstClear:[ 50, 60, 70, 80, 100, 120, 140, 170, 200, 300 ],
 
   // Revente d'un doublon (on garde toujours au moins 1 exemplaire)
-  sell:{ C:5, PC:15, R:40, UR:120 }
+  sell:{ C:5, PC:15, R:40, UR:120, S:600 }
 };
 
 // Gain d'une victoire en Solo : { win, bonus, total }
