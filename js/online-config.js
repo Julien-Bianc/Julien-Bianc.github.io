@@ -11,8 +11,8 @@
 //  Tant que url / key sont vides, le menu Multijoueur propose seulement le TEST LOCAL (2 onglets du même navigateur).
 // ============================================================
 const ONLINE_CFG = {
-  url: '',                                   // ex. 'https://abcdefghijkl.supabase.co'
-  key: '',                                   // ex. 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'
+  url: 'https://eynvuhccjaquvihxriec.supabase.co',                                   // ex. 'https://abcdefghijkl.supabase.co'
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5bnZ1aGNjamFxdXZpaHhyaWVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5NDY1MzUsImV4cCI6MjEwNzUyMjUzNX0.8Hkb6Fma6jO4h1twl6oIRpkPmA2SXyCRc_w496dZh3M',                                   // ex. 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'
 
   emailDomain: 'joueurs.arene-des-creatures.app',   // adresse interne : <pseudo>@<emailDomain> (jamais utilisée pour envoyer d'e-mail)
   saveDelay: 2,                              // secondes entre une modification et l'envoi de la sauvegarde
