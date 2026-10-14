@@ -18,6 +18,8 @@
   registerTypes();
   res.ok.forEach(registerPokemon);
   Save.ensureDefaults();
+  // multijoueur : reconnexion automatique au compte (la sauvegarde du compte remplace celle du navigateur)
+  if(typeof Online !== 'undefined' && Online.configured()){ menu('<h1>Connexion au compte…</h1>'); await Online.boot(); }
   showMain();
   requestAnimationFrame(loop);
 })();
