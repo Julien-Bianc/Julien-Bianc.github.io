@@ -5,7 +5,7 @@
 //    • l'esquive ANNULE la charge d'une attaque
 //    • sécurité : écran d'erreur (au lieu d'un gel du jeu) + garde-fous contre les animations bloquées
 // ============================================================
-const GAME_VERSION = '0.15';
+const GAME_VERSION = '0.16';
 const CRIT = { chance:.0625, mult:1.5 };        // 1 chance sur 16, dégâts x1,5 — identique pour tous les Pokémon
 
 // ---------- coups critiques ----------

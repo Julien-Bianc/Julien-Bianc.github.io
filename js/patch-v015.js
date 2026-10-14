@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange', () => {
   if(document.hidden){
     try{ AU.ctx.suspend(); }catch(e){}
     if(el && el instanceof HTMLMediaElement && !el.paused){ el.pause(); el._wasOn = true; }
-    if(G && !G.over && !G.paused && typeof pauseGame === 'function' && !(G.cfg && G.cfg.mode === 'online')) pauseGame();   // le combat se met en pause
+    if(G && !G.over && !G.paused && typeof pauseGame === 'function' && !(G.cfg && (G.cfg.mode === 'online' || G.cfg.net))) pauseGame();   // le combat se met en pause
   } else {
     try{ AU.ctx.resume(); }catch(e){}
     if(el && el._wasOn){ el._wasOn = false; el.play().catch(() => {}); }

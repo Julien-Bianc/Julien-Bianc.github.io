@@ -73,7 +73,7 @@ function drawGround(){
   const rf = REFLECT[curArena];
   if(rf && S) for(const [o, en] of [[G.e, 1], [G.p, 0]]){
     if(!o || o.hid || (o.hp <= 0 && !en) || !SPR[o.t]) continue;
-    const im = mon(o, en), k = o.boss ? 3 : 2, C = im.width;
+    const im = mon(o, en), k = o.boss ? (o.sc || 3) : 2, C = im.width;
     ctx.save(); ctx.globalAlpha = rf*(o.hp > 0 ? 1 : .4); ctx.translate(Math.round(o.x), Math.round(o.y + 14*k)); ctx.scale(k, -k*.8);
     ctx.drawImage(im, -C/2, -(C/2 + 14)); ctx.restore();
   }

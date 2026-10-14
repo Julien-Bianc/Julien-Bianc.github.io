@@ -74,7 +74,7 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) syncF
 const _stepV13 = step;
 step = function(dt){
   _stepV13(dt);
-  if(!G || G.over || G.paused || (typeof ERR_SHOWN !== 'undefined' && ERR_SHOWN) || (G.cfg && G.cfg.mode === 'online')) { if(G) G.menuT = 0; return; }
+  if(!G || G.over || G.paused || (typeof ERR_SHOWN !== 'undefined' && ERR_SHOWN) || (G.cfg && (G.cfg.mode === 'online' || G.cfg.net))) { if(G) G.menuT = 0; return; }
   const m = document.getElementById('menu');
   if(m.style.display !== 'none' && m.innerHTML){ G.menuT = (G.menuT || 0) + dt; if(G.menuT > .6){ G.menuT = 0; menu(''); } } else G.menuT = 0;
 };

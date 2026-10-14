@@ -310,7 +310,7 @@ function updEmerge(){
   if(t >= tEnd){ M.e.hid = false; G.em = null; }
 }
 function drawEmerge(){
-  const M = G && G.em; if(!M) return; const t = G.time - M.t0, e = M.e, k = e.boss ? 3 : 2;
+  const M = G && G.em; if(!M) return; const t = G.time - M.t0, e = M.e, k = e.boss ? (e.sc || 3) : 2;
   sendOutDraw(ctx, { x:e.x, y:e.y, feet:PB_FEET*k/2, from:trainerFrom(e, true), mon:mon(e, 1), k, glow:capsuleGlow(e, true), dir:-1 }, t);
 }
 // ----- branchements -----
