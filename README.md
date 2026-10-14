@@ -307,3 +307,60 @@ de la capsule. **Purement visuelles** (aucun effet sur le combat). Plus l'effet 
 | Changer la Pokéball, ses couleurs ou les animations d'envoi / de rappel | `js/pokeball.js` (`PB_PAL`, `PB_T`, `PB_R`) |
 | Ajouter / renommer une Capsule Ball, changer sa rareté ou sa couleur | `data/capsules.js` |
 | Modifier ou créer un effet d'arrivée | `js/capsules.js` (`CAP_FX`) |
+
+## Multijoueur — comptes, amis, combats en ligne, échanges
+Le jeu reste un site statique (GitHub Pages) : le serveur est **Supabase** (gratuit), qui fournit les comptes, la base de données
+et le temps réel. Sans configuration, le jeu marche exactement comme avant (le menu Multijoueur propose seulement le **test local**).
+
+### Activer le jeu en ligne (une seule fois, ~10 minutes)
+1. Crée un compte et un projet gratuit sur https://supabase.com (région Europe, mot de passe de base au choix).
+2. **SQL Editor** → New query → colle **tout** `supabase/schema.sql` → **Run** (« Success. No rows returned »). Relançable sans risque.
+3. **Authentication → Sign In / Providers → Email** : désactive **Confirm email** (les joueurs n'ont pas d'e-mail, seulement un pseudo).
+4. **Project Settings → API** (ou *Data API*) : copie **Project URL** et la clé **anon public** dans `js/online-config.js` (`url`, `key`).
+   La clé anon est faite pour être publique : la sécurité est assurée par les règles de `schema.sql`.
+5. Pousse sur GitHub. Le menu **Multijoueur** propose maintenant « Se connecter / Créer un compte ».
+   Si l'inscription répond que l'adresse e-mail est invalide, remplace `emailDomain` dans `js/online-config.js` par un vrai nom de domaine.
+
+### Ce que fait chaque partie
+- **Compte** (pseudo + mot de passe) : à la création, la progression de l'appareil (équipes, inventaire, Pokédollars, Pokémon capturés,
+  niveaux Solo) est **rattachée au compte**. Ensuite elle suit le compte sur tous les appareils (envoi 2 s après chaque modification,
+  copie locale pour jouer hors connexion, fusion automatique si deux appareils ont joué). Reconnexion automatique au lancement.
+  Onglet **Compte** : changer de mot de passe, se déconnecter. ⚠ Pas d'e-mail = mot de passe oublié irrécupérable.
+- **Amis** : ajouter par pseudo exact, accepter / refuser, retirer. Point vert = en ligne, orange = en combat.
+  Pastille rouge sur le menu principal = demandes d'ami ou échanges reçus en attente.
+- **Défier** un ami → choix de l'équipe (3v3 ou 6v6) → il reçoit « Untel te défie ! » (45 s pour répondre) → il choisit une équipe de même
+  format → compte à rebours 3, 2, 1 → combat en temps réel sur une des 6 arènes. Fin : écran Victoire / Défaite + **Revanche**.
+  Le perdant enregistre la défaite sur le serveur (victoires / défaites visibles par les amis).
+  Abandon (pause → Abandonner), adversaire déconnecté 20 s ou jeu en arrière-plan 12 s = défaite.
+  En ligne la pause ne fige pas le combat. Les outils développeur de combat (invincible, recharge instantanée) sont coupés,
+  et seules les équipes de Pokémon vraiment capturés sont autorisées.
+- **Échanges** : « Échanger » à côté d'un ami (ou Inventaire → Classeur → Échanger) → tu choisis ce que tu donnes (tes objets)
+  et ce que tu demandes (son inventaire) : cartes, objets tenus, Capsules Ball, 12 objets différents max de chaque côté.
+  L'ami accepte ou refuse ; l'échange se fait **d'un seul coup sur le serveur** dans les deux sauvegardes (impossible de dupliquer
+  un objet ou d'en perdre un). Les tickets / Balls du Safari et les cartes limitées ne s'échangent pas.
+  Un objet tenu donné est retiré automatiquement de l'équipe qui le portait.
+
+### Comment marche le combat en ligne
+Chaque joueur fait tourner le combat chez lui : son Pokémon est contrôlé localement, celui de l'adversaire suit les positions reçues
+(15 fois/s). Chaque attaque est rejouée à l'identique chez l'autre, et **c'est la machine du joueur visé qui décide s'il est touché**
+(si tu as esquivé sur ton écran, tu as esquivé), puis elle renvoie les dégâts à l'attaquant. Le ping s'affiche en haut de l'écran.
+
+### Tester sans serveur (test local)
+Ouvre le jeu dans **2 onglets** du même navigateur → Multijoueur → **Test local** : chaque onglet voit l'autre et peut le défier
+(aucun compte nécessaire). Ajoute `?lag=120` à l'adresse pour simuler 120 ms de latence.
+
+### Limites à connaître
+- La sauvegarde est envoyée par le jeu lui-même : un joueur qui bidouille son navigateur peut modifier son propre inventaire.
+  Pour un jeu entre amis c'est suffisant ; un vrai classement public demanderait de calculer les récompenses côté serveur.
+- Le mode développeur (Options) donne de vrais objets, qui deviennent échangeables : à garder pour toi.
+- Supabase gratuit : 200 connexions temps réel simultanées, projet mis en pause après 7 jours sans aucune connexion
+  (un clic sur « Restore » dans Supabase le relance).
+
+| Je veux… | Fichier |
+|---|---|
+| Brancher le jeu sur mon projet Supabase, régler délais / fréquence d'envoi | `js/online-config.js` |
+| Tables, sécurité, règles des amis / défis / échanges (côté serveur) | `supabase/schema.sql` |
+| Connexion, sauvegarde en ligne, présence, notifications | `js/online-core.js` |
+| Écrans Multijoueur : compte, amis, défis, échanges, test local | `js/online-social.js` |
+| Combat en ligne (synchronisation, compte à rebours, fin, revanche) | `js/online-battle.js` |
+| Style des écrans et notifications du multijoueur | `css/online.css` |
