@@ -30,9 +30,10 @@ Save.addItem = function(id, n){
   const m = /^card:([^:]+):/.exec(id);
   if(m && (n || 1) > 0){
     const pid = m[1], d = this.load(); d.setDone = d.setDone || {};
-    if(!d.setDone[pid] && CARD_RARITIES.every(rr => this.itemCount(`card:${pid}:${rr}`) > 0)){
-      d.setDone[pid] = 1; this.save(); this.addCoins(CARD_SET_REWARD);
-      setTimeout(() => { toast(`<b>Collection complète : ${esc(NAME[pid] || pid)} !</b><span>+${money(CARD_SET_REWARD)}</span>`); if(typeof coinSfx === 'function') coinSfx(); }, 900);
+    d.setSeen = d.setSeen || {};
+    if(!d.setDone[pid] && !d.setSeen[pid] && CARD_RARITIES.every(rr => this.itemCount(`card:${pid}:${rr}`) > 0)){      // v0.14 : la récompense se récupère dans le Classeur
+      d.setSeen[pid] = 1; this.save();
+      setTimeout(() => toast(`<b>Collection complète : ${esc(NAME[pid] || pid)} !</b><span style="font-size:11px">🎁 Récupère ta récompense dans le Classeur</span>`), 900);
     }
   }
   return r;
@@ -91,8 +92,8 @@ showMain = function(){
   _mainV12();
   if(showMain.checked || !ORDER.length) return; showMain.checked = true;
   const d = Save.load(); d.setDone = d.setDone || {}; let n = 0;
-  [...ORDER, ...(typeof BOSSES !== 'undefined' ? BOSSES : [])].forEach(pid => { if(!d.setDone[pid] && CARD_RARITIES.every(r => Save.itemCount(`card:${pid}:${r}`) > 0)){ d.setDone[pid] = 1; n++; } });
-  if(n){ Save.save(); Save.addCoins(n*CARD_SET_REWARD); setTimeout(() => toast(`<b>${n} collection${n > 1 ? 's' : ''} complète${n > 1 ? 's' : ''} !</b><span>+${money(n*CARD_SET_REWARD)}</span>`), 600); }
+  [...ORDER, ...(typeof BOSSES !== 'undefined' ? BOSSES : [])].forEach(pid => { if(!d.setDone[pid] && CARD_RARITIES.every(r => Save.itemCount(`card:${pid}:${r}`) > 0)) n++; });
+  /* v0.14 : plus de versement automatique, la pastille 🎁 du Classeur s'en charge */
 };
 // styles de la notification
 document.head.insertAdjacentHTML('beforeend', `<style>

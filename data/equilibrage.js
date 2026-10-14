@@ -1,5 +1,5 @@
 // ============================================================
-//  ÉQUILIBRAGE (v0.13) — difficulté générale, récompenses. Modifie les nombres à ta guise.
+//  ÉQUILIBRAGE (v0.14) — difficulté générale, récompenses. Modifie les nombres à ta guise.
 // ============================================================
 // Difficulté par mode (multiplie les réglages des niveaux : data/stages.js, data/safari.js, data/boss-defi.js)
 //   dmg  : dégâts des ennemis (1.6 = +60 %)       hp   : PV des ennemis
@@ -16,8 +16,13 @@ const PLAYER_IFRAMES = .35;
 const IMMUNITY_MULT = .5;
 // Ajustements d'attaques : { pokémon : { 'Nom de l'attaque' : { champ:valeur } } }
 const MOVE_TWEAKS = {
-  raichu:{ 'Éclair':{ cooldown:.5 } }                            // avant 0,22 s : trop facile à spammer
+  raichu:{ 'Éclair':{ cooldown:.5 } },                           // avant 0,22 s : trop facile à spammer
+  dracaufeu:{ 'Vol':{ cooldown:5 } }                             // avant 3,6 s : trop d'esquives en l'air
 };
+// Attaques « Vol » (s'envole puis plonge) : pour limiter les esquives
+//   invulnAbove : invulnérable seulement quand il est plus haut que cette part de la hauteur max (0.55 = 55 %)
+//   lockAfter   : secondes sans pouvoir esquiver juste après l'atterrissage
+const FLY_RULES = { invulnAbove:.55, lockAfter:1 };
 
 // Solo : nombre MINIMUM d'adversaires (même si ton équipe n'a que 1 ou 2 Pokémon)
 const SOLO_MIN_ENEMIES = 3;

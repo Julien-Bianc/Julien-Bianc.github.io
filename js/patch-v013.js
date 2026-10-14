@@ -38,28 +38,7 @@ const _menuV13 = menu;
 menu = function(h){ _menuV13(h); if(h) requestAnimationFrame(scrollHints); };
 addEventListener('resize', () => requestAnimationFrame(scrollHints));
 
-// ---------- 4. visée : appui bref = auto, appui long = direction de déplacement ----------
-const AIM_TAP = .2;                                                 // secondes : en dessous = « appui bref »
-AIM.t0 = [0, 0, 0];
-const _pressV13 = press;
-press = function(i){ const was = down[i]; _pressV13(i); if(!was && down[i]) AIM.t0[i] = performance.now(); };
-const heldFor = i => (performance.now() - (AIM.t0[i] || 0))/1000;
-const longDir = () => { const d = moveInput() || LASTDIR; return Math.atan2(d.y, d.x); };
-const longR = m => isFreeBlink(m) ? 1 : .55;
-const _takeV13 = AIM.take;
-AIM.take = function(i, p, e){
-  if(!this.on[i] && heldFor(i) > AIM_TAP){ this.on[i] = 1; this.a[i] = longDir(); this.r[i] = longR(p.mv[i]); }
-  return _takeV13.call(this, i, p, e);
-};
-const _fireV13 = fire;                                              // le téléport suit aussi la règle (js/fixes-v011.js)
-fire = function(m, c, i){ if(!AIM.on[i] && heldFor(i) > AIM_TAP){ AIM.on[i] = 1; AIM.a[i] = longDir(); AIM.r[i] = longR(m); } return _fireV13(m, c, i); };
-const _dasV13 = drawAimShape;
-drawAimShape = function(p, i){
-  if(AIM.on[i]) return _dasV13(p, i);
-  if(heldFor(i) < AIM_TAP) return;                                  // début d'appui : aucun aperçu (pas d'aimant)
-  AIM.on[i] = 1; AIM.a[i] = longDir(); AIM.r[i] = longR(p.mv[i]);
-  try{ _dasV13(p, i); } finally { AIM.on[i] = 0; }
-};
+// ---------- 4. visée : remplacée en v0.14 (js/patch-v014.js : le viseur part de l'endroit où le doigt touche le bouton)
 
 // ---------- 5. son mixé avec le téléphone ----------
 function applyAudioSession(){ try{ if(navigator.audioSession) navigator.audioSession.type = Settings.get().mixAudio ? 'ambient' : 'auto'; }catch(e){} }

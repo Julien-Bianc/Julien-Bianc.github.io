@@ -129,13 +129,14 @@ function updBallBtn(){
   if(!G || !G.safari){ ballBtn.style.display = 'none'; return; }
   ballBtn.style.display = '';
   let b = BALL[G.safari.ball]; if(Save.itemCount(b.id) < 1){ const nb = SAFARI.balls.find(x => Save.itemCount(x.id) > 0); if(nb){ G.safari.ball = nb.id; b = nb; } }
-  const n = Save.itemCount(b.id), pc = Math.round(catchChance(G.e, b)*100), key = b.id + n + pc + (G.safari.cd > 0);
+  const n = Save.itemCount(b.id), pc = G.cfg.rooms && G.e.t !== G.cfg.target ? '—' : Math.round(catchChance(G.e, b)*100), key = b.id + n + pc + (G.safari.cd > 0);
   if(ballBtn.dataset.k === key) return; ballBtn.dataset.k = key;
   ballBtn.style.borderColor = b.top === '#2a2a34' ? '#ffd23f' : b.top;
   ballBtn.innerHTML = `<img src='${ballImg(b)}'><b>${esc(b.name.replace(' Ball', ''))} ×${n}</b><small>${pc} %</small><span class='bsw'>⇄</span>`;
   ballBtn.classList.toggle('cd', G.safari.cd > 0 || !!G.ballFly || !!G.cap);
 }
 function throwBall(){
+  if(G && G.cfg && G.cfg.rooms && G.e && G.e.t !== G.cfg.target){ dmgTxt(G.p.x, G.p.y - 50, 'BATS D\'ABORD LES GARDIENS !', '#ffd23f'); return; }
   if(!G || !G.safari || G.over || G.paused || G.sw || G.cap || G.ballFly || G.safari.cd > 0 || G.wait) return;
   const e = G.e, p = G.p, b = BALL[G.safari.ball]; if(!e || e.hp <= 0 || G.intro > 0 || e.hid) return;
   if(Save.itemCount(b.id) < 1){ dmgTxt(p.x, p.y - 50, 'PLUS DE ' + b.name.toUpperCase() + ' !', '#ff8a7a'); return; }
@@ -181,8 +182,9 @@ step = function(dt){
       else { dmgTxt(F.tx, F.ty - 30, 'RATÉ !', '#c8c8d0'); vp({ x:F.tx, y:F.ty, life:.3, s:4, s1:20, kind:'ring', col:'#ffffff' }); } } }
   if(G.cap) updCapture();
   if(!G || G.over) return;
-  if(e && e.hp <= 0 && !G.caught){ S.koT = (S.koT || 0) + dt; if(S.koT > 1.2){ G.over = 1; battleEnd(false); } return; }   // K.O. : il s'enfuit
-  if(!S.warned && e && e.hp > 0 && e.hp < e.max*.2){ S.warned = true; dmgTxt(e.x, e.y - 70, 'ATTENTION : NE LE METS PAS K.O. !', '#ffd23f'); }
+  const isTarget = !e || !G.cfg.rooms || e.t === G.cfg.target;            // v0.14 : en salles, seuls les K.O. de la cible comptent
+  if(isTarget && e && e.hp <= 0 && !G.caught){ S.koT = (S.koT || 0) + dt; if(S.koT > 1.2){ G.over = 1; battleEnd(false); } return; }   // K.O. : il s'enfuit
+  if(isTarget && !S.warned && e && e.hp > 0 && e.hp < e.max*.2){ S.warned = true; dmgTxt(e.x, e.y - 70, 'ATTENTION : NE LE METS PAS K.O. !', '#ffd23f'); }
   if(!G.cap && !G.ballFly && !G.caught && ballsLeft() === 0){ S.noBall = (S.noBall || 0) + dt; if(S.noBall > 1.5){ G.over = 1; battleEnd(false); } }
 };
 const _drawSf = draw;
