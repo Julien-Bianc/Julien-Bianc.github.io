@@ -1,0 +1,96 @@
+/* ============================================================
+   online.css — MULTIJOUEUR : notifications, connexion, amis, échanges, combat en ligne
+   Charger APRÈS css/menus.css (reprend ses couleurs : --gold, --glass, --line, --txt…).
+   ============================================================ */
+
+/* ---------- notifications (défis, toasts) : en haut au centre, au-dessus de tout ---------- */
+#netpop{position:absolute;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translateX(-50%) scale(min(var(--ui,1),1.6));transform-origin:top center;
+  z-index:60;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;width:min(92vw,340px)}
+.np{pointer-events:auto;position:relative;width:100%;background:linear-gradient(180deg,rgba(44,32,82,.97),rgba(18,12,36,.97));border:1px solid var(--line);border-radius:8px;padding:6px 10px 7px;color:var(--txt);
+  font-family:var(--font);text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.55);overflow:hidden;animation:npIn .25s ease-out}
+.np-h{display:block;font-size:13px;color:var(--gold2)}
+.np p{margin:2px 0 0;font-size:11px}.np p small{color:var(--txt2);font-size:9px}
+.np-b{display:flex;gap:6px;justify-content:center;margin-top:5px}.np-b:empty{display:none}
+.np-b button{padding:4px 12px;font-size:11px}
+.np-t{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--gold);transform-origin:left;animation:npT linear forwards}
+.np.chal{border-color:#ff8a5a;box-shadow:0 0 18px rgba(255,120,60,.45),0 4px 16px rgba(0,0,0,.55)}
+.np.chal .np-h{color:#ffd0a0;font-size:14px;animation:npPulse .8s ease-in-out infinite alternate}
+/* (la classe .toast existe aussi dans js/patch-v012.js : on annule ici sa position et son style) */
+#netpop .np.toast{position:relative;left:auto;top:auto;transform:none;z-index:auto;display:block;gap:0;font-size:11px;padding:5px 10px;
+  background:linear-gradient(180deg,rgba(44,32,82,.97),rgba(18,12,36,.97));border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.55);
+  pointer-events:auto;animation:npIn .25s ease-out;transition:opacity .5s,transform .5s}
+#netpop .np.toast b{font-size:11px;color:var(--gold2)}
+#netpop .np.toast.out{opacity:0;transform:translateY(-8px)}
+@keyframes npIn{from{opacity:0;transform:translateY(-10px)}}
+@keyframes npT{to{transform:scaleX(0)}}
+@keyframes npPulse{to{text-shadow:0 0 8px rgba(255,160,80,.9)}}
+
+/* ---------- pastille du compte sur le menu principal ---------- */
+.mm-top{display:flex;align-items:center;gap:6px}
+.onl-chip{display:inline-flex;align-items:center;gap:5px;background:var(--glass2);border:1px solid var(--line);border-radius:14px;color:var(--txt);
+  font:600 11px var(--font);padding:4px 10px;cursor:pointer}
+.onl-chip:hover{border-color:var(--gold)}
+.onl-badge{min-width:15px;height:15px;line-height:15px;border-radius:8px;background:#e8403c;color:#fff;font-size:9px;text-align:center;padding:0 3px}
+
+/* ---------- écrans ---------- */
+.onl{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;max-width:600px;min-height:0;flex:1 1 auto}
+.onl .hd{justify-content:space-between}
+.onl .who{font-size:12px;color:var(--txt)}.onl .who small{color:var(--txt2);font-size:10px;margin-left:4px}
+.onl .nb{display:inline-block;min-width:14px;border-radius:7px;background:#e8403c;color:#fff;font-size:9px;padding:0 3px;margin-left:2px}
+.onl-body{width:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center}
+.onl-body>.scroll,.onl .flist{flex:1 1 auto;max-height:none;min-height:0}
+.onl input,.onl-teams input{background:rgba(10,8,24,.85);color:var(--txt);border:1px solid var(--line);border-radius:6px;font:600 12px var(--font);padding:6px 8px;outline:none;min-width:0}
+.onl input:focus{border-color:var(--gold)}
+.addf input{width:200px}
+.btn.sm{padding:4px 10px;font-size:11px}
+.btn:disabled,.btn2:disabled{opacity:.45;filter:grayscale(.6);cursor:default;transform:none}
+.btn2.sure{background:#7a1e1e;color:#fff;border-color:#ff8a7a}
+
+/* liste d'amis */
+.frow{display:flex;align-items:center;gap:5px;background:var(--glass2);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:3px 6px;margin:3px 0;text-align:left}
+.frow .fn{flex:1;min-width:0}.frow .fn b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .fn small{display:block;font-size:9px;color:var(--txt2)}
+.dot{flex:none;width:9px;height:9px;border-radius:50%;background:#5c5670;box-shadow:inset 0 0 0 1px #0006;display:inline-block}
+.dot.on{background:#4fd16a;box-shadow:0 0 6px #4fd16a}
+.dot.fight{background:#ff9a3c;box-shadow:0 0 6px #ff9a3c}
+.onl h3{margin:6px 0 2px;text-align:left}
+
+/* choix d'équipe */
+.onl-teams .trow.off{opacity:.55}.onl-teams small.bad{display:block;color:#ffb0a0;font-size:9px}
+
+/* échanges */
+.trd{background:var(--glass2);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 8px;margin:4px 0;text-align:left}
+.trd.old{padding:2px 8px;opacity:.75}
+.trh b{font-size:12px}.trh small{display:block;font-size:10px;color:var(--txt2);font-style:italic}
+.trl{display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin:2px 0}
+.trl .lab{flex:0 0 70px;font-size:9px;color:var(--gold);text-transform:uppercase}
+.im{display:inline-flex;align-items:center;gap:3px;background:rgba(10,8,24,.55);border:1px solid var(--rc,#fff3);border-radius:5px;padding:1px 5px 1px 2px;font-size:10px;max-width:100%}
+.im img{width:20px;height:20px;object-fit:contain;image-rendering:pixelated}
+.im span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.im em{font-style:normal;color:var(--gold)}
+.edit.trade .left{flex:0 0 42%;display:flex;flex-direction:column;gap:3px}
+.tside{display:flex;align-items:baseline;gap:6px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--txt2);font-family:var(--font);text-align:left;padding:3px 2px;cursor:pointer}
+.tside b{font-size:12px}.tside small{font-size:9px}
+.tside.on{color:var(--gold2);border-bottom-color:var(--gold)}.tside.on b::before{content:"▶ ";color:var(--gold)}
+.tlines{display:flex;flex-direction:column;gap:2px;min-height:18px}
+.tline{display:flex;align-items:center;justify-content:space-between;background:none;border:0;padding:0;cursor:pointer;color:var(--txt);font-family:var(--font)}
+.tline i{font-style:normal;color:#ff8a7a;font-weight:700;padding:0 4px}
+.tline:hover .im{border-color:#ff8a7a}
+#tnote{margin-top:auto;width:100%}
+.edit.trade .right{display:flex;flex-direction:column}.tkinds{justify-content:flex-start!important;flex:none}
+.edit.trade .igrid{flex:1 1 auto}
+.acc{text-align:left}.acc input{width:180px}
+
+/* connexion */
+.auth form{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:min(100%,300px)}
+.auth label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;text-align:left}
+.auth label input{width:170px}
+.auth .err{min-height:24px;text-align:center}
+
+/* attente / fin de combat en ligne */
+.net-wait .vs{display:flex;align-items:center;justify-content:center;gap:18px;margin:8px 0}
+.net-wait .vs>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:140px}
+.net-wait .vs b{font-size:14px;color:var(--gold2)}
+.net-wait .vs i{font:900 italic 28px Impact,"Arial Black",sans-serif;color:#ff9a3c;text-shadow:0 2px 0 #3a1406,0 0 10px rgba(255,140,60,.6)}
+.net-wait .dots{font-size:22px;letter-spacing:3px;animation:npPulse .6s ease-in-out infinite alternate}
+.net-wait #nwt{min-height:14px}
+.net-end{justify-content:center}
