@@ -61,7 +61,7 @@ function raidReroll(){
 // réglages du raid pour un nombre d'étoiles (RAID + RAID_STARS[étoiles])
 function raidCfg(stars){
   const S = RAID_STARS[stars] || {}, c = { ...RAID, ...S, stars };
-  ['stage', 'ult', 'rage', 'reward'].forEach(k => c[k] = { ...RAID[k], ...(S[k] || {}) });
+  ['stage', 'ult', 'rage', 'zones', 'reward'].forEach(k => c[k] = { ...RAID[k], ...(S[k] || {}) });
   return c;
 }
 let RAID_CUR_CFG = null;

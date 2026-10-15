@@ -17,7 +17,10 @@ const IMMUNITY_MULT = .5;
 // Ajustements d'attaques : { pokémon : { 'Nom de l'attaque' : { champ:valeur } } }
 const MOVE_TWEAKS = {
   raichu:{ 'Éclair':{ cooldown:.5 } },                           // avant 0,22 s : trop facile à spammer
-  dracaufeu:{ 'Vol':{ cooldown:5 } }                             // avant 3,6 s : trop d'esquives en l'air
+  dracaufeu:{ 'Vol':{ cooldown:5 },                              // avant 3,6 s : trop d'esquives en l'air
+              'Surchauffe':{ power:16 } },                       // avant 20 : trop de dégâts (v0.17.1)
+  farfuret:{ 'Tranche-Nuit':{ power:21, crit:.25 },              // avant 26 / 35 % de coups critiques (v0.17.1)
+             'Furie-Griffe':{ power:5 } }                        // avant 6 par coup
 };
 // Attaques « Vol » (s'envole puis plonge) : pour limiter les esquives
 //   invulnAbove : invulnérable seulement quand il est plus haut que cette part de la hauteur max (0.55 = 55 %)

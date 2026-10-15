@@ -22,6 +22,10 @@ const RAID = {
   rage:{ rate:.86, tele:.92, dmg:1.12, invuln:1.3, roarRadius:230, roarPush:150 },
   ult:{ first:16, cd:24, cdRage:3, charge:2.1, rings:3, gap:.75, speed:270, width:26, dmg:.32 /* part des PV max */, push:120 },
   // yeux rouges : position dans la tête (parts de la tête) — head : hauteur de la tête, y : hauteur des yeux, gap : écart, side/turn : profil
+  // attaques de zone (v0.17.1) : le boss fait tomber des zones rouges au sol → sors-en ou esquive au bon moment.
+  //   first : 1re après x s · every : puis toutes les x s (plus souvent en rage) · power : dégâts · count : zones en plus au hasard
+  //   delay : temps avant l'impact · kinds : 'meteor' (pluie sur les joueurs), 'cross' (fissures depuis le boss), 'ring' (2 ondes autour du boss)
+  zones:{ first:10, every:11, power:12, count:3, delay:1.3, kinds:['meteor', 'cross', 'ring'] },
   eyes:{ head:.32, y:.78, gap:.17, turn:.14, side:.28 },
   reward:{ solo:600, multi:400, crates:1, bonus:null }
 };
@@ -34,18 +38,23 @@ const RAID_TIERS = [
   { stars:4, weight:20, pokemon:['tortank', 'dracaufeu', 'florizarre', 'carchacrok', 'tyranocif'] },
   { stars:5, weight:6,  pokemon:['mewtwo'] }                           // raid RARE
 ];
-// Ce que chaque nombre d'étoiles change par rapport à RAID (stage, ult, rage et reward sont fusionnés)
+// Ce que chaque nombre d'étoiles change par rapport à RAID (stage, ult, rage, zones et reward sont fusionnés)
 //   bonus : objet supplémentaire possible à la victoire { chance, held:'R'|'UR', caps:'R'|'UR' }
 const RAID_STARS = {
   1:{ bars:3, hp:5, time:150, stage:{ dmg:.9, rate:1.05, tele:1.1, aim:.45, speed:.7 }, ult:{ first:20, cd:28, rings:2, dmg:.2 },
+      zones:{ first:14, every:15, power:8, count:1, delay:1.5 },
       reward:{ solo:250, multi:180, crates:1 } },
   2:{ bars:4, hp:6.5, time:165, stage:{ dmg:1.15, rate:.92, tele:1, aim:.6, speed:.75 }, ult:{ first:18, cd:26, rings:2, dmg:.26 },
+      zones:{ first:12, every:13, power:10, count:2, delay:1.4 },
       reward:{ solo:400, multi:280, crates:1, bonus:{ chance:.25, held:'R' } } },
   3:{ bars:5, hp:7.5, time:180, stage:{ dmg:1.35, rate:.84, tele:.92, aim:.7 }, ult:{ rings:3, dmg:.3 },
+      zones:{ every:11, power:12, count:3 },
       reward:{ solo:600, multi:420, crates:1, bonus:{ chance:.5, held:'R' } } },
   4:{ bars:5, hp:9, time:195, stage:{ dmg:1.55, rate:.78, tele:.86, aim:.8 }, ult:{ first:14, cd:22, rings:3, dmg:.34 },
+      zones:{ first:9, every:9.5, power:14, count:4, delay:1.2 },
       reward:{ solo:900, multi:650, crates:2, bonus:{ chance:.8, held:'R', caps:'R' } } },
   5:{ bars:6, hp:10, time:210, stage:{ dmg:1.7, rate:.74, tele:.82, aim:.9 }, ult:{ first:12, cd:20, rings:4, gap:.65, dmg:.36 },
+      zones:{ first:8, every:8, power:16, count:5, delay:1.1 },
       reward:{ solo:1500, multi:1100, crates:3, bonus:{ chance:1, held:'R', caps:'UR' } } }
 };
 
