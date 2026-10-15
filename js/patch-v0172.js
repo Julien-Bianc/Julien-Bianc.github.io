@@ -177,6 +177,10 @@ hurtE = (prev => function(d, b){ const e = G && G.e, h = e && e.hp, r = prev(d, 
 hurtP = (prev => function(d, b){ const p = G && G.p, h = p && p.hp, r = prev(d, b); if(G && p === G.p && p.hp < h) knockOf(p, b); return r; })(hurtP);
 
 // ---------- 6. butin bonus : rareté au choix dans une liste ----------
+//  l'écran Raid affiche RAR[held] : on crée une entrée pour chaque liste (ex. ['C', 'PC'] → « commun ou peu commun »)
+Object.values(RAID_STARS).forEach(S => { const B = S.reward && S.reward.bonus; if(!B) return;
+  ['held', 'caps'].forEach(k => { const v = B[k]; if(!Array.isArray(v) || RAR[v]) return; const L = [...new Set(v)].filter(r => RAR[r]);
+    RAR[v] = { ...RAR[L[L.length - 1]], label:L.map(r => RAR[r].label).join(' ou ') }; }); });
 raidBonus = function(B){
   if(!B || Math.random() >= (B.chance ?? 1)) return [];
   shopBuild(); const out = [], pick = L => L[Math.floor(Math.random()*L.length)], rar = v => Array.isArray(v) ? pick(v) : v;
