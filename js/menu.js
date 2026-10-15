@@ -119,6 +119,7 @@ function showTeamEditor(team){
     const hq = document.getElementById('hq'); if(hq) hq.onclick = () => { sync(); ed.pick = false; render(); };
     document.getElementById('sv').onclick = () => { sync(); if(!ed.members.length){ alert('Ajoute au moins 1 Pokémon.'); return; } Save.saveTeam({ id:ed.id, name:ed.name.trim() || 'Équipe', size:ed.size, members:ed.members, items:{ ...ed.items }, caps:{ ...ed.caps }, look:{ ...ed.look } }); showTeams(); };
     document.getElementById('cn').onclick = showTeams;
+    if(typeof teamEditorHook === 'function') teamEditorHook(ed, () => { sync(); render(); });   // v0.18 : double appui, glisser-déposer (js/patch-v018.js)
   };
   render();
 }

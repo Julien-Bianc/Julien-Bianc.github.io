@@ -96,21 +96,32 @@ function setMouse(e){
 }
 const _aimKey = AIM.key.bind(AIM);
 AIM.key = function(i){ this.on[i] = 0; MHOLD[i] = { mx:this.mouse ? this.mouse.x : 0, my:this.mouse ? this.mouse.y : 0, moved:0 }; };   // J/K/L : la visée commence si la souris bouge
-addEventListener('pointerdown', e => {          // empêche le joystick tactile de s'ouvrir au clic de souris
+//  (v0.18) tout passe par les événements « pointer » : bloquer pointerdown empêchait les mousedown d'arriver.
+//  e.buttons (1 gauche, 2 droit, 4 molette) dit quels boutons sont enfoncés ; on compare avec l'état précédent.
+let mMask = 0;
+function mouseButtons(e, start){
+  const was = mMask; mMask = e.buttons;
+  for(const [bit, i] of [[1, 0], [2, 1], [4, 2]]){
+    const on = !!(e.buttons & bit), before = !!(was & bit);
+    if(on && !before && start){ setMouse(e); press(i); if(down[i]) AIM.key(i); }
+    else if(!on && before && MHOLD[i]) rel(i);
+  }
+}
+addEventListener('pointerdown', e => {
   lastPT = e.pointerType;
-  if(e.pointerType === 'mouse' && inFight() && mouseOk(e.target)){ e.stopPropagation(); e.preventDefault(); }
+  if(e.pointerType !== 'mouse' || !inFight() || !mouseOk(e.target)) return;
+  e.stopPropagation(); e.preventDefault(); mouseButtons(e, true);       // pas de joystick tactile au clic de souris
 }, true);
-addEventListener('mousedown', e => {
-  const i = MBTN[e.button]; if(i == null || lastPT !== 'mouse' || !inFight() || !mouseOk(e.target)) return;   // (pas les clics simulés après un toucher)
-  e.preventDefault(); setMouse(e); press(i); if(down[i]) AIM.key(i);
-}, true);
-addEventListener('mouseup', e => { const i = MBTN[e.button]; if(i != null && MHOLD[i]) rel(i); }, true);
-addEventListener('mousemove', e => {
+addEventListener('pointermove', e => {
+  if(e.pointerType !== 'mouse') return;
   setMouse(e);
+  if(e.buttons !== mMask) mouseButtons(e, inFight());                   // 2e bouton appuyé / relâché pendant un maintien
   for(const k in MHOLD){ const h = MHOLD[k], i = +k; if(!down[i]){ delete MHOLD[k]; continue; }
     if(!h.moved && Math.hypot(AIM.mouse.x - h.mx, AIM.mouse.y - h.my) > 10) h.moved = 1;
     if(h.moved) _aimKey(i); }
 }, true);
+addEventListener('pointerup', e => { if(e.pointerType === 'mouse') mouseButtons(e, false); }, true);
+addEventListener('blur', () => { mMask = 0; });
 addEventListener('contextmenu', e => { if(G && mouseOk(e.target)) e.preventDefault(); });
 rel = (prev => function(i){
   const h = MHOLD[i];
