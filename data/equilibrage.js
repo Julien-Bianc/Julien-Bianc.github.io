@@ -33,3 +33,7 @@ const SOLO_DEFEAT_SHARE = .5;
 const CARD_SET_REWARD = 100;
 // Cadeau de bienvenue : tickets Safari offerts (une seule fois)
 const FREE_TICKETS = 1;
+
+// v0.17 : vitesse de déplacement des ennemis (multiplie les réglages des niveaux) — plus lent = plus facile à viser
+//         (sauf combats en ligne et Entraînement)
+const ENEMY_SPEED = .68;

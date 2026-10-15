@@ -1,7 +1,6 @@
 // ============================================================
 //  patch-v016.js — Rapport de test v0.15
-//    1. Visée : appui BREF = tir automatique sur l'adversaire ; appui LONG sans glisser = la zone de visée
-//       s'affiche et part dans TA direction (celle du joystick, ou ta dernière direction) — plus d'effet « aimant »
+//    1. Visée (revue en v0.17) : point mort = tir automatique sans visée affichée ; glisser = visée ; revenir au centre = annuler
 //    2. Opacité des commandes tactiles (Options → Confort)
 //    3. Les menus déroulants ne défilent plus de côté
 //    4. Mode développeur : « Donner un objet » au choix, dans la quantité voulue
@@ -9,30 +8,19 @@
 // ============================================================
 Object.assign(SETTINGS_DEFAULT, { ctlAlpha:1 });
 
-// ---------- 1. visée ----------
-const AIM_TAP16 = .2;
+// ---------- 1. visée (v0.17) ----------
+//  • doigt immobile sur le bouton (point mort) : AUCUNE visée affichée ; appui bref ou long = tir automatique sur
+//    l'adversaire (on peut donc charger au point mort : l'attaque suit l'adversaire)
+//  • glisser : la visée apparaît dans la direction du doigt
+//  • revenir au point mort après avoir glissé : la visée disparaît et relâcher ANNULE l'attaque
 AIM.t0 = AIM.t0 || [0, 0, 0];
 const _pressV16 = press;
 press = function(i){ const was = down[i]; _pressV16(i); if(!was && down[i]) AIM.t0[i] = performance.now(); };
-const held16 = i => (performance.now() - (AIM.t0[i] || 0))/1000;
-const faceDir16 = () => { const d = moveInput() || LASTDIR; return Math.atan2(d.y, d.x); };
-const reach16 = m => isFreeBlink(m) ? 1 : .55;
 const _dasV16 = drawAimShape;
-drawAimShape = function(p, i){
-  if(AIM.on[i]) return _dasV16(p, i);
-  if(held16(i) < AIM_TAP16) return;                                          // tout début d'appui : rien (ce sera peut-être un tir auto)
-  AIM.on[i] = 1; AIM.a[i] = faceDir16(); AIM.r[i] = reach16(p.mv[i]);
-  try{ _dasV16(p, i); } finally { AIM.on[i] = 0; }
-};
-const _drawAimV16 = drawAim;                                                 // l'aperçu s'affiche aussi pendant la charge
-drawAim = function(){
+drawAimShape = function(p, i){ if(!AIM.on[i] || (AIM.cancel && AIM.cancel[i])) return; return _dasV16(p, i); };
+drawAim = function(){                                                        // l'aperçu reste affiché pendant la charge
   if(!G || G.over || G.sw || !Settings.get().aimGuides) return;
   const p = G.p; for(let i = 0; i < 3; i++) if(down[i] && (p.cd[i] <= 0 || p.ch[i] > 0)) drawAimShape(p, i);
-};
-const _fireV16 = fire;
-fire = function(m, c, i){
-  if(!AIM.on[i] && held16(i) > AIM_TAP16){ AIM.on[i] = 1; AIM.a[i] = faceDir16(); AIM.r[i] = reach16(m); }
-  return _fireV16(m, c, i);
 };
 
 // ---------- 2. opacité des commandes ----------

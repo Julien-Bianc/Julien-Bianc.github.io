@@ -34,16 +34,51 @@ ARENAS.push({ name:'Stade du Raid', th:RAID_TH, fx:{ k:'ember', c:'#ff5a3a', n:4
     pitchLines(a, 'rgba(230,240,230,.35)', .2, { inset:8, r:0, r2:0, box:[54, 44] });
   } });
 
+// ============================================================ QUEL RAID ? (rotation toutes les 30 min + étoiles)
+const RAID_POOL = () => RAID_TIERS.map(T => ({ ...T, pokemon:T.pokemon.filter(id => SPR[id] && HERO[id] && MV[id]) })).filter(T => T.pokemon.length);
+const raidSlot = () => Math.floor(Date.now()/(RAID.rotation*60000));
+const raidNextIn = () => (raidSlot() + 1)*RAID.rotation*60000 - Date.now();
+function seeded(n){ let x = (n*2654435761) >>> 0; return () => { x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0; return x/4294967296; }; }
+function raidRoll(rnd, not){
+  const P = RAID_POOL(), tot = P.reduce((a, T) => a + T.weight, 0);
+  for(let k = 0; k < 8; k++){
+    let x = rnd()*tot, T = P[0]; for(const t of P){ x -= t.weight; if(x <= 0){ T = t; break; } }
+    const id = T.pokemon[Math.floor(rnd()*T.pokemon.length)];
+    if(id !== not || k === 7) return { id, stars:T.stars };
+  }
+}
+const raidStarsOf = id => (RAID_TIERS.find(T => T.pokemon.includes(id)) || { stars:3 }).stars;
+// le raid du moment : le même pour tout le monde (calculé depuis l'heure), sauf si tu as payé pour le changer
+function raidCurrent(){
+  const d = Save.load(), slot = raidSlot();
+  if(d.raidPick && d.raidPick.slot === slot && SPR[d.raidPick.id]) return d.raidPick;
+  return { ...raidRoll(seeded(slot + 7919)), slot };
+}
+function raidReroll(){
+  const cur = raidCurrent(); if(!Save.spend(RAID.reroll)) return false;
+  const d = Save.load(); d.raidPick = { ...raidRoll(Math.random, cur.id), slot:raidSlot() }; Save.save(); return true;
+}
+// réglages du raid pour un nombre d'étoiles (RAID + RAID_STARS[étoiles])
+function raidCfg(stars){
+  const S = RAID_STARS[stars] || {}, c = { ...RAID, ...S, stars };
+  ['stage', 'ult', 'rage', 'reward'].forEach(k => c[k] = { ...RAID[k], ...(S[k] || {}) });
+  return c;
+}
+let RAID_CUR_CFG = null;
+const RCF = () => (G && G.raid && G.raid.cfg) || RAID_CUR_CFG || RAID;
+
 // ============================================================ LANCEMENT
 let RAID_PENDING = null;                                          // réglages du raid en cours de lancement (lus dans spawn)
 function startRaid(team, o){
   o = o || {};
   const members = team.members.filter(id => ORDER.includes(id) && (typeof Owned === 'undefined' || Owned.has(id))).slice(0, RAID.teamMax);
   if(!members.length) return;
+  const cur = o.boss ? { id:o.boss, stars:o.stars || raidStarsOf(o.boss) } : raidCurrent(), cfg = raidCfg(cur.stars);
   Save.lastTeam = team.id;
-  RAID_PENDING = { n:o.players ? o.players.length : 1, net:!!o.net, host:!o.net || !!o.host, slot:o.slot || 0 };
-  start({ mode:'raid', net:!!o.net, team:members, size:RAID.teamMax, teamId:team.id, stage:{ ...RAID.stage, arena:RAID_ARENA }, arena:RAID_ARENA, enemies:[RAID.boss] });
-  RAID_PENDING = null;
+  RAID_PENDING = { n:o.players ? o.players.length : 1, net:!!o.net, host:!o.net || !!o.host, slot:o.slot || 0, cfg };
+  RAID_CUR_CFG = cfg;
+  try{ start({ mode:'raid', net:!!o.net, raidBoss:cur.id, team:members, size:RAID.teamMax, teamId:team.id, stage:{ ...cfg.stage, arena:RAID_ARENA }, arena:RAID_ARENA, enemies:[cur.id] }); }
+  finally { RAID_PENDING = null; RAID_CUR_CFG = null; }
 }
 const isRaid = () => !!(G && G.raid);
 const raidAuth = () => isRaid() && (!G.raid.net || G.raid.host);   // c'est cette machine qui fait agir le boss
@@ -54,9 +89,10 @@ spawn = function(){
   _spawnRaid();
   if(!(G && G.cfg && G.cfg.mode === 'raid')) return;
   const P = RAID_PENDING || { n:1, net:false, host:true, slot:0 }, e = G.e;
-  G.raid = { n:P.n, net:P.net, host:P.host, rage:0, ultT:RAID.ult.first, ult:null, out:false, won:false, failed:false, base:{ ...G.stage }, t0:G.time + (G.intro || 0) };
+  if(P.cfg) RAID_CUR_CFG = P.cfg;
+  G.raid = { cfg:P.cfg || raidCfg(raidStarsOf(e.t)), n:P.n, net:P.net, host:P.host, rage:0, ultT:RCF().ult.first, ult:null, out:false, won:false, failed:false, base:{ ...G.stage }, t0:G.time + (G.intro || 0) };
   e.boss = true; e.raid = 1; e.r = 44; e.sc = 4;
-  e.hp = e.max = Math.round(HERO[e.t].hp*RAID.hp*(1 + RAID.hpPerPlayer*(P.n - 1)));
+  e.hp = e.max = Math.round(HERO[e.t].hp*RCF().hp*(1 + RCF().hpPerPlayer*(P.n - 1)));
   e.x = W/2; e.y = H/2 - 20; e.next = 2;
   const a = Math.PI/2 + (P.slot - (P.n - 1)/2)*.7;                  // les joueurs se répartissent devant le boss
   G.p.x = W/2 + Math.cos(a)*230; G.p.y = clY(H/2 + Math.sin(a)*170);
@@ -79,7 +115,7 @@ function raidFire(){
   const e = G.e, R = G.raid; if(!raidAuth() || R.ult) return;
   const m = MV[e.t][e.pat], S = G.stage, T = raidTarget(); if(!T) return;
   lbl(1, m.n, e.t); e.atk = e.atkD = .35;
-  const sc = S.dmg*Math.pow(RAID.rage.dmg, R.rage)*(isBig(m) ? .85 : 1);
+  const sc = S.dmg*Math.pow(RCF().rage.dmg, R.rage)*(isBig(m) ? .85 : 1);
   const sp = (m.fan && m.fan.speed) || m.s || 300, dist = Math.hypot(T.x - e.x, T.y - e.y), k = dist/Math.max(120, sp*.9)*S.aim;
   const d = { x:clX(T.x + (T.vx || 0)*k), y:clY(T.y + (T.vy || 0)*k), r:T.r || 14 };
   cast(e, d, m, .5, 0, sc, undefined);
@@ -88,24 +124,27 @@ function raidFire(){
 const _eFireRaid = eFire;
 eFire = function(){ if(isRaid()) return raidFire(); return _eFireRaid(); };
 
+// un boss avec son propre cerveau (Mewtwo) n'agit que sur la machine qui fait agir le boss
+if(typeof bossThink === 'function'){ const _btRaid = bossThink; bossThink = function(e, A){ if(isRaid() && !raidAuth()) return; return _btRaid(e, A); }; }
+
 // ============================================================ RAGE (une par barre perdue)
 function raidRage(level, fromNet){
   const R = G.raid, e = G.e, B = R.base;
   R.rage = level;
-  G.stage.rate = B.rate*Math.pow(RAID.rage.rate, level); G.stage.tele = B.tele*Math.pow(RAID.rage.tele, level);
-  e.invT = G.time + RAID.rage.invuln; e.tele = 0; e.next = Math.max(e.next || 0, RAID.rage.invuln);
+  G.stage.rate = B.rate*Math.pow(RCF().rage.rate, level); G.stage.tele = B.tele*Math.pow(RCF().rage.tele, level);
+  e.invT = G.time + RCF().rage.invuln; e.tele = 0; e.next = Math.max(e.next || 0, RCF().rage.invuln);
   if(SPR[e.t]) e.ann = { an:resolveAnim(SPR[e.t], 'Charge') || 'Idle', t0:G.time };
-  dmgTxt(e.x, e.y - 110, level >= RAID.bars - 1 ? 'DERNIÈRE BARRE : FURIE !' : 'RAGE ' + level + ' !', '#ff5a4a');
+  dmgTxt(e.x, e.y - 110, level >= RCF().bars - 1 ? 'DERNIÈRE BARRE : FURIE !' : 'RAGE ' + level + ' !', '#ff5a4a');
   G.shake = Math.max(G.shake, .7); HS = Math.max(HS, .1); flashScreen(.3); if(typeof playSfx === 'function') playSfx('ko');
-  for(let k = 0; k < 4; k++) groundRing(e.x, e.y + 20, 20, RAID.rage.roarRadius*(1 + k*.35), k % 2 ? '#ffffff' : '#ff3b3b', .55 + k*.12, 5);
+  for(let k = 0; k < 4; k++) groundRing(e.x, e.y + 20, 20, RCF().rage.roarRadius*(1 + k*.35), k % 2 ? '#ffffff' : '#ff3b3b', .55 + k*.12, 5);
   burst(30, (i, q) => vp({ x:e.x, y:e.y, vx:Math.cos(q)*R_(120, 320), vy:Math.sin(q)*R_(80, 220), life:R_(.5, .9), s:R_(10, 16), s1:R_(20, 30), kind:'smoke', col:'#3a0a0c', a:.7, fr:2 }));
   const p = G.p, d = Math.hypot(p.x - e.x, p.y - e.y);                   // le rugissement repousse ton Pokémon
-  if(!R.out && p.hp > 0 && d < RAID.rage.roarRadius + p.r && typeof throwBack === 'function') throwBack(p, Math.atan2(p.y - e.y, p.x - e.x), RAID.rage.roarPush, .35);
+  if(!R.out && p.hp > 0 && d < RCF().rage.roarRadius + p.r && typeof throwBack === 'function') throwBack(p, Math.atan2(p.y - e.y, p.x - e.x), RCF().rage.roarPush, .35);
 }
 
 // ============================================================ ATTAQUE ULTIME : COLÈRE DU TITAN
 function raidUlt(fromNet){
-  const R = G.raid, e = G.e, U = RAID.ult;
+  const R = G.raid, e = G.e, U = RCF().ult;
   R.ult = { t0:G.time, hit:[], x:e.x, y:e.y }; R.ultT = Math.max(8, U.cd - U.cdRage*R.rage);
   e.tele = 0; e.next = U.charge + U.rings*U.gap + 1.2; e.rs = null;
   if(SPR[e.t]) e.ann = { an:resolveAnim(SPR[e.t], 'Charge') || 'Idle', t0:G.time };
@@ -113,7 +152,7 @@ function raidUlt(fromNet){
   if(!fromNet && RaidHook.ult) RaidHook.ult();
 }
 function updUlt(dt){
-  const R = G.raid, U = RAID.ult, Q = R.ult, e = G.e, p = G.p; if(!Q) return;
+  const R = G.raid, U = RCF().ult, Q = R.ult, e = G.e, p = G.p; if(!Q) return;
   const t = G.time - Q.t0; Q.x = e.x; Q.y = e.y;
   if(typeof DIM !== 'undefined') DIM.a = Math.max(DIM.a, t < U.charge ? .55*t/U.charge : .45);
   if(t < U.charge){
@@ -137,7 +176,7 @@ function updUlt(dt){
   if(t > U.charge + (U.rings - 1)*U.gap + 2.6) R.ult = null;
 }
 function drawUlt(){
-  const R = G.raid, Q = R && R.ult, U = RAID.ult; if(!Q) return;
+  const R = G.raid, Q = R && R.ult, U = RCF().ult; if(!Q) return;
   const t = G.time - Q.t0, e = G.e;
   ctx.save();
   if(t < U.charge){                                                 // aperçu : les ondes qui vont partir
@@ -182,7 +221,7 @@ step = function(dt){
     e.x = ex + (tx - ex)*k; e.y = ey + (ty - ey)*k;
   }
   // barres de vie → rage
-  if(raidAuth() && e.hp > 0){ const lvl = RAID.bars - Math.max(1, Math.ceil(e.hp/(e.max/RAID.bars))); if(lvl > R.rage) raidRage(lvl); }
+  if(raidAuth() && e.hp > 0){ const lvl = RCF().bars - Math.max(1, Math.ceil(e.hp/(e.max/RCF().bars))); if(lvl > R.rage) raidRage(lvl); }
   // attaque ultime
   if(raidAuth() && e.hp > 0 && G.intro <= 0 && !R.ult && !busyB && !e.tele){ R.ultT -= dt; if(R.ultT <= 0) raidUlt(); }
   updUlt(dt);
@@ -191,7 +230,7 @@ step = function(dt){
   // temps écoulé
   if(raidAuth() && !R.won && e.hp > 0 && G.intro <= 0 && raidLeft() <= 0){ R.failed = 'time'; if(RaidHook.fail) RaidHook.fail('time'); G.over = 1; battleEnd(false); }
 };
-const raidLeft = () => RAID.time - Math.max(0, G.time - G.raid.t0);
+const raidLeft = () => RCF().time - Math.max(0, G.time - G.raid.t0);
 
 // ============================================================ YEUX ROUGES + AURA
 //  On repère la TÊTE du sprite (le haut de sa silhouette) et on y allume deux yeux rouges, placés selon la
@@ -249,7 +288,7 @@ hud = function(){
   const p = G.p, e = G.e, R = G.raid, HW = VW/UIK.hud, BW = Math.max(80, Math.min(150, Math.floor((HW - 2*58 - 80)/2)));
   hudSide(p, 0, HW, BW, NAME[p.t], G.team.map(c => c.hp <= 0 ? 2 : c === p ? 1 : 0), R.net && RaidHook.me ? RaidHook.me() : '');
   // grande barre du boss
-  const W2 = Math.min(300, HW - 2*(BW + 70)), x = HW/2 - W2/2, y = 5, B = RAID.bars, seg = e.max/B, hp = Math.max(0, e.hp);
+  const W2 = Math.min(300, HW - 2*(BW + 70)), x = HW/2 - W2/2, y = 5, B = RCF().bars, seg = e.max/B, hp = Math.max(0, e.hp);
   const cur = Math.max(1, Math.ceil(hp/seg - 1e-6)), within = hp <= 0 ? 0 : (hp - (cur - 1)*seg)/seg;
   glassPanel(x - 6, y, W2 + 12, 44, 'rgba(255,80,70,.75)');
   htext('RAID · ' + (NAME[e.t] || '').toUpperCase(), x, y + 13, 10, '#ffb0a0', 'left');
@@ -305,14 +344,26 @@ const _pressRaid = press; press = function(i){ if(isRaid() && (G.raid.out || G.r
 const _dashRaid = dash; dash = function(){ if(isRaid() && (G.raid.out || G.raidEndAt)) return; _dashRaid(); };
 const _swapRaid = swap; swap = function(){ if(isRaid() && G.raid.out) return; _swapRaid(); };
 
+// butin bonus des raids difficiles : objet tenu et/ou Capsule Ball de la rareté indiquée
+function raidBonus(B){
+  if(!B || Math.random() >= (B.chance ?? 1)) return [];
+  shopBuild(); const out = [], pick = L => L[Math.floor(Math.random()*L.length)];
+  if(B.held){ const L = HELD.filter(h => h.r === B.held); if(L.length) out.push(ITEM[pick(L).id]); }
+  if(B.caps && typeof CAPSULES !== 'undefined'){ const L = CAPSULES.filter(h => h.r === B.caps); if(L.length) out.push(ITEM[pick(L).id]); }
+  out.filter(Boolean).forEach(it => Save.addItem(it.id, 1));
+  return out.filter(Boolean);
+}
 function raidEndScreen(win, R){
   const c = G.cfg, t = Save.team(c.teamId), s = Math.floor(G.time - (R.t0 || 0)), before = Save.coins(), b = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
   let rew = '';
   if(win){
-    const gain = R.net ? RAID.reward.multi : RAID.reward.solo, d = Save.load();
-    Save.addCoins(gain); d.raidCrates = (d.raidCrates || 0) + RAID.reward.crates; d.raidWins = (d.raidWins || 0) + 1; Save.save();
-    rew = `<div class='gain'><b>+${money(gain)}</b><small>Raid réussi en ${Math.floor(s/60)}:${String(s%60).padStart(2, '0')}</small></div>
-      <div class='rcrate'><img src='${crateImg()}'><p><b>+${RAID.reward.crates} Caisse de raid</b><br><small>à ouvrir maintenant ou plus tard (Magasin → Caisses)</small></p></div>
+    const RW = RCF().reward, gain = R.net ? RW.multi : RW.solo, d = Save.load(), nC = RW.crates || 1;
+    Save.addCoins(gain); d.raidCrates = (d.raidCrates || 0) + nC; d.raidWins = (d.raidWins || 0) + 1;
+    d.raidStars = d.raidStars || {}; d.raidStars[RCF().stars] = (d.raidStars[RCF().stars] || 0) + 1; Save.save();
+    const extra = raidBonus(RW.bonus);
+    rew = `<p class='rstars'>${'★'.repeat(RCF().stars || 3)}</p><div class='gain'><b>+${money(gain)}</b><small>Raid réussi en ${Math.floor(s/60)}:${String(s%60).padStart(2, '0')}</small></div>
+      <div class='rcrate'><img src='${crateImg()}'><p><b>+${nC} Caisse${nC > 1 ? 's' : ''} de raid</b><br><small>à ouvrir maintenant ou plus tard (Magasin → Caisses)</small></p></div>
+      ${extra.length ? `<div class='rbonus'><b>Butin bonus :</b>${extra.map(it => `<span style='--rc:${RAR[it.r].col}'><img src='${imgOf(it)}'>${esc(it.name)}</span>`).join('')}</div>` : ''}
       <p>Solde : <span id='gsol'>${money(before)}</span></p>`;
   }
   const why = R.failed === 'time' ? 'Le temps est écoulé…' : R.failed === 'host' ? 'L\'hôte a quitté le raid.' : 'Toute l\'équipe est K.O.…';
@@ -321,7 +372,7 @@ function raidEndScreen(win, R){
     <button class='btn2' id='rr'>Raids</button><button class='btn2' id='mn'>Menu</button></div>`);
   if(win){ countUp(document.getElementById('gsol'), before, Save.coins()); if(typeof playSfx === 'function') playSfx('victory'); }
   b('rc', () => { G = null; openCrate('raid'); });
-  b('rp', () => startRaid(t)); b('rr', () => SCREENS.raid()); b('mn', showMain);
+  b('rp', () => startRaid(t, { boss:G.cfg.raidBoss, stars:RCF().stars })); b('rr', () => SCREENS.raid()); b('mn', showMain);
 }
 
 // ============================================================ CAISSES DE RAID (Magasin)
@@ -351,41 +402,54 @@ showCrate = function(id){
 // ============================================================ ÉCRAN « COMBAT RAID »
 { const i = MAIN_MENU.findIndex(m => m.id === 'boss'); MAIN_MENU.splice(i >= 0 ? i + 1 : 1, 0, { id:'raid', label:'Combat Raid', desc:'Un Pokémon géant, seul ou jusqu\'à 4 joueurs', screen:'raid' }); }
 function raidTeams(){ return Save.teams().filter(t => teamOk(t) && t.members.some(id => typeof Owned === 'undefined' || Owned.has(id))); }
+const mmss2 = ms => { const t = Math.max(0, Math.ceil(ms/1000)); return Math.floor(t/60) + ':' + String(t % 60).padStart(2, '0'); };
 function showRaid(sel){
   sel = sel || {};
   const teams = raidTeams();
   if(!teams.length){ menu(`<h1>Combat Raid</h1><p>Crée d'abord une équipe.</p><div class='row'><button class='btn' id='mk'>Mes équipes</button><button class='btn2' id='back'>Retour</button></div>`);
     document.getElementById('mk').onclick = showTeams; document.getElementById('back').onclick = showMain; return; }
-  const t = sel.team || teams.find(x => x.id === Save.lastTeam) || teams[0], used = t.members.slice(0, RAID.teamMax), P = POKEMON[RAID.boss], d = Save.load();
+  const t = sel.team || teams.find(x => x.id === Save.lastTeam) || teams[0], used = t.members.slice(0, RAID.teamMax), d = Save.load();
+  const cur = raidCurrent(), C = raidCfg(cur.stars), P = POKEMON[cur.id], rare = cur.stars >= 5, B = C.reward.bonus;
+  RAID_CUR_CFG = C;
   menu(`<div class='hd'><h1>Combat Raid</h1>${walletHtml()}</div>
-    <div class='edit raidv'>
-      <div class='left rboss'><canvas id='rbcv' width='200' height='170'></canvas><b>${esc(P.name)}</b><small>${P.types.map(tp => `<span class='tc' style='background:${COL[tp]}'>${TN[tp] || tp}</span>`).join('')}</small></div>
+    <div class='edit raidv ${rare ? 'rare' : ''}'>
+      <div class='left rboss'><span class='rstars'>${'★'.repeat(cur.stars)}<i>${'★'.repeat(5 - cur.stars)}</i></span><canvas id='rbcv' width='200' height='120'></canvas>
+        <b>${esc(P.name)}</b><small>${P.types.map(tp => `<span class='tc' style='background:${COL[tp]}'>${TN[tp] || tp}</span>`).join('')}</small>
+        <small class='rnext'>Nouveau raid dans <span id='rnx'>${mmss2(raidNextIn())}</span></small>
+        <button class='btn2 sm' id='rrr' ${Save.coins() >= RAID.reroll ? '' : 'disabled'}>Changer de raid · ${money(RAID.reroll)}</button></div>
       <div class='scroll right'>
-        <p><b class='gold'>${RAID.bars} barres de vie</b> — à chaque barre perdue il passe en <b style='color:#ff6a5a'>RAGE</b>.</p>
-        <p><b style='color:#ff6a5a'>Attaque ultime</b> : des ondes de choc rouges partent de lui → <b>esquive au moment où l'onde arrive</b> pour passer à travers !</p>
-        <p>Temps limite : ${Math.floor(RAID.time/60)} min. Seul : <b>très difficile</b>. À plusieurs (jusqu'à ${RAID.maxPlayers}) : bien plus simple.</p>
-        <p>Récompense : <b class='gold'>${money(RAID.reward.solo)}</b> en solo · <b class='gold'>${money(RAID.reward.multi)}</b> à plusieurs + <b>Caisse de raid</b></p>
-        ${P.moves.map(m => `<p class='mvl'><b>${esc(m.name)}</b> <span class='tc' style='background:${COL[m.type]}'>${TN[m.type] || m.type}</span></p>`).join('')}
+        ${rare ? `<p class='rrare'>✦ RAID RARE ✦</p>` : ''}
+        <p><b class='gold'>${C.bars} barres de vie</b> — à chaque barre perdue il passe en <b style='color:#ff6a5a'>RAGE</b>.</p>
+        <p><b style='color:#ff6a5a'>Attaque ultime</b> : ${C.ult.rings} ondes de choc rouges partent de lui → <b>esquive au moment où l'onde arrive</b> !</p>
+        <p>Temps limite : ${mmss2(C.time*1000)}. Seul : <b>difficile</b>. À plusieurs (jusqu'à ${RAID.maxPlayers}) : bien plus simple.</p>
+        <p>Récompense : <b class='gold'>${money(C.reward.solo)}</b> en solo · <b class='gold'>${money(C.reward.multi)}</b> à plusieurs + <b>${C.reward.crates} Caisse${C.reward.crates > 1 ? 's' : ''} de raid</b></p>
+        ${B ? `<p>Butin bonus${B.chance < 1 ? ' (' + Math.round(B.chance*100) + ' % de chance)' : ''} : ${[B.held && `objet tenu <b style='color:${RAR[B.held].col}'>${RAR[B.held].label.toLowerCase()}</b>`, B.caps && `Capsule Ball <b style='color:${RAR[B.caps].col}'>${RAR[B.caps].label.toLowerCase()}</b>`].filter(Boolean).join(' + ')}</p>` : ''}
+        ${P.moves.slice(0, 4).map(m => `<p class='mvl'><b>${esc(m.name)}</b> <span class='tc' style='background:${COL[m.type]}'>${TN[m.type] || m.type}</span></p>`).join('')}
         <p class='hint'>Raids réussis : ${d.raidWins || 0} · Caisses de raid à ouvrir : ${raidCrates()}</p>
       </div></div>
     <div class='row'>${teams.map(x => `<button class='btn2 sm ${x.id === t.id ? 'on' : ''}' data-team='${x.id}'>${esc(x.name)}</button>`).join('')}
       <span class='rtm'>${used.map(id => thumb(id)).join('')}</span><small class='hint'>3 Pokémon max</small></div>
     <div class='row'><button class='btn' id='rsolo'>Raid solo</button>${RaidHook.menuButtons ? RaidHook.menuButtons() : ''}<button class='btn2' id='back'>Retour</button></div>`);
+  RAID_CUR_CFG = null;
   bindAll('[data-team]', el => showRaid({ team:Save.team(el.dataset.team) }));
-  document.getElementById('rsolo').onclick = () => startRaid(t);
+  document.getElementById('rsolo').onclick = () => startRaid(t, { boss:cur.id, stars:cur.stars });
+  document.getElementById('rrr').onclick = () => gameConfirm(`Changer de raid ?`, `Un autre Pokémon de raid apparaîtra (au hasard) pour <b>${money(RAID.reroll)}</b>.`, 'Changer', () => { if(raidReroll()){ if(typeof coinSfx === 'function') coinSfx(); } showRaid({ team:t }); });
   document.getElementById('back').onclick = showMain;
   if(RaidHook.bindMenu) RaidHook.bindMenu(t);
-  raidPreview();
+  raidPreview(cur.id);
+  const slot = raidSlot(), nx = document.getElementById('rnx');
+  const tick = () => { if(!nx.isConnected) return; if(raidSlot() !== slot) return showRaid({ team:t }); nx.textContent = mmss2(raidNextIn()); setTimeout(tick, 1000); };
+  setTimeout(tick, 1000);
 }
 SCREENS.raid = showRaid;
 // aperçu animé du boss : géant, aura rouge, yeux rouges
-function raidPreview(){
-  const cv = document.getElementById('rbcv'); if(!cv) return; const c = cv.getContext('2d'), id = RAID.boss, S = SPR[id], t0 = performance.now();
+function raidPreview(id){
+  const cv = document.getElementById('rbcv'); if(!cv) return; const c = cv.getContext('2d'), S = SPR[id], t0 = performance.now();
   const loop = now => {
-    if(!cv.isConnected) return; const t = (now - t0)/1000; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 200, 170); c.imageSmoothingEnabled = false;
-    const g = c.createRadialGradient(100, 130, 6, 100, 120, 100); g.addColorStop(0, `rgba(255,40,40,${.5 + .15*Math.sin(t*4)})`); g.addColorStop(1, 'rgba(120,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 200, 170);
+    if(!cv.isConnected) return; const t = (now - t0)/1000; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 200, 120); c.imageSmoothingEnabled = false;
+    const g = c.createRadialGradient(100, 100, 6, 100, 90, 90); g.addColorStop(0, `rgba(255,40,40,${.5 + .15*Math.sin(t*4)})`); g.addColorStop(1, 'rgba(120,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, 200, 120);
     if(S){ const an = resolveAnim(S, 'Idle') || 'Idle', fr = snFrame(id, an, 1, frameAt(S, an, t*44, 1)), E = raidEyes(fr, 1), k = 3;
-      const x0 = 100 - fr.width*k/2, y0 = 70 - fr.height*k/2; c.drawImage(fr, x0, y0, fr.width*k, fr.height*k);
+      const x0 = 100 - fr.width*k/2, y0 = 52 - fr.height*k/2; c.drawImage(fr, x0, y0, fr.width*k, fr.height*k);
       c.globalCompositeOperation = 'lighter'; c.globalAlpha = .15 + .1*Math.sin(t*5); c.drawImage(tint(fr, '#ff2020'), x0, y0, fr.width*k, fr.height*k);
       c.globalAlpha = .6 + .4*Math.sin(t*5); E.pts.forEach(([i, j]) => c.drawImage(glow('#ff2020'), x0 + i*k - 10, y0 + j*k - 10, 22, 22));
       c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; E.pts.forEach(([i, j]) => { c.fillStyle = '#ff2a2a'; c.fillRect(x0 + i*k - 1, y0 + j*k - 1, 4, 3); }); }
@@ -397,7 +461,12 @@ function raidPreview(){
 document.head.insertAdjacentHTML('beforeend', `<style>
 .raidv{flex:1 1 auto;min-height:0;align-items:stretch}
 .raidv .rboss{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 70%,rgba(120,10,20,.45),rgba(10,8,24,.5))!important}
-.raidv .rboss canvas{width:200px;height:170px;image-rendering:pixelated}.raidv .rboss b{color:#ffb0a0}
+.raidv .rboss canvas{width:200px;height:120px;image-rendering:pixelated}
+.raidv .rboss{gap:1px;overflow:hidden}.raidv .rboss .btn2.sm{padding:2px 8px;font-size:10px}
+.rstars{font-size:15px;color:#ffd23f;letter-spacing:2px;text-shadow:0 0 6px rgba(255,180,40,.6)}.rstars i{font-style:normal;color:#3a3248;text-shadow:none}
+.rnext{font-size:9px;color:var(--txt2,#c9bcd8);margin:2px 0}.rrare{color:#e0b0ff;font-weight:700;text-align:center;letter-spacing:2px;text-shadow:0 0 8px #c070ff}
+.raidv.rare .rboss{box-shadow:inset 0 0 18px rgba(192,112,255,.5);border-color:#c88aff!important}
+.rbonus{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;font-size:11px}.rbonus span{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--rc);border-radius:6px;padding:1px 6px}.rbonus img{width:22px;height:22px;image-rendering:pixelated}.raidv .rboss b{color:#ffb0a0}
 .raidv .right p{margin:3px 0;font-size:11px}.rtm img{width:28px;height:28px;image-rendering:pixelated}
 .rcrate{display:flex;align-items:center;gap:10px;justify-content:center;text-align:left}.rcrate img{width:72px;image-rendering:pixelated;filter:drop-shadow(0 0 8px #ff6a5a)}
 </style>`);

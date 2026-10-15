@@ -33,6 +33,7 @@ const RaidNet = {
       me:{ id:rid(), pseudo:myPseudo(o.kind), team:mem }, seen:new Map(), list:[], state:'lobby', t0:performance.now(), timers:[],
       allies:new Map(), sent:0, recv:{}, dmgSeen:{}, tracers:[], lastB:0 };
     M.T.on((k, d) => { if(RNET.m === M) rnMsg(M, k, d); });
+    if(o.host) M.boss = raidCurrent();
     M.timers.push(setInterval(() => rnLobbyTick(M), 700));
     rnLobbyTick(M); rnLobbyScreen(M);
     return M;
@@ -52,7 +53,7 @@ function rnLobbyTick(M){
     if(M.host){
       for(const [id, p] of M.seen) if(now - p.last > 5000) M.seen.delete(id);
       const L = [{ id:M.me.id, pseudo:M.me.pseudo, team:M.me.team, host:true }, ...[...M.seen.values()].sort((a, b) => a.j - b.j).map(p => ({ id:p.id, pseudo:p.pseudo, team:p.team }))].slice(0, RAID.maxPlayers);
-      const ch = JSON.stringify(L) !== JSON.stringify(M.list); M.list = L; rsend('rl', { list:L });
+      const ch = JSON.stringify(L) !== JSON.stringify(M.list); M.list = L; M.boss = M.boss || raidCurrent(); rsend('rl', { list:L, boss:M.boss.id, stars:M.boss.stars });
       if(ch) rnLobbyScreen(M);
     } else if(!M.list.length && now - M.t0 > 10000) rnAbort('Aucun raid trouvé avec le code <b>' + esc(M.code) + '</b>.');
     if(M.T.err) rnAbort('Connexion au serveur impossible (' + M.T.err + ').');
@@ -62,6 +63,7 @@ function rnLobbyScreen(M){
   if(RNET.m !== M || M.state !== 'lobby') return;
   const full = !M.host && M.list.length >= RAID.maxPlayers && !M.list.some(p => p.id === M.me.id);
   menu(`<div class='rnl'><h1>Raid à plusieurs</h1>
+    ${M.boss ? `<p class='rnboss'>${'★'.repeat(M.boss.stars)} <b>${esc(NAME[M.boss.id] || M.boss.id)}</b></p>` : ''}
     <div class='rncode'><small>CODE DU RAID</small><b>${esc(M.code)}</b><small>${M.kind === 'local' ? 'Test local : ouvre le jeu dans un autre onglet → Combat Raid → Rejoindre' : 'Donne ce code à tes amis : Combat Raid → Rejoindre'}</small></div>
     <div class='rnps'>${M.list.length ? M.list.map(p => `<div class='rnp ${p.id === M.me.id ? 'me' : ''}'><b>${p.host ? '★ ' : ''}${esc(p.pseudo)}</b><span>${p.team.map(id => thumb(id)).join('')}</span></div>`).join('')
       : `<p class='hint'>${M.host ? '' : 'Recherche du raid…'}</p>`}${M.list.length ? Array.from({ length:Math.max(0, RAID.maxPlayers - M.list.length) }, () => `<div class='rnp empty'><i>en attente…</i></div>`).join('') : ''}</div>
@@ -79,16 +81,16 @@ function rnAbort(msg){
 function rnHostGo(M){
   if(M.list.length < 2) return;
   M.round = (M.round || 0) + 1;
-  const pay = { list:M.list, n:M.round };
+  const pay = { list:M.list, n:M.round, boss:M.boss.id, stars:M.boss.stars };
   [0, 300, 800, 1500, 2500].forEach(t => setTimeout(() => { if(RNET.m === M) rsend('rgo', pay); }, t));
-  rnStart(M, M.list);
+  rnStart(M, M.list, M.boss);
 }
-function rnStart(M, list){
+function rnStart(M, list, boss){
   const slot = list.findIndex(p => p.id === M.me.id); if(slot < 0) return rnAbort('Ce raid est complet.');
   M.list = list; M.state = 'fight'; M.allies.clear(); M.sent = 0; M.recv = {}; M.dmgSeen = {}; M.lastB = performance.now();
   list.forEach((p, i) => { if(p.id === M.me.id) return; const t = p.team.find(id => SPR[id] && MV[id]) || p.team[0];
     M.allies.set(p.id, { id:p.id, pseudo:p.pseudo, team:p.team, t, x:W/2, y:H/2 + 200, tx:W/2, ty:H/2 + 200, hp:1, max:1, out:false, last:performance.now(), r:12, slot:i }); });
-  startRaid(Save.team(M.teamId), { net:true, host:M.host, players:list, slot });
+  startRaid(Save.team(M.teamId), { net:true, host:M.host, players:list, slot, boss:boss && boss.id, stars:boss && boss.stars });
   M.timers.push(setInterval(() => rnFightTick(M), 1000/RN_HZ));
 }
 
@@ -142,8 +144,8 @@ function rnMsg(M, k, d){
     if(M.host && M.state === 'lobby' && known){ const p = M.seen.get(d.id); M.seen.set(d.id, { id:d.id, pseudo:String(d.pseudo || '?').slice(0, 16), team:d.team.slice(0, RAID.teamMax), last:performance.now(), j:p ? p.j : performance.now() }); }
     return;
   }
-  if(k === 'rl'){ if(M.host || M.state !== 'lobby') return; const ch = JSON.stringify(d.list) !== JSON.stringify(M.list); M.list = d.list || []; if(ch) rnLobbyScreen(M); return; }
-  if(k === 'rgo'){ if(M.host || M.state !== 'lobby' || !d || !d.list) return; rnStart(M, d.list); return; }
+  if(k === 'rl'){ if(M.host || M.state !== 'lobby') return; const ch = JSON.stringify(d.list) !== JSON.stringify(M.list) || !M.boss; M.list = d.list || []; if(d.boss && SPR[d.boss]) M.boss = { id:d.boss, stars:d.stars }; if(ch) rnLobbyScreen(M); return; }
+  if(k === 'rgo'){ if(M.host || M.state !== 'lobby' || !d || !d.list) return; if(!SPR[d.boss]) return rnAbort('Le Pokémon de ce raid est inconnu de ton jeu : mets-le à jour.'); rnStart(M, d.list, { id:d.boss, stars:d.stars }); return; }
   if(M.state !== 'fight' || !G || !G.raid) return;
   const e = G.e, R = G.raid;
   switch(k){
@@ -153,7 +155,7 @@ function rnMsg(M, k, d){
     case 'a': { const a = M.allies.get(d.id); if(!a || a.out) return; if(SPR[a.t]) a.ann = { an:resolveAnim(SPR[a.t], d.an) || 'Attack', t0:G.time };
       M.tracers.push({ x:a.x, y:a.y - 10, t0:G.time, col:COL[d.tp] || '#ffffff' }); return; }
     case 'd': { const last = M.dmgSeen[d.id] || 0, dl = d.c - last; if(dl <= 0) return; M.dmgSeen[d.id] = d.c;
-      if(M.host && e.hp > 0 && d.id !== M.me.id){ M.recv[d.id] = d.c; if(!(e.invT > G.time)) e.hp = Math.max(0, e.hp - dl); }
+      if(M.host && e.hp > 0 && d.id !== M.me.id){ M.recv[d.id] = d.c; e.hp = Math.max(0, e.hp - dl); }   // l'invité a déjà vérifié chez lui que le coup portait
       if(d.id !== M.me.id){ txt.push({ x:e.x + R_(-30, 30), y:e.y - 60, s:String(Math.round(dl*10)), c:'#bff0c0', f:14, t:.8 }); vp({ x:e.x + R_(-20, 20), y:e.y - 10, life:.25, s:6, s1:26, kind:'ring', col:'#bff0c0' }); }
       return; }
     case 'out': { const a = M.allies.get(d.id); if(a) a.out = true; return; }
@@ -168,7 +170,7 @@ function rnMsg(M, k, d){
       M.lastB = performance.now(); M.bx = d.x; M.by = d.y;
       if(!R.won){ e.max = d.max; e.hp = Math.max(1, d.hp - Math.max(0, M.sent - ((d.ack && d.ack[M.me.id]) || 0))); }
       if(d.rg > R.rage) raidRage(d.rg, true);
-      R.t0 = G.time - (RAID.time - d.tl);
+      R.t0 = G.time - (RCF().time - d.tl);
       return;
     case 'bt': e.pat = d.p; e.tele = e.tm = d.t; return;
     case 'bf': { const m = MV[e.t][d.i]; if(!m) return; lbl(1, m.n, e.t); e.atk = e.atkD = .35; e.tele = 0; cast(e, { x:d.x, y:d.y, r:d.r }, m, .5, 0, d.sc, undefined); return; }
@@ -249,6 +251,7 @@ function rnChoose(t, create){
 }
 document.head.insertAdjacentHTML('beforeend', `<style>
 .rnl{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.rnboss{margin:0;font-size:13px;color:#ffd23f}.rnboss b{color:#ffb0a0}
 .rncode{display:flex;flex-direction:column;align-items:center;background:rgba(10,8,24,.55);border:1px solid rgba(255,90,70,.6);border-radius:10px;padding:4px 18px}
 .rncode b{font:700 30px var(--font,monospace);letter-spacing:6px;color:#ffe9a0;text-shadow:0 0 10px rgba(255,90,70,.6)}.rncode small{font-size:9px;color:var(--txt2,#c9bcd8)}
 .rnps{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:5px;width:100%;max-width:440px}
