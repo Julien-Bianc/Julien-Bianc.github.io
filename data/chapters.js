@@ -11,16 +11,54 @@ const SOLO_COUNT = { 0:1, 1:2 };
 const CHAPTERS = [
   { id:'depart', name:'Le Grand Départ', desc:'Les 7 Pokémon du grand départ… et un clone légendaire t\'attend au niveau 10.',
     pool:['farfuret', 'dracaufeu', 'tortank', 'florizarre', 'lucario', 'raichu', 'fouinar'],
-    // (v0.18) équipe type de chaque niveau : ces Pokémon sont toujours là, les places restantes sont tirées au hasard dans le pool.
-    //   En 3v3 on garde au moins 1 place au hasard (sauf niveaux 1 et 2). Le boss (Mewtwo) prend la dernière place.
-    teams:[['fouinar'], ['fouinar', 'farfuret'], ['farfuret', 'raichu'], ['raichu', 'farfuret', 'fouinar'], ['raichu', 'lucario', 'farfuret'],
-           ['lucario', 'florizarre', 'raichu'], ['florizarre', 'tortank', 'lucario'], ['tortank', 'lucario', 'raichu', 'florizarre'],
-           ['dracaufeu', 'tortank', 'florizarre', 'lucario'], ['dracaufeu', 'tortank', 'lucario', 'florizarre']] },                  // niveaux 1 à 10 (data/stages.js)
+    // (v0.19) équipes FIXES de l'ordinateur, niveau par niveau (de plus en plus fortes) : teams3 en Solo 3v3, teams6 en Solo 6v6.
+    //   Les doublons sont permis. Le boss (Mewtwo) est écrit directement dans la liste du niveau 10.
+    teams3:[
+             ['fouinar'],
+             ['fouinar', 'farfuret'],
+             ['fouinar', 'farfuret', 'raichu'],
+             ['farfuret', 'raichu', 'fouinar'],
+             ['raichu', 'farfuret', 'lucario'],
+             ['lucario', 'raichu', 'florizarre'],
+             ['florizarre', 'lucario', 'tortank'],
+             ['tortank', 'florizarre', 'lucario'],
+             ['lucario', 'tortank', 'dracaufeu'],
+             ['tortank', 'dracaufeu', 'mewtwo']],
+    teams6:[
+             ['fouinar'],
+             ['fouinar', 'farfuret'],
+             ['fouinar', 'farfuret', 'fouinar', 'raichu', 'farfuret', 'raichu'],
+             ['farfuret', 'fouinar', 'raichu', 'farfuret', 'lucario', 'raichu'],
+             ['raichu', 'farfuret', 'lucario', 'fouinar', 'raichu', 'florizarre'],
+             ['lucario', 'raichu', 'florizarre', 'farfuret', 'lucario', 'tortank'],
+             ['florizarre', 'lucario', 'tortank', 'raichu', 'florizarre', 'dracaufeu'],
+             ['tortank', 'florizarre', 'lucario', 'dracaufeu', 'raichu', 'tortank'],
+             ['lucario', 'tortank', 'florizarre', 'dracaufeu', 'farfuret', 'dracaufeu'],
+             ['florizarre', 'lucario', 'tortank', 'raichu', 'dracaufeu', 'mewtwo']] },                  // niveaux 1 à 10 (data/stages.js)
   { id:'titans', name:'L\'Éveil des Titans', desc:'Des Pokémon jamais vus sortent de l\'ombre…',
     pool:['rondoudou', 'ectoplasma', 'alakazam', 'gardevoir', 'cizayox', 'carchacrok', 'tyranocif'],
-    teams:[['rondoudou', 'gardevoir'], ['alakazam', 'rondoudou'], ['gardevoir', 'alakazam'], ['cizayox', 'gardevoir'], ['carchacrok', 'ectoplasma'],
-           ['tyranocif', 'ectoplasma', 'alakazam'], ['ectoplasma', 'gardevoir', 'alakazam'], ['alakazam', 'gardevoir', 'cizayox', 'ectoplasma'],
-           ['tyranocif', 'carchacrok', 'cizayox', 'ectoplasma'], ['carchacrok', 'tyranocif', 'ectoplasma', 'cizayox']],
+    teams3:[
+             ['rondoudou', 'alakazam', 'gardevoir'],
+             ['alakazam', 'rondoudou', 'ectoplasma'],
+             ['gardevoir', 'alakazam', 'rondoudou'],
+             ['cizayox', 'gardevoir', 'alakazam'],
+             ['ectoplasma', 'carchacrok', 'cizayox'],
+             ['ectoplasma', 'tyranocif', 'gardevoir'],
+             ['gardevoir', 'ectoplasma', 'alakazam'],
+             ['alakazam', 'cizayox', 'gardevoir'],
+             ['cizayox', 'tyranocif', 'carchacrok'],
+             ['ectoplasma', 'tyranocif', 'carchacrok']],
+    teams6:[
+             ['rondoudou', 'alakazam', 'rondoudou', 'gardevoir', 'alakazam', 'rondoudou'],
+             ['alakazam', 'rondoudou', 'ectoplasma', 'gardevoir', 'alakazam', 'ectoplasma'],
+             ['gardevoir', 'rondoudou', 'alakazam', 'gardevoir', 'ectoplasma', 'rondoudou'],
+             ['cizayox', 'gardevoir', 'alakazam', 'cizayox', 'ectoplasma', 'tyranocif'],
+             ['ectoplasma', 'carchacrok', 'cizayox', 'alakazam', 'gardevoir', 'carchacrok'],
+             ['ectoplasma', 'tyranocif', 'gardevoir', 'cizayox', 'alakazam', 'tyranocif'],
+             ['gardevoir', 'ectoplasma', 'alakazam', 'ectoplasma', 'cizayox', 'gardevoir'],
+             ['alakazam', 'gardevoir', 'cizayox', 'ectoplasma', 'carchacrok', 'alakazam'],
+             ['cizayox', 'tyranocif', 'carchacrok', 'ectoplasma', 'tyranocif', 'carchacrok'],
+             ['gardevoir', 'ectoplasma', 'cizayox', 'tyranocif', 'carchacrok', 'tyranocif']],
     stages:['Forêt hantée', 'Temple psychique', 'Jardin féerique', 'Forteresse d\'acier', 'Canyon du dragon',
             'Montagne sombre', 'Gouffre spectral', 'Sanctuaire mental', 'Volcan des titans', 'Sommet des maîtres'],
     // décors : 0 prairie, 1 grotte, 2 désert, 3 banquise, 4 lave, 5 ruines (les cartes sauvages et le Stade du Raid sont ajoutés dans js/solo-chapters.js)
