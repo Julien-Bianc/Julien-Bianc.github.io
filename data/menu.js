@@ -10,6 +10,7 @@ const MAIN_MENU = [
   { id:'training', label:'Entraînement', desc:'Teste tous les Pokémon sur une grande map', screen:'training' },
   { id:'shop',    label:'Magasin',       desc:'Caisses : cartes et objets tenus',     screen:'shop'      },
   { id:'inventory', label:'Inventaire', desc:'Objets tenus et classeur de cartes',    screen:'inventory' },
+  { id:'contest', label:'Concours Pokémon', desc:'Style, rythme, prestations, rubans', screen:'contest' },
   { id:'versus',  label:'Combat libre',  desc:'', soon:true },
   { id:'online',  label:'Multijoueur',   desc:'Compte, amis, combats en ligne et échanges', screen:'online' },
   { id:'options', label:'Options',       desc:'Son, touches, plein écran', screen:'options' }
