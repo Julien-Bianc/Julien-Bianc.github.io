@@ -4,13 +4,13 @@
 //      classement en ligne (supabase/tour.sql).
 //    • Tu commences avec 1 Pokémon sans objet ; 3 Pokémon maximum ; des recrues et des bonus en route.
 //    • Entre deux étages : change l'ordre de ton équipe et donne / échange les objets gagnés (le « sac »).
-//    • Autant d'adversaires que de Pokémon debout dans ton équipe (+1 dès l'étage 20, +2 dès l'étage 40) ;
+//    • 3 adversaires par étage, même si des Pokémon de ton équipe sont K.O. (+1 dès l'étage 20, +2 dès l'étage 40) ;
 //      tous les 10 étages, le dernier adversaire est un boss.
 // ============================================================
 const TW = {
   teamMax:3,
   heal:.1,                         // PV rendus à chaque Pokémon encore debout après chaque étage
-  coins:f => 10 + 2*f,             // Pokédollars gagnés en passant l'étage f
+  coins:f => Math.round((10 + 2*f)*.65),   // Pokédollars gagnés en passant l'étage f (v0.21.4 : ×0,65)
   extraFoes:f => f >= 40 ? 2 : f >= 20 ? 1 : 0,
   arenas:[0, 1, 2, 3, 4, 5, 7, 8, 11, 13]
 };
@@ -18,7 +18,7 @@ const twStage = f => { const t = Math.min(1, (f - 1)/40), x = Math.max(0, f - 40
   return { name:'Tour — étage ' + f, level:Math.min(10, Math.ceil(f/5)), arena:TW.arenas[(f*7) % TW.arenas.length], hp:r2(.75 + .028*(f - 1) + .03*x), dmg:r2(.65 + .024*(f - 1) + .02*x),
     speed:r2(.8 + .45*t), pspeed:r2(.85 + .5*t), rate:r2(1.3 - .72*t), tele:r2(1.2 - .52*t), aim:r2(Math.min(1, (f - 1)/20)), boss:r2(1.8 + .03*f) }; };
 const twBossFloor = f => f % 10 === 0;
-const twFoesN = (f, alive) => Math.max(1, alive) + TW.extraFoes(f);
+const twFoesN = f => 3 + TW.extraFoes(f);                  // v0.21.4 : toujours 3 adversaires (et plus en haut de la tour)
 const twPick = (pool, n) => { const out = []; while(out.length < n){ const P = pool.slice().sort(() => Math.random() - .5); out.push(...P.slice(0, n - out.length)); } return out; };
 
 // ---------------------------------------------------------------- sauvegarde, record, stats, classement
@@ -68,7 +68,7 @@ const TW_BONUS = {
   hpm:   { name:'PV max +15 %',  desc:'Tous tes Pokémon ont plus de PV.', ok:R => (R.hpm || 1) < 2, go:R => R.hpm = +((R.hpm || 1)*1.15).toFixed(3) },
   item:  { name:'Objet tenu',    desc:'Un objet tenu va dans ton sac : donne-le au Pokémon de ton choix.', ok:() => true,
            go:R => { const L = HELD.filter(h => h.r === 'PC' || h.r === 'R'), h = L[Math.floor(Math.random()*L.length)]; (R.bag = R.bag || []).push(h.id); return `${h.name} rejoint ton sac !`; } },
-  coins: { name:'Bourse',        desc:'Des Pokédollars tout de suite.', ok:() => true, go:R => { const n = 40 + R.floor*8; Save.addCoins(n); R.coins = (R.coins || 0) + n; Tower.stats().coins += n; return `+ ${money(n)}`; } }
+  coins: { name:'Bourse',        desc:'Des Pokédollars tout de suite.', ok:() => true, go:R => { const n = Math.round((40 + R.floor*8)*.65); Save.addCoins(n); R.coins = (R.coins || 0) + n; Tower.stats().coins += n; return `+ ${money(n)}`; } }
 };
 function twOffer(R, f){
   if(f % 5 === 0) return { kind:'bonus', opts:twPick(Object.keys(TW_BONUS).filter(k => TW_BONUS[k].ok(R)), 3).filter((v, i, a) => a.indexOf(v) === i) };
@@ -113,7 +113,7 @@ SCREENS.tower = showTower;
 function twRules(){
   menu(`<div class='hd' data-twscene><h1>Règles de la Tour</h1></div><div class='twrules'>
     <p>${twI('recruit')} Tu entres avec <b>un seul Pokémon, sans objet</b>. D'autres Pokémon proposent de te rejoindre en route (<b>3 maximum</b> ; équipe pleine : l'un d'eux laisse sa place).</p>
-    <p>${twI('foes')} Chaque étage est plus dur. Autant d'adversaires que de Pokémon debout dans ton équipe, <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
+    <p>${twI('foes')} Chaque étage est plus dur. <b>3 adversaires</b> par étage, <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
     <p>${twI('heal')} Les PV ne remontent que de 10 % entre deux étages et un Pokémon K.O. le reste (sauf Rappel).</p>
     <p>${twI('item')} Tous les 5 étages : un <b>bonus</b> au choix. Les objets gagnés vont dans ton <b>sac</b> : donne-les et change l'ordre de ton équipe avant chaque combat.</p>
     <p>${twI('runs')} Si toute ton équipe tombe, la tour est finie. <b>Quitter un combat = fin de la tour.</b></p></div>
