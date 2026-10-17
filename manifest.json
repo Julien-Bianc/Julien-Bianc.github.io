@@ -1,6 +1,6 @@
 {
-  "name": "Arène des Créatures",
-  "short_name": "Arène",
+  "name": "PokéClash",
+  "short_name": "PokéClash",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

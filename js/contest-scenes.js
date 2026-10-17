@@ -409,7 +409,7 @@ function sceneShow(C, ct, idx, kind, score, done){
 //   Clavier : maintiens Espace (relâche pour ralentir).   done(q) avec q de 0 à 1
 // ============================================================
 function sceneCook(berryIds, done){
-  const DUR = 10, CXp = 160, CYp = 82, R = 54, GO = [2.4, 5.6];
+  const DUR = 10, CXp = 160, CYp = 82, R = 54, GO = [2.9, 5.1];   // v0.21.2 : zone verte plus étroite et qui bouge
   const berries = berryIds.map((id, i) => ({ b:BERRY[id], im:berryEl(BERRY[id]), t0:.6 + i*.6, in:false }));
   let ph = 'intro', tt = 0, ang = -Math.PI/2, om = 0, lastA = null, lastT = 0, down = false, held = false, good = 0, elapsed = 0, msg = '', q = 0, poff = null, sw = 0, bub = 0;
   const avgCol = () => { const ins = berries.filter(b => b.in); if(!ins.length) return '#fff0a8'; let r = 0, g = 0, b = 0; ins.forEach(e => { const h = e.b.col; r += parseInt(h.slice(1, 3), 16); g += parseInt(h.slice(3, 5), 16); b += parseInt(h.slice(5, 7), 16); }); const n = ins.length; return mixHex('#fff0a8', '#' + [r/n, g/n, b/n].map(v => Math.round(v).toString(16).padStart(2, '0')).join(''), .3*ins.length/berries.length + .06); };
@@ -429,7 +429,8 @@ function sceneCook(berryIds, done){
       if(ph === 'intro'){ berries.forEach(b => { if(!b.in && tt > b.t0 + .5){ b.in = true; fxRing(sc, CXp, CYp + 4, b.b.col, 50, 3, .8); fxBurst(sc, CXp, CYp, 12, [b.b.col, '#fff'], 50, { life:.6, g:60 }); snd(300 + Math.random()*120, .12, 'sine', .09, 200); noise(.12, .08, 1500, 500, 'lowpass'); } }); if(berries.every(b => b.in) && tt > berries[berries.length - 1].t0 + .9){ ph = 'stir'; tt = 0; msg = 'Tourne dans le sens de la flèche !'; } return; }
       if(ph === 'stir'){
         if(held){ om += (om < 8 ? 5 : 0)*dt; ang += om*dt; } else if(!down){ om *= Math.max(0, 1 - dt*3.2); ang += om*dt; } else if(sc.t - lastT > .12){ om *= Math.max(0, 1 - dt*6); }
-        elapsed += dt; const inBand = om > GO[0] && om < GO[1];
+        elapsed += dt; { const c = 4 + Math.sin(elapsed*.85)*1.5 + Math.sin(elapsed*2.1 + 1)*.45, hw = 1.15 - elapsed*.03; GO[0] = c - hw; GO[1] = c + hw; }
+        const inBand = om > GO[0] && om < GO[1];
         if(inBand){ good += dt; msg = 'Parfait ! Continue comme ça !'; if(Math.random() < dt*12) fxBurst(sc, CXp + Math.cos(ang)*32, CYp + Math.sin(ang)*32, 3, ['#7aff9a', '#fff'], 30, { life:.5, g:20 }); }
         else if(om >= GO[1]){ msg = 'Ralentis un peu !'; if(Math.random() < dt*20) fxBurst(sc, CXp + Math.cos(ang)*R, CYp + Math.sin(ang)*R, 2, ['#fff0a8'], 70, { life:.5 }); }
         else if(om < -1){ msg = 'Dans le sens de la flèche !'; } else { msg = elapsed < 1.5 ? 'Tourne dans le sens de la flèche !' : 'Plus vite !'; }

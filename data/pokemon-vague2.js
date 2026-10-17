@@ -52,7 +52,7 @@ Object.assign(POKEMON, {
   },
 
   tyranocif: {
-    name:'Tyranocif', folder:'assets/pokemon/tyranocif', types:['roche', 'tenebres'], hp:150, speed:140,
+    name:'Tyranocif', folder:'assets/pokemon/tyranocif', types:['roche', 'tenebres'], hp:135, speed:140,
     ability:{ name:'Sable Volant', desc:'Tempête de sable : l\'adversaire perd des PV (sauf Roche/Sol/Acier) ; Tyranocif subit -20 % des attaques à distance.',
               sandStream:{ dps:.5, resist:.8 } },
     moves:[

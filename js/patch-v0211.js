@@ -147,7 +147,7 @@ function showBadges(sel){
     <div class='edit bdgv'><div class='scroll left'><div class='bdgcase'>${BADGES.map(B => `<button class='bgx ${Badges.has(B.id) ? 'on' : ''} ${B.id === S.id ? 'foc' : ''}' data-bdg='${B.id}' title='${esc(B.name)}'><img src='${badgeImg(B.id, !Badges.has(B.id))}'></button>`).join('')}</div></div>
       <div class='scroll right'><div class='bdgd'><img src='${badgeImg(S.id, !has)}'><div><b>${has ? esc(S.name) : '???'}</b><p>${esc(S.how)}</p><small>${has ? '✔ Obtenu le ' + when : '🔒 Pas encore obtenu'}</small></div></div></div></div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
-  bindAll('[data-bdg]', el => showBadges(el.dataset.bgx));
+  bindAll('[data-bdg]', el => showBadges(el.dataset.bdg));
   document.getElementById('back').onclick = showMain;
 }
 SCREENS.badges = showBadges;
@@ -166,9 +166,9 @@ setTimeout(() => { try{ if(typeof Owned !== 'undefined' && Owned.ready()) Badges
 document.head.insertAdjacentHTML('beforeend', `<style>
 .bdgv .left{flex:0 0 58%}.bdgcase{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;background:linear-gradient(180deg,#3a1420,#22080e);border:2px solid #8a5a20;border-radius:10px;box-shadow:inset 0 0 0 2px #2a0a10,inset 0 6px 14px rgba(0,0,0,.6)}
 .bgx{background:radial-gradient(circle at 50% 40%,#5a2430,#2a0c12);border:1px solid #6a3a20;border-radius:8px;padding:3px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.bgx img{width:100%;max-width:52px;image-rendering:auto;filter:bdDrop-shadow(0 2px 2px rgba(0,0,0,.6))}.bgx.on img{filter:bdDrop-shadow(0 2px 2px rgba(0,0,0,.6)) bdDrop-shadow(0 0 4px rgba(255,220,120,.35))}
+.bgx img{width:100%;max-width:52px;image-rendering:auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}.bgx.on img{filter:drop-shadow(0 2px 2px rgba(0,0,0,.6)) drop-shadow(0 0 4px rgba(255,220,120,.35))}
 .bgx.foc{outline:2px solid #ffd23f;box-shadow:0 0 10px rgba(255,210,63,.5)}
-.bdgd{display:flex;gap:10px;align-items:center;text-align:left}.bdgd img{width:96px;height:96px;filter:bdDrop-shadow(0 3px 4px rgba(0,0,0,.6))}.bdgd b{color:#ffe9a0;font-size:14px}.bdgd p{font-size:11px;margin:4px 0}.bdgd small{font-size:10px;color:var(--txt2,#c9bcd8)}
+.bdgd{display:flex;gap:10px;align-items:center;text-align:left}.bdgd img{width:96px;height:96px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6))}.bdgd b{color:#ffe9a0;font-size:14px}.bdgd p{font-size:11px;margin:4px 0}.bdgd small{font-size:10px;color:var(--txt2,#c9bcd8)}
 .bdgc{color:#ffd23f;font-size:13px}
 .np.bdgn{border-color:#ffd23f}.bdgt{display:flex;align-items:center;gap:6px}.bdgt img{width:40px;height:40px}
 </style>`);
