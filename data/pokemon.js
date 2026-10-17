@@ -33,8 +33,8 @@ const POKEMON = {
         anim:'MultiScratch', hits:[3,7,10], effect:'claws' },
       { name:'Vent Glace', type:'glace', kind:'fan', power:9, share:.5, cooldown:1.5,
         speed:260, count:7, spread:.2, life:.9, anim:'Shoot', status:{ kind:'slow', chance:.5 } },
-      { name:'Tranche-Nuit', type:'tenebres', kind:'melee', power:26, cooldown:3.2,
-        anim:'Swing', hits:[5], effect:'slash', crit:.35 }
+      { name:'Tranche-Nuit', type:'tenebres', kind:'melee', power:19, cooldown:3.2,              // v0.21 : 26 → 19, critiques 35 % → 25 %
+        anim:'Swing', hits:[5], effect:'slash', crit:.25 }
     ]
   },
 

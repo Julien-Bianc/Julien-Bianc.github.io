@@ -110,6 +110,7 @@ function mouseButtons(e, start){
 addEventListener('pointerdown', e => {
   lastPT = e.pointerType;
   if(e.pointerType !== 'mouse' || !inFight() || !mouseOk(e.target)) return;
+  if(typeof sfPickAt === 'function' && sfPickAt(e)){ e.stopImmediatePropagation(); e.preventDefault(); return; }   // v0.21 : Safari, clic sur un Pokémon = cible
   e.stopPropagation(); e.preventDefault(); mouseButtons(e, true);       // pas de joystick tactile au clic de souris
 }, true);
 addEventListener('pointermove', e => {

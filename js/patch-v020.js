@@ -57,8 +57,12 @@ menu = (prev => function(h){
   if(!h || !h.includes("class='edit sf-ed'") || SAFARI.zones.length < 2) return;
   const t = document.querySelector('#menu h1'); if(!t) return;
   const z = SAFARI.zones.find(x => x.name === t.textContent.trim()) || SAFARI.zones[0];
-  t.closest('.hd').insertAdjacentHTML('afterend', `<div class='row sfz'>${SAFARI.zones.map(x => `<button class='btn2 sm ${x.id === z.id ? 'on' : ''}' data-sfz='${x.id}'>${esc(x.name.replace('Safari ', ''))}</button>`).join('')}</div>`);
-  bindAll('[data-sfz]', b => showSafari({ zone:b.dataset.sfz }));
+  // v0.21 : zones verrouillées (Titans : chapitre 1 du Solo terminé) et titre « Safari »
+  const locked = x => x.id === 'titans' && typeof raidUnlocked === 'function' && !raidUnlocked();
+  if(locked(z)) return showSafari({ zone:SAFARI.zones[0].id });
+  t.textContent = 'Safari';
+  t.closest('.hd').insertAdjacentHTML('afterend', `<div class='row sfz'>${SAFARI.zones.map(x => `<button class='btn2 sm ${x.id === z.id ? 'on' : ''} ${locked(x) ? 'lk' : ''}' data-sfz='${x.id}' ${locked(x) ? "title='Termine le chapitre 1 du Solo'" : ''}>${locked(x) ? '🔒 ' : ''}${esc(x.name.replace('Safari ', ''))}</button>`).join('')}</div>`);
+  bindAll('[data-sfz]', b => { const x = SAFARI.zones.find(q => q.id === b.dataset.sfz); if(locked(x)) return Notif.toast('🔒 Termine le chapitre 1 du Solo pour ouvrir le ' + esc(x.name)); showSafari({ zone:x.id }); });
 })(menu);
 
 // ---------- 3. musiques ----------
@@ -121,5 +125,5 @@ menu = (prev => function(h){
 document.head.insertAdjacentHTML('beforeend', `<style>
 .rtries{font-size:11px;color:#ffe9a0;margin:0 0 4px}.rtries small{color:var(--txt2,#c9bcd8)}
 .rdone.rlost{color:#ff8a7a}
-.sfz{margin:0 0 2px}.sfz .btn2{font-size:10px}
+.sfz{margin:0 0 2px}.sfz .btn2{font-size:10px}.sfz .btn2.lk{opacity:.6}
 </style>`);

@@ -73,6 +73,12 @@ CRATES.push({ id:'raid', name:'Caisse de raid', desc:'Gagnée en battant un Pok�
     { r:'R',  label:'Objet tenu rare', held:true },
     { r:'R',  label:'Capsule Ball rare', caps:true },
     { r:'UR', label:'Capsule Ball ultra rare', caps:true },
+    // v0.21 : les objets et capsules de la Caisse des Titans (data/titans.js)
+    { r:'PC', label:'Objet tenu peu commun (Titans)', held:'titans' },
+    { r:'PC', label:'Capsule Ball peu commune (Titans)', caps:'titans' },
+    { r:'R',  label:'Objet tenu rare (Titans)', held:'titans' },
+    { r:'R',  label:'Capsule Ball rare (Titans)', caps:'titans' },
+    { r:'UR', label:'Capsule Ball ultra rare (Titans)', caps:'titans' },
     { r:'UR', label:'Carte LÉGENDAIRE', legend:true },
     { r:'S',  label:'???', items:['shiny-swapper', 'oeuf-mystere'], hidden:true }
   ] });
