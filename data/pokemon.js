@@ -61,8 +61,9 @@ const POKEMON = {
     moves:[
       { name:'Vive-Attaque', type:'normal', kind:'melee', power:8, cooldown:.7,
         anim:'Strike', hits:[2], effect:'quick', rushTime:.07, invuln:.3 },
-      { name:'Souplesse', type:'normal', kind:'melee', power:16, cooldown:2.2,
-        anim:'Swing', hits:[5], effect:'slam', rushTime:.18, knockback:90 },
+      { name:'Météores', type:'normal', kind:'fan', power:16, share:.35, cooldown:2.2,           // v0.21.1 : remplace Souplesse (attaque à distance)
+        speed:330, count:5, spread:.16, jitter:.04, life:1.1, radius:6, home:1.4, anim:'Shoot', color:'#fff3a0',
+        desc:'5 étoiles dorées qui suivent la cible : difficiles à esquiver.' },
       { name:'Damoclès', type:'normal', kind:'melee', power:30, cooldown:4,
         anim:'Charge', hits:[5], effect:'ram', rushTime:.22, recoil:.25, range:300 }
     ]

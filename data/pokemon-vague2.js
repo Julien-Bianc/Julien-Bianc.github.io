@@ -74,7 +74,7 @@ Object.assign(POKEMON, {
       { name:'Plaie-Croix', type:'insecte', kind:'boomerang', power:15, cooldown:2.2,
         range:250, speed:460, radius:13, anim:'Swing' },
       { name:'Danse-Lames', type:'normal', kind:'buff', power:0, cooldown:9,
-        time:6, dmg:1.5, speed:1.15, anim:'Rotate', label:'ATTAQUE +50 % !' }
+        time:6, dmg:1.35, speed:1.1, anim:'Rotate', label:'ATTAQUE +35 % !' }   // v0.21.1 : 1,5 → 1,35
     ]
   },
 
@@ -108,7 +108,7 @@ Object.assign(MOVE_DESC, {
   'Vibrobscur':'Onde de ténèbres en arc qui repousse la cible.',
   'Poing Balle':'Coup de poing d\'acier ultra-rapide (boosté par Technicien).',
   'Plaie-Croix':'Lame en croix qui part puis REVIENT : peut toucher deux fois.',
-  'Danse-Lames':'Danse guerrière : attaques +50 % et vitesse +15 % pendant 6 s.',
+  'Danse-Lames':'Danse guerrière : attaques +35 % et vitesse +10 % pendant 6 s.',
   'Pouvoir Lunaire':'Boule de lune qui éclate en 6 éclats d\'étoiles.',
   'Reflet Magik':'Bulle psychique 1,3 s : bloque tout et RENVOIE les projectiles.',
   'Choc Psy':'Rayon psychique après une courte charge : vise bien !',
