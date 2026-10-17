@@ -1,6 +1,6 @@
 // ============================================================
 //  patch-v0212.js — correctif (rapport de test v0.21.1)
-//    1. TOUR DE COMBAT : mode infini (1 Pokémon au départ, recrues et bonus en route, classement en ligne)
+//    1. TOUR DE COMBAT : déplacée dans js/tower.js (v0.21.3)
 //    2. Badges : cliquables, RÉCOMPENSE à récupérer pour chacun, 14 nouveaux badges
 //    3. Concours : les attaques du Pokémon et leur catégorie dans l'onglet Stats
 //    4. Défi Mewtwo : encore plus dur + attaques de raid en Extrême et SECRET (Déferlante Psy, Pluie Psy)
@@ -16,12 +16,6 @@ const MW_RAID = {
             rain:{ first:6,  cd:12, n:4, delay:1.2, r:46, dmg:.13 } },
   secret: { ult:{ first:8,  cd:13, charge:1.5, rings:4, gap:.65, speed:350, width:30, dmg:.22, push:100 },
             rain:{ first:4,  cd:8.5, n:6, delay:1.05, r:50, dmg:.15 } }
-};
-const TW = {
-  heal:.1,                    // PV rendus à chaque Pokémon encore debout après chaque étage
-  coins:f => 10 + 2*f,        // Pokédollars gagnés en passant l'étage f
-  teamMax:6,
-  arenas:[0, 1, 2, 3, 4, 5, 7, 8, 11, 13]
 };
 
 // ================================================================ 4. MEWTWO
@@ -129,18 +123,18 @@ BADGES.push(
   { id:'online10',   name:'Badge Tonnerre',   how:'Gagne 10 combats en ligne.',                          ok:() => bdCount('onlineWins') >= 10 },
   { id:'champion',   name:'Badge Champion',   how:'Obtiens tous les autres badges.',                     ok:() => BADGES.every(B => B.id === 'champion' || Badges.has(B.id)) }
 );
-// récompense de chaque badge : Pokédollars (+ objet tenu)
+// récompense de chaque badge : Pokédollars (+ objet tenu) — v0.21.3 : Pokédollars divisés par 2
 const BADGE_REWARD = {
-  depart:{ coins:300 }, solo3:{ coins:1500, item:'restes' }, solo6:{ coins:2500, item:'orbe-vie' },
-  mewtwo:{ coins:500 }, mewtwo3:{ coins:1500, item:'ceinture-force' }, secret:{ coins:3000 },
-  raid1:{ coins:300 }, raid5:{ coins:1000 }, raid10:{ coins:1500, item:'bandeau-choix' }, coop:{ coins:500 },
-  safari1:{ coins:200 }, safariA:{ coins:800 }, safariT:{ coins:1500 },
-  contest1:{ coins:300 }, contestM:{ coins:1500 }, legend:{ coins:1000 }, online:{ coins:300 }, shiny:{ coins:500 },
-  tower10:{ coins:500 }, tower25:{ coins:1200, item:'baie-sitrus' }, tower50:{ coins:3000, item:'mouchoir-choix' },
-  perfect:{ coins:2000 }, collect10:{ coins:600 }, collectAll:{ coins:3000, item:'restes' }, crates25:{ coins:500 }, crates100:{ coins:1500 },
-  rich:{ coins:1000 }, rainbow:{ coins:1200 }, crown:{ coins:3000, item:'orbe-vie' }, shiny5:{ coins:1500 }, online10:{ coins:1500 }, champion:{ coins:5000, item:'ceinture-force' }
+  depart:{ coins:150 }, solo3:{ coins:750, item:'restes' }, solo6:{ coins:1250, item:'orbe-vie' },
+  mewtwo:{ coins:250 }, mewtwo3:{ coins:750, item:'ceinture-force' }, secret:{ coins:1500 },
+  raid1:{ coins:150 }, raid5:{ coins:500 }, raid10:{ coins:750, item:'bandeau-choix' }, coop:{ coins:250 },
+  safari1:{ coins:100 }, safariA:{ coins:400 }, safariT:{ coins:750 },
+  contest1:{ coins:150 }, contestM:{ coins:750 }, legend:{ coins:500 }, online:{ coins:150 }, shiny:{ coins:250 },
+  tower10:{ coins:250 }, tower25:{ coins:600, item:'baie-sitrus' }, tower50:{ coins:1500, item:'mouchoir-choix' },
+  perfect:{ coins:1000 }, collect10:{ coins:300 }, collectAll:{ coins:1500, item:'restes' }, crates25:{ coins:250 }, crates100:{ coins:750 },
+  rich:{ coins:500 }, rainbow:{ coins:600 }, crown:{ coins:1500, item:'orbe-vie' }, shiny5:{ coins:750 }, online10:{ coins:750 }, champion:{ coins:2500, item:'ceinture-force' }
 };
-const bdRewardOf = id => BADGE_REWARD[id] || { coins:200 };
+const bdRewardOf = id => BADGE_REWARD[id] || { coins:100 };
 const bdRewardTxt = id => { const R = bdRewardOf(id), it = R.item && HELD_BY_ID[R.item]; return money(R.coins) + (it ? ' + ' + it.name : ''); };
 const BdClaim = {
   all(){ const d = Save.load(); if(!d.badgeClaim) d.badgeClaim = {}; return d.badgeClaim; },
@@ -205,145 +199,6 @@ renderMainMM = (prev => function(){
 })(renderMainMM);
 document.title = 'PokéClash';
 
-// ================================================================ 1. TOUR DE COMBAT
-const twStage = f => { const t = Math.min(1, (f - 1)/40), x = Math.max(0, f - 40), r2 = v => +v.toFixed(2);
-  return { name:'Tour — étage ' + f, level:Math.min(10, Math.ceil(f/5)), arena:TW.arenas[(f*7) % TW.arenas.length], hp:r2(.75 + .028*(f - 1) + .03*x), dmg:r2(.65 + .024*(f - 1) + .02*x),
-    speed:r2(.8 + .45*t), pspeed:r2(.85 + .5*t), rate:r2(1.3 - .72*t), tele:r2(1.2 - .52*t), aim:r2(Math.min(1, (f - 1)/20)), boss:r2(1.8 + .03*f) }; };
-const twEnemyN = f => f % 10 === 0 ? 3 : f % 5 === 0 ? 2 : 1;
-const twPick = (pool, n) => pool.slice().sort(() => Math.random() - .5).slice(0, n);
-const Tower = {
-  run(){ return Save.load().tower || null; },
-  set(r){ const d = Save.load(); d.tower = r; Save.save(); },
-  best(){ return bdCount('towerBest'); },
-  record(f, team){ const d = Save.load(); if(f > (d.towerBest || 0)){ d.towerBest = f; d.towerTeam = team; Save.save(); Badges.check(); } this.sync(); },
-  async sync(){ const d = Save.load(); if(typeof Online === 'undefined' || !Online.user || !d.towerBest || (d.towerSent || 0) >= d.towerBest) return;
-    try{ await Online.rpc('submit_tower', { p_floor:d.towerBest, p_team:d.towerTeam || '' }); d.towerSent = d.towerBest; Save.save(); }catch(e){ console.warn('tour', e.message); } },
-  async top(){ return await Online.rpc('tower_top', { p_limit:30 }) || []; }
-};
-const TW_BONUS = {
-  heal:  { name:'Soin total',      icon:'💖', desc:'Tous tes Pokémon debout récupèrent tous leurs PV.', ok:R => R.team.some(m => m.hp > 0 && m.hp < 1), go:R => R.team.forEach(m => { if(m.hp > 0) m.hp = 1; }) },
-  revive:{ name:'Rappel',          icon:'✨', desc:'Tes Pokémon K.O. reviennent avec 50 % de leurs PV.', ok:R => R.team.some(m => m.hp <= 0), go:R => R.team.forEach(m => { if(m.hp <= 0) m.hp = .5; }) },
-  atk:   { name:'Attaque +12 %',   icon:'⚔️', desc:'Toute ton équipe frappe plus fort jusqu\'à la fin de la tour.', ok:() => true, go:R => R.atk = +((R.atk || 1)*1.12).toFixed(3) },
-  def:   { name:'Défense +10 %',   icon:'🛡️', desc:'Ton équipe subit 10 % de dégâts en moins.', ok:() => true, go:R => R.def = +((R.def || 1)*.9).toFixed(3) },
-  spd:   { name:'Vitesse +8 %',    icon:'💨', desc:'Ton équipe se déplace plus vite.', ok:R => (R.spd || 1) < 1.4, go:R => R.spd = +((R.spd || 1)*1.08).toFixed(3) },
-  hpm:   { name:'PV max +15 %',    icon:'❤️', desc:'Tous tes Pokémon ont plus de PV.', ok:R => (R.hpm || 1) < 2, go:R => R.hpm = +((R.hpm || 1)*1.15).toFixed(3) },
-  item:  { name:'Objet tenu',      icon:'🎒', desc:'Ton Pokémon de tête reçoit un objet tenu (pour cette tour).', ok:R => R.team[0] && !(R.items || {})[R.team[0].id],
-           go:R => { const L = HELD.filter(h => h.r === 'PC' || h.r === 'R'), h = L[Math.floor(Math.random()*L.length)]; R.items = R.items || {}; R.items[R.team[0].id] = h.id; return `${NAME[R.team[0].id]} tient ${h.name} !`; } },
-  coins: { name:'Bourse',          icon:'💰', desc:'Des Pokédollars tout de suite.', ok:() => true, go:R => { const n = 40 + R.floor*8; Save.addCoins(n); R.coins = (R.coins || 0) + n; return `+ ${money(n)}`; } }
-};
-function twOffer(R, f){
-  if(f % 5 === 0) return { kind:'bonus', opts:twPick(Object.keys(TW_BONUS).filter(k => TW_BONUS[k].ok(R)), 3) };
-  if(R.team.length < TW.teamMax && (f % 5 === 2 || (f % 5 === 4 && R.team.length < 3))) return { kind:'recruit', opts:twPick(ORDER.filter(id => !R.team.some(m => m.id === id)), 3) };
-  return null;
-}
-function twTeamHtml(R, click){
-  return `<div class='twteam'>${R.team.map((m, i) => `<button class='twm ${m.hp <= 0 ? 'ko' : ''} ${i === 0 ? 'lead' : ''}' ${click ? `data-twl='${i}'` : 'disabled'}>${thumb(m.id)}<small>${esc(NAME[m.id] || m.id)}</small>
-    <i><u style='width:${Math.max(0, m.hp)*100}%;background:${m.hp > .5 ? '#46d86a' : m.hp > .2 ? '#ffd23f' : '#ff5a4a'}'></u></i>${(R.items || {})[m.id] && HELD_BY_ID[R.items[m.id]] ? `<img class='twit' src='${heldImg(HELD_BY_ID[R.items[m.id]])}'>` : ''}</button>`).join('')}</div>`;
-}
-const twBuffs = R => [['atk', 'Attaque', v => '+' + Math.round((v - 1)*100) + ' %'], ['def', 'Dégâts subis', v => '−' + Math.round((1 - v)*100) + ' %'], ['spd', 'Vitesse', v => '+' + Math.round((v - 1)*100) + ' %'], ['hpm', 'PV max', v => '+' + Math.round((v - 1)*100) + ' %']]
-  .filter(([k]) => R[k] && R[k] !== 1).map(([k, n, f]) => `<span class='twb'>${n} ${f(R[k])}</span>`).join('');
-
-function showTower(){
-  let R = Tower.run();
-  if(R && R.inFight && !(G && G.cfg && G.cfg.mode === 'tower' && !G.over)){ G = null; return twEnd(R, 'abandon'); }
-  G = null; Tower.sync();
-  menu(`<div class='hd'><h1>Tour de Combat</h1>${walletHtml()}</div>
-    <div class='edit twv'><div class='scroll left'>
-      <p class='mini'>Monte le plus haut possible ! Tu commences avec <b>un seul Pokémon, sans objet</b>. Chaque étage est plus dur que le précédent.
-        Tous les 5 étages : <b>un bonus au choix</b>. En route : <b>des Pokémon te rejoignent</b> (6 max). Les PV ne remontent presque pas entre deux étages
-        et un Pokémon K.O. le reste. Si toute ton équipe tombe, la tour est finie. <b>Quitter un combat = fin de la tour.</b></p>
-      <p class='twrec'>🏆 Ton record : <b>étage ${Tower.best()}</b></p>
-      ${R ? `<div class='twrun'><b>Tour en cours : étage ${R.floor}</b>${twTeamHtml(R)}${twBuffs(R) ? `<div class='twbs'>${twBuffs(R)}</div>` : ''}</div>
-        <div class='row'><button class='btn' id='twc'>Continuer</button><button class='btn2' id='twq'>Abandonner</button></div>`
-        : `<div class='row'><button class='btn' id='twn'>Entrer dans la tour</button></div>`}
-    </div><div class='scroll right'><p class='mini'><b>Classement en ligne</b></p><div id='twlb'><small>Chargement…</small></div></div></div>
-    <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
-  const on = (id, fn) => { const b = document.getElementById(id); if(b) b.onclick = fn; };
-  on('twn', twNew); on('twc', () => R.pending ? twAfter(R) : twFloor()); on('back', showMain);
-  on('twq', () => gameConfirm('Abandonner la tour ?', `Ta tour s'arrête à l'étage ${R.floor - 1}.`, 'Abandonner', () => twEnd(R, 'quit')));
-  twBoard();
-}
-SCREENS.tower = showTower;
-async function twBoard(){
-  const el = () => document.getElementById('twlb');
-  if(typeof Online === 'undefined' || !Online.configured || !Online.configured() || !Online.user){ if(el()) el().innerHTML = `<small>Connecte-toi dans <b>Multijoueur</b> pour apparaître dans le classement.</small>`; return; }
-  try{
-    const L = await Tower.top(); if(!el()) return;
-    el().innerHTML = L.length ? `<ol class='twlb'>${L.map((r, i) => `<li class='${r.pseudo === Online.user.pseudo ? 'me' : ''}'><span>${i + 1}.</span><b>${esc(r.pseudo)}</b><span class='tth'>${String(r.team || '').split(',').filter(id => ORDER.includes(id)).slice(0, 6).map(thumb).join('')}</span><em>${r.best}</em></li>`).join('')}</ol>` : '<small>Personne pour l\'instant : sois le premier !</small>';
-  }catch(e){ if(el()) el().innerHTML = `<small>Classement indisponible pour l'instant.</small>`; console.warn('tower_top', e.message); }
-}
-function twNew(){
-  const mine = ORDER.filter(id => Owned.has(id));
-  menu(`<h1>Choisis ton Pokémon de départ</h1><small class='sub'>Il entre seul dans la tour, sans objet.</small><div class='scroll'><div class='grid2'>${mine.map(id => `<button class='card' data-pk='${id}'>${thumb(id)}<small>${NAME[id]}</small><small class='ty'>${typesOf(id).map(t => `<span class='tc' style='background:${COL[t]}'>${TN[t] || t}</span>`).join('')}</small></button>`).join('')}</div></div>
-    <div class='row'><button class='btn2' id='bk'>Retour</button></div>`);
-  bindAll('[data-pk]', el => { Tower.set({ floor:1, team:[{ id:el.dataset.pk, hp:1 }], items:{}, atk:1, def:1, spd:1, hpm:1, coins:0, inFight:0, pending:null }); twFloor(); });
-  document.getElementById('bk').onclick = showTower;
-}
-function twFloor(){
-  const R = Tower.run(); if(!R) return showTower();
-  const f = R.floor, n = twEnemyN(f);
-  menu(`<div class='hd'><h1>Étage ${f}</h1>${walletHtml()}</div>
-    <p class='twnext'>${f % 10 === 0 ? '👑 <b>Étage du boss</b> : 3 adversaires, le dernier est un boss !' : n > 1 ? `⚔ ${n} adversaires` : '⚔ 1 adversaire'}</p>
-    ${twTeamHtml(R, true)}<small class='sub'>Touche un Pokémon pour le mettre en tête.</small>${twBuffs(R) ? `<div class='twbs'>${twBuffs(R)}</div>` : ''}
-    <div class='row'><button class='btn' id='twgo'>Combattre</button><button class='btn2' id='twm'>Menu</button></div>`);
-  bindAll('[data-twl]', el => { const i = +el.dataset.twl; if(R.team[i].hp <= 0) return; R.team.unshift(R.team.splice(i, 1)[0]); Tower.set(R); twFloor(); });
-  document.getElementById('twgo').onclick = twFight; document.getElementById('twm').onclick = showMain;
-}
-function twFight(){
-  const R = Tower.run(); if(!R) return showTower();
-  const alive = R.team.filter(m => m.hp > 0); if(!alive.length) return twEnd(R, 'ko');
-  const f = R.floor, S = twStage(f), foes = twPick(ORDER, twEnemyN(f));
-  R.inFight = 1; Tower.set(R);
-  start({ mode:'tower', team:alive.map(m => m.id), items:R.items || {}, size:alive.length, stage:S, arena:S.arena, enemies:foes });
-  if(!G) return;
-  G.tower = R;
-  G.team.forEach(c => { const m = alive.find(x => x.id === c.t); c.max = Math.round(c.max*(R.hpm || 1)); c.hp = Math.max(1, Math.round(c.max*(m ? m.hp : 1))); c.sp *= R.spd || 1; });
-  if(typeof setBtns === 'function') setBtns();
-  if(typeof musicSet === 'function') musicSet(f % 10 === 0 ? 'tower:boss|boss|battle' : 'tower|battle');
-}
-hurtE = (prev => function(d, b){ if(G && G.tower && G.cfg && G.cfg.mode === 'tower') d *= G.tower.atk || 1; return prev(d, b); })(hurtE);
-hurtP = (prev => function(d, b){ if(G && G.tower && G.cfg && G.cfg.mode === 'tower') d *= G.tower.def || 1; return prev(d, b); })(hurtP);
-battleEnd = (prev => function(win, why){
-  if(!(G && G.cfg && G.cfg.mode === 'tower')) return prev(win, why);
-  const R = G.tower || Tower.run(); if(!R) return showTower();
-  R.inFight = 0;
-  if(!win){ R.team.forEach(m => m.hp = 0); return twEnd(R, 'ko'); }
-  R.team.forEach(m => { const c = G.team.find(x => x.t === m.id); if(c) m.hp = Math.max(0, Math.min(1, c.hp/c.max + (c.hp > 0 ? TW.heal : 0))); });
-  const f = R.floor, gain = TW.coins(f); Save.addCoins(gain); R.coins = (R.coins || 0) + gain; R.floor = f + 1;
-  R.pending = twOffer(R, f); R.last = { f, gain }; Tower.set(R);
-  Tower.record(f, R.team.map(m => m.id).join(','));
-  twAfter(R);
-})(battleEnd);
-function twAfter(R, note){
-  const P = R.pending, L = R.last || { f:R.floor - 1, gain:0 };
-  const body = !P ? '' : P.kind === 'bonus'
-    ? `<p class='mini'><b>Choisis un bonus :</b></p><div class='twopts'>${P.opts.map(k => { const B = TW_BONUS[k]; return `<button class='twopt' data-two='${k}'><em>${B.icon}</em><b>${B.name}</b><small>${B.desc}</small></button>`; }).join('')}</div>`
-    : `<p class='mini'><b>Un Pokémon veut te rejoindre :</b> (${R.team.length}/${TW.teamMax})</p><div class='twopts'>${P.opts.map(id => `<button class='twopt' data-two='${id}'>${thumb(id)}<b>${esc(NAME[id] || id)}</b><small class='ty'>${typesOf(id).map(t => `<span class='tc' style='background:${COL[t]}'>${TN[t] || t}</span>`).join('')}</small></button>`).join('')}
-      <button class='twopt skip' data-two=''><em>✖</em><b>Personne</b><small>Garder mon équipe</small></button></div>`;
-  menu(`<div class='hd'><h1>🏆 Étage ${L.f} réussi !</h1>${walletHtml()}</div>
-    <p class='twgain'>+${money(L.gain)} ${note ? ` · <b>${esc(note)}</b>` : ''}</p>${twTeamHtml(R)}${body}
-    ${P ? '' : `<div class='row'><button class='btn' id='twnx'>Étage ${R.floor}</button><button class='btn2' id='twm'>Menu</button></div>`}`);
-  bindAll('[data-two]', el => {
-    const v = el.dataset.two; let msg = '';
-    if(P.kind === 'bonus'){ msg = TW_BONUS[v].go(R) || TW_BONUS[v].name; }
-    else if(v){ R.team.push({ id:v, hp:1 }); msg = `${NAME[v]} rejoint ton équipe !`; }
-    R.pending = null; Tower.set(R); twAfter(R, msg);
-  });
-  const nx = document.getElementById('twnx'); if(nx) nx.onclick = twFloor;
-  const mn = document.getElementById('twm'); if(mn) mn.onclick = showMain;
-}
-function twEnd(R, why){
-  const f = Math.max(0, R.floor - 1), team = R.team.map(m => m.id).join(',');
-  Tower.set(null); if(f) Tower.record(f, team); G = null;
-  const best = Tower.best();
-  menu(`<h1>${why === 'ko' ? 'Ton équipe est K.O.' : 'Fin de la tour'}</h1>
-    <p>${why === 'abandon' ? 'Tu as quitté un combat : la tour est terminée.<br>' : ''}Tu es arrivé à l'<b>étage ${f}</b>${f && f >= best ? ' — <b>nouveau record !</b>' : ` (record : étage ${best})`}</p>
-    <p class='twgain'>Gains de la tour : ${money(R.coins || 0)}</p>${twTeamHtml(R)}
-    <div class='row'><button class='btn' id='twr'>Recommencer</button><button class='btn2' id='twm'>Menu</button></div>`);
-  document.getElementById('twr').onclick = showTower; document.getElementById('twm').onclick = showMain;
-}
-if(!MAIN_MENU.some(m => m.id === 'tower')){ const i = MAIN_MENU.findIndex(m => m.id === 'solo'); MAIN_MENU.splice(i + 1, 0, { id:'tower', label:'Tour de Combat', desc:'Mode infini : monte le plus haut possible', screen:'tower' }); }
-
 document.head.insertAdjacentHTML('beforeend', `<style>
 .bdgcase{grid-template-columns:repeat(8,1fr)!important}
 .bgx.gift{position:relative;animation:bdgp 1.6s ease-in-out infinite}.bgx.gift::after{content:"!";position:absolute;right:-3px;top:-4px;width:14px;height:14px;border-radius:50%;background:#ffd23f;color:#3a1406;font:bold 10px/14px monospace;text-align:center;box-shadow:0 0 6px #ffd23f}
@@ -354,14 +209,4 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .logo b.pcl{font-size:31px;letter-spacing:2px}.mm .logo .lball{left:188px;top:-6px;background:linear-gradient(180deg,#8a3ae8 0 47%,#14101c 47% 53%,#f4f4f4 53%)}
 .cmvs{display:flex;flex-direction:column;gap:3px}.cmv{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.06)}.cmv b{flex:1;text-align:left}
 .cmv .tc{font-size:9px;padding:1px 5px;border-radius:4px;color:#fff}.ccat2{font-size:9px;padding:0 5px;border:1px solid;border-radius:4px;font-weight:700}.cmv small{width:22px;text-align:right;color:var(--txt2,#c9bcd8)}
-.twv .left{flex:0 0 56%}.twrec{font-size:13px;color:#ffe9a0;margin:6px 0}.twrun{margin:6px 0;padding:6px;border:1px solid #8a5a20;border-radius:8px;background:rgba(58,20,32,.4)}
-.twteam{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:6px 0}.twm{position:relative;width:70px;padding:3px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;display:flex;flex-direction:column;align-items:center;cursor:pointer}
-.twm img{width:40px;height:40px;image-rendering:pixelated}.twm small{font-size:9px}.twm i{display:block;width:58px;height:5px;background:#2a2146;border-radius:3px;overflow:hidden;margin-top:2px}.twm u{display:block;height:100%}
-.twm.lead{border-color:#ffd23f;box-shadow:0 0 6px rgba(255,210,63,.45)}.twm.ko{opacity:.4;filter:grayscale(1)}.twm .twit{position:absolute;top:2px;right:2px;width:16px!important;height:16px!important}.twm:disabled{cursor:default}
-.twbs{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:4px 0}.twb{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(255,210,63,.15);color:#ffe9a0}
-.twnext{font-size:13px;margin:4px 0}.twgain{color:#ffe9a0;font-size:13px;margin:4px 0}
-.twopts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}.twopt{width:150px;padding:6px;border-radius:10px;border:2px solid #8a5a20;background:linear-gradient(180deg,#3a1a50,#22102e);color:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
-.twopt:hover{border-color:#ffd23f}.twopt em{font-style:normal;font-size:22px}.twopt b{font-size:12px;color:#ffe9a0}.twopt small{font-size:10px}.twopt img{width:48px;height:48px;image-rendering:pixelated}.twopt.skip{width:110px;opacity:.8}
-.twlb{list-style:none;margin:0;padding:0;font-size:11px}.twlb li{display:flex;align-items:center;gap:5px;padding:2px 4px;border-radius:5px}.twlb li:nth-child(odd){background:rgba(255,255,255,.05)}.twlb li.me{background:rgba(255,210,63,.18)}
-.twlb b{flex:1;text-align:left}.twlb em{font-style:normal;color:#ffd23f;font-weight:700}.twlb .tth img{width:18px;height:18px;image-rendering:pixelated}
 </style>`);
