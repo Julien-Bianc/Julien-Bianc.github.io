@@ -112,6 +112,115 @@ Object.assign(POKEMON, {
       { name:'Vent Glace', type:'glace', kind:'fan', power:6, share:.5, cooldown:1.6, speed:250, count:5, spread:.2, life:.9, anim:'Shoot', status:{ kind:'slow', chance:.3 } },
       { name:'Feinte', type:'tenebres', kind:'melee', power:8, cooldown:1.8, anim:'Swing', hits:[5], effect:'slash' }
     ]
+  },
+  // ---- v0.20 : Safari des Titans (sprites pmdcollab : 0174, 0063, 0064, 0280, 0281, 0092, 0093, 0123, 0443, 0444, 0246, 0247) ----
+  toudoudou: {
+    name:'Toudoudou', folder:'assets/pokemon/toudoudou', types:['normal', 'fee'], hp:50, speed:165, wildOnly:true,
+    ability:{ name:'Joli Sourire', desc:'Sous 33 % PV : attaques Fée x1,3', lowHp:{ below:.33, type:'fee', mult:1.3, label:'JOLI SOURIRE !' } },
+    moves:[
+      { name:'Écras\'Face', type:'normal', kind:'melee', power:5, cooldown:1.1, anim:'Attack', effect:'impact', rushTime:.13 },
+      { name:'Voix Enjôleuse', type:'fee', kind:'fan', power:4, cooldown:1.4, speed:280, count:3, spread:0.2, life:1, radius:6, anim:'Shoot' },
+      { name:'Berceuse', type:'normal', kind:'fan', power:2, cooldown:2.4, speed:200, count:4, spread:0.35, life:1, radius:7, anim:'Shoot', status:{ kind:'confuse', chance:0.2 } }
+    ]
+  },
+  abra: {
+    name:'Abra', folder:'assets/pokemon/abra', types:['psy'], hp:45, speed:200, wildOnly:true,
+    ability:{ name:'Synchro', desc:'Sous 33 % PV : attaques Psy x1,3', lowHp:{ below:.33, type:'psy', mult:1.3, label:'SYNCHRO !' } },
+    moves:[
+      { name:'Choc Mental', type:'psy', kind:'fan', power:5, cooldown:1.2, speed:360, count:1, spread:0, life:1, radius:7, anim:'Shoot', status:{ kind:'confuse', chance:0.1 } },
+      { name:'Rafale Psy', type:'psy', kind:'fan', power:4, cooldown:1.6, speed:300, count:3, spread:0.15, life:1, radius:6, anim:'Shoot' },
+      { name:'Charge', type:'normal', kind:'melee', power:4, cooldown:1.1, anim:'Attack', effect:'ram', rushTime:.13 }
+    ]
+  },
+  kadabra: {
+    name:'Kadabra', folder:'assets/pokemon/kadabra', types:['psy'], hp:70, speed:205, wildOnly:true,
+    ability:{ name:'Synchro', desc:'Sous 33 % PV : attaques Psy x1,3', lowHp:{ below:.33, type:'psy', mult:1.3, label:'SYNCHRO !' } },
+    moves:[
+      { name:'Psyko', type:'psy', kind:'fan', power:8, cooldown:2.2, speed:280, count:1, spread:0, life:1, radius:10, anim:'Shoot', status:{ kind:'confuse', chance:0.15 } },
+      { name:'Choc Mental', type:'psy', kind:'fan', power:5, cooldown:1.3, speed:360, count:2, spread:0.12, life:1, radius:7, anim:'Shoot' },
+      { name:'Coupe Psycho', type:'psy', kind:'melee', power:9, cooldown:1.6, anim:'Attack', effect:'slash', rushTime:.13 }
+    ]
+  },
+  tarsal: {
+    name:'Tarsal', folder:'assets/pokemon/tarsal', types:['psy', 'fee'], hp:45, speed:170, wildOnly:true,
+    ability:{ name:'Synchro', desc:'Sous 33 % PV : attaques Psy x1,3', lowHp:{ below:.33, type:'psy', mult:1.3, label:'SYNCHRO !' } },
+    moves:[
+      { name:'Choc Mental', type:'psy', kind:'fan', power:4, cooldown:1.3, speed:340, count:1, spread:0, life:1, radius:7, anim:'Attack' },
+      { name:'Voix Enjôleuse', type:'fee', kind:'fan', power:4, cooldown:1.6, speed:280, count:3, spread:0.2, life:1, radius:6, anim:'Attack' },
+      { name:'Vampibaiser', type:'fee', kind:'melee', power:5, cooldown:1.3, anim:'Attack', effect:'impact', rushTime:.13 }
+    ]
+  },
+  kirlia: {
+    name:'Kirlia', folder:'assets/pokemon/kirlia', types:['psy', 'fee'], hp:70, speed:185, wildOnly:true,
+    ability:{ name:'Synchro', desc:'Sous 33 % PV : attaques Psy x1,3', lowHp:{ below:.33, type:'psy', mult:1.3, label:'SYNCHRO !' } },
+    moves:[
+      { name:'Psyko', type:'psy', kind:'fan', power:7, cooldown:2.2, speed:280, count:1, spread:0, life:1, radius:9, anim:'Attack', status:{ kind:'confuse', chance:0.15 } },
+      { name:'Éclat Magique', type:'fee', kind:'fan', power:4, cooldown:1.8, speed:300, count:5, spread:0.25, life:1, radius:6, anim:'Attack' },
+      { name:'Choc Mental', type:'psy', kind:'fan', power:5, cooldown:1.3, speed:360, count:1, spread:0, life:1, radius:7, anim:'Attack' }
+    ]
+  },
+  fantominus: {
+    name:'Fantominus', folder:'assets/pokemon/fantominus', types:['spectre', 'poison'], hp:45, speed:190, wildOnly:true,
+    ability:{ name:'Lévitation', desc:'Sous 33 % PV : attaques Spectre x1,3', lowHp:{ below:.33, type:'spectre', mult:1.3, label:'LÉVITATION !' } },
+    moves:[
+      { name:'Léchouille', type:'spectre', kind:'melee', power:5, cooldown:1.2, anim:'Attack', effect:'impact', rushTime:.13, status:{ kind:'par', chance:0.2 } },
+      { name:'Ball\'Ombre', type:'spectre', kind:'fan', power:6, cooldown:1.8, speed:280, count:1, spread:0, life:1, radius:9, anim:'Shoot' },
+      { name:'Purédpois', type:'poison', kind:'fan', power:3, cooldown:2.2, speed:220, count:4, spread:0.3, life:1, radius:6, anim:'Shoot', status:{ kind:'poison', chance:0.3 } }
+    ]
+  },
+  spectrum: {
+    name:'Spectrum', folder:'assets/pokemon/spectrum', types:['spectre', 'poison'], hp:70, speed:200, wildOnly:true,
+    ability:{ name:'Lévitation', desc:'Sous 33 % PV : attaques Spectre x1,3', lowHp:{ below:.33, type:'spectre', mult:1.3, label:'LÉVITATION !' } },
+    moves:[
+      { name:'Ball\'Ombre', type:'spectre', kind:'fan', power:8, cooldown:1.8, speed:290, count:1, spread:0, life:1, radius:10, anim:'Shoot' },
+      { name:'Poing Ombre', type:'spectre', kind:'melee', power:9, cooldown:1.5, anim:'Attack', effect:'impact', rushTime:.13 },
+      { name:'Bomb-Beurk', type:'poison', kind:'fan', power:7, cooldown:2.4, speed:260, count:1, spread:0, life:1, radius:10, anim:'Shoot', status:{ kind:'poison', chance:0.3 } }
+    ]
+  },
+  insecateur: {
+    name:'Insécateur', folder:'assets/pokemon/insecateur', types:['insecte', 'vol'], hp:75, speed:210, wildOnly:true,
+    ability:{ name:'Essaim', desc:'Sous 33 % PV : attaques Insecte x1,5', lowHp:{ below:.33, type:'insecte', mult:1.5, label:'ESSAIM !' } },
+    moves:[
+      { name:'Taillade', type:'insecte', kind:'melee', power:6, cooldown:1.1, anim:'Attack', effect:'slash', rushTime:.13 },
+      { name:'Lame d\'Air', type:'vol', kind:'fan', power:6, cooldown:1.6, speed:360, count:3, spread:0.15, life:1, radius:6, anim:'Shoot' },
+      { name:'Plaie-Croix', type:'insecte', kind:'melee', power:10, cooldown:1.8, anim:'Attack', effect:'slash', rushTime:.13 }
+    ]
+  },
+  griknot: {
+    name:'Griknot', folder:'assets/pokemon/griknot', types:['dragon', 'sol'], hp:60, speed:175, wildOnly:true,
+    ability:{ name:'Voile Sable', desc:'Sous 33 % PV : attaques Dragon x1,3', lowHp:{ below:.33, type:'dragon', mult:1.3, label:'VOILE SABLE !' } },
+    moves:[
+      { name:'Draco-Rage', type:'dragon', kind:'fan', power:6, cooldown:1.6, speed:320, count:1, spread:0, life:1, radius:8, anim:'Shoot' },
+      { name:'Tir de Boue', type:'sol', kind:'fan', power:4, cooldown:1.8, speed:260, count:3, spread:0.2, life:1, radius:6, anim:'Shoot', status:{ kind:'slow', chance:0.2 } },
+      { name:'Morsure', type:'tenebres', kind:'melee', power:7, cooldown:1.3, anim:'Attack', effect:'slash', rushTime:.13 }
+    ]
+  },
+  carmache: {
+    name:'Carmache', folder:'assets/pokemon/carmache', types:['dragon', 'sol'], hp:80, speed:200, wildOnly:true,
+    ability:{ name:'Voile Sable', desc:'Sous 33 % PV : attaques Dragon x1,3', lowHp:{ below:.33, type:'dragon', mult:1.3, label:'VOILE SABLE !' } },
+    moves:[
+      { name:'Draco-Griffe', type:'dragon', kind:'melee', power:10, cooldown:1.5, anim:'Attack', effect:'slash', rushTime:.13 },
+      { name:'Draco-Souffle', type:'dragon', kind:'fan', power:6, cooldown:1.8, speed:320, count:5, spread:0.12, life:1, radius:6, anim:'Shoot', status:{ kind:'par', chance:0.1 } },
+      { name:'Tir de Boue', type:'sol', kind:'fan', power:5, cooldown:1.8, speed:260, count:3, spread:0.2, life:1, radius:6, anim:'Shoot', status:{ kind:'slow', chance:0.2 } }
+    ]
+  },
+  embrylex: {
+    name:'Embrylex', folder:'assets/pokemon/embrylex', types:['roche', 'sol'], hp:60, speed:160, wildOnly:true,
+    ability:{ name:'Cran', desc:'Sous 33 % PV : attaques Roche x1,3', lowHp:{ below:.33, type:'roche', mult:1.3, label:'CRAN !' } },
+    moves:[
+      { name:'Jet-Pierres', type:'roche', kind:'fan', power:6, cooldown:1.5, speed:300, count:1, spread:0, life:1, radius:8, anim:'Shoot' },
+      { name:'Morsure', type:'tenebres', kind:'melee', power:7, cooldown:1.3, anim:'Attack', effect:'slash', rushTime:.13 },
+      { name:'Tir de Boue', type:'sol', kind:'fan', power:4, cooldown:1.8, speed:260, count:3, spread:0.2, life:1, radius:6, anim:'Shoot', status:{ kind:'slow', chance:0.2 } }
+    ]
+  },
+  ymphect: {
+    name:'Ymphect', folder:'assets/pokemon/ymphect', types:['roche', 'sol'], hp:80, speed:150, wildOnly:true,
+    ability:{ name:'Mue', desc:'Sous 33 % PV : attaques Roche x1,3', lowHp:{ below:.33, type:'roche', mult:1.3, label:'MUE !' } },
+    moves:[
+      { name:'Éboulement', type:'roche', kind:'fan', power:6, cooldown:2, speed:280, count:4, spread:0.25, life:1, radius:9, anim:'Shoot' },
+      { name:'Mâchouille', type:'tenebres', kind:'melee', power:10, cooldown:1.6, anim:'Attack', effect:'slash', rushTime:.13 },
+      { name:'Jet-Pierres', type:'roche', kind:'fan', power:6, cooldown:1.5, speed:300, count:1, spread:0, life:1, radius:8, anim:'Shoot' }
+    ]
   }
 });
 
@@ -151,5 +260,41 @@ const SAFARI_ROOMS = {
     { pokemon:'fouinette', count:3, hp:.55, dmg:.7,  label:'Salle 1 — Les Fouinette guettent', map:'herbes' },
     { pokemon:'fouinette', count:4, hp:.55, dmg:.75, label:'Salle 2 — Le terrier des Fouinette', map:'montagne' },
     { pokemon:'fouinar',   count:1, hp:1,   dmg:1,   label:'Salle 3 — Fouinar t\'attend !', map:'herbes' }
+  ],
+  // ---- v0.20 : Safari des Titans ----
+  rondoudou:[
+    { pokemon:'toudoudou', count:3, hp:.55, dmg:.75, label:'Salle 1 — La crèche des Toudoudou', map:'herbes' },
+    { pokemon:'toudoudou', count:4, hp:.6,  dmg:.8,  label:'Salle 2 — La chorale des Toudoudou', map:'herbes' },
+    { pokemon:'rondoudou', count:1, hp:1,   dmg:1,   label:'Salle 3 — Rondoudou t\'attend !', map:'herbes' }
+  ],
+  alakazam:[
+    { pokemon:'abra',      count:3, hp:.55, dmg:.75, label:'Salle 1 — Les Abra se téléportent', map:'montagne' },
+    { pokemon:'kadabra',   count:2, hp:.6,  dmg:.85, label:'Salle 2 — Les Kadabra tordent leurs cuillères', map:'montagne' },
+    { pokemon:'alakazam',  count:1, hp:1,   dmg:1,   label:'Salle 3 — Alakazam t\'attend !', map:'montagne' }
+  ],
+  gardevoir:[
+    { pokemon:'tarsal',    count:3, hp:.55, dmg:.75, label:'Salle 1 — Les Tarsal se cachent', map:'herbes' },
+    { pokemon:'kirlia',    count:2, hp:.6,  dmg:.85, label:'Salle 2 — Le ballet des Kirlia', map:'montagne' },
+    { pokemon:'gardevoir', count:1, hp:1,   dmg:1,   label:'Salle 3 — Gardevoir t\'attend !', map:'montagne' }
+  ],
+  ectoplasma:[
+    { pokemon:'fantominus', count:3, hp:.55, dmg:.75, label:'Salle 1 — Les Fantominus rôdent', map:'toundra' },
+    { pokemon:'spectrum',   count:2, hp:.6,  dmg:.85, label:'Salle 2 — Les Spectrum ricanent', map:'toundra' },
+    { pokemon:'ectoplasma', count:1, hp:1,   dmg:1,   label:'Salle 3 — Ectoplasma t\'attend !', map:'toundra' }
+  ],
+  cizayox:[
+    { pokemon:'insecateur', count:2, hp:.55, dmg:.75, label:'Salle 1 — Deux Insécateur aiguisent leurs lames', map:'herbes' },
+    { pokemon:'insecateur', count:3, hp:.6,  dmg:.85, label:'Salle 2 — L\'essaim des Insécateur', map:'montagne' },
+    { pokemon:'cizayox',    count:1, hp:1,   dmg:1,   label:'Salle 3 — Cizayox t\'attend !', map:'montagne' }
+  ],
+  carchacrok:[
+    { pokemon:'griknot',   count:3, hp:.55, dmg:.75, label:'Salle 1 — Le nid des Griknot', map:'montagne' },
+    { pokemon:'carmache',  count:2, hp:.6,  dmg:.85, label:'Salle 2 — Les Carmache creusent', map:'volcan' },
+    { pokemon:'carchacrok', count:1, hp:1,  dmg:1,   label:'Salle 3 — Carchacrok t\'attend !', map:'volcan' }
+  ],
+  tyranocif:[
+    { pokemon:'embrylex',  count:3, hp:.55, dmg:.75, label:'Salle 1 — Les Embrylex dévorent la roche', map:'montagne' },
+    { pokemon:'ymphect',   count:2, hp:.6,  dmg:.85, label:'Salle 2 — Les Ymphect se réveillent', map:'montagne' },
+    { pokemon:'tyranocif', count:1, hp:1,   dmg:1,   label:'Salle 3 — Tyranocif t\'attend !', map:'volcan' }
   ]
 };

@@ -391,7 +391,7 @@ canvas.cprev.sm{width:200px;aspect-ratio:22/12}
 .cwrap canvas{width:100%;max-width:560px;max-height:calc(100vh - 70px);aspect-ratio:16/9;image-rendering:pixelated;border:2px solid #0008;border-radius:6px;background:#14101c;touch-action:none;cursor:pointer}
 .cin{background:#1c1838ee;border-radius:10px;padding:8px 12px;max-width:460px;width:100%;text-align:left;font-size:12px}
 .cin p{margin-top:5px}.cinh{display:flex;align-items:center;gap:10px}.cinh img{width:40px;height:40px;image-rendering:pixelated}
-.rbn{width:24px;height:28px;image-rendering:pixelated}.rbn.big{width:48px;height:56px}
+.rbn{width:36px;height:34px;image-rendering:pixelated}.rbn.big{width:66px;height:63px}
 .ctab{border-collapse:collapse;font-size:11px;max-width:480px;width:100%}.ctab th{font-size:9px;opacity:.7;font-weight:400}
 .ctab td{padding:2px 4px;text-align:center;border-bottom:1px solid #fff2}.ctab tr[style]{box-shadow:inset 3px 0 0 var(--cc)}
 .ctab .nm{text-align:left;white-space:nowrap}.ctab .nm img{width:22px;height:22px;vertical-align:middle;image-rendering:pixelated}
@@ -427,3 +427,9 @@ canvas.cprev.sm{width:200px;aspect-ratio:22/12}
 .ctabs{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}.ctabs .btn2{padding:3px 8px;font-size:11px}
 .cdet .cr{max-height:none;overflow:visible}.cdet .cr .poflist{max-height:120px}
 .cdet .cl .big{width:72px;height:72px}
+
+.bimg{width:32px;height:32px;image-rendering:pixelated;vertical-align:middle}.bimg.m{width:28px;height:28px}.bimg.s{width:20px;height:20px}
+
+/* v0.19 : épreuves du concours en plein écran */
+#menu.cfull{background:#000!important;padding:0!important}#menu.cfull .mc{display:none!important}
+canvas.cfull{position:absolute;left:0;top:0;width:100%;height:100%;z-index:30;display:block;touch-action:none;cursor:pointer;background:#000}

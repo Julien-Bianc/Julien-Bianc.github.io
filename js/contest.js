@@ -28,18 +28,103 @@ const ribbonId = (cat, rank) => cat + '-' + rank;
 const ribbonName = (cat, rank) => 'Ruban ' + CSTAT[cat].name + ' ' + CONTEST_RANKS[rank].name;
 const catColor = cat => CSTAT[cat].col;
 
-// ---------- icône de ruban (pixel art : rosette + deux pans, couleur = catégorie, métal = rang) ----------
+// ---------- petit atelier de pixel art : calques à ombrage 3 tons (lumière haut-gauche) + contour sombre automatique ----------
+function pxBuilder(W, H){
+  const out = mkc(W, H), ox = out.getContext('2d');
+  const layer = (fn, col) => {
+    const m = mkc(W, H), mx = m.getContext('2d'); mx.fillStyle = '#fff'; fn(mx); const d = mx.getImageData(0, 0, W, H).data, on = (i, j) => i >= 0 && j >= 0 && i < W && j < H && d[(j*W + i)*4 + 3] > 100;
+    const Lc = mixHex(col, '#ffffff', .5), Dc = mixHex(col, '#000000', .45);
+    for(let j = 0; j < H; j++) for(let i = 0; i < W; i++){ if(!on(i, j)) continue; ox.fillStyle = (!on(i, j - 1) || !on(i - 1, j)) ? Lc : (!on(i, j + 1) || !on(i + 1, j)) ? Dc : col; ox.fillRect(i, j, 1, 1); }
+  };
+  const finish = () => {
+    const d = ox.getImageData(0, 0, W, H).data, f = mkc(W, H), fx = f.getContext('2d'), on = (i, j) => i >= 0 && j >= 0 && i < W && j < H && d[(j*W + i)*4 + 3] > 100;
+    fx.drawImage(out, 0, 0); fx.fillStyle = OL;
+    for(let j = 0; j < H; j++) for(let i = 0; i < W; i++) if(!on(i, j) && (on(i - 1, j) || on(i + 1, j) || on(i, j - 1) || on(i, j + 1))) fx.fillRect(i, j, 1, 1);
+    return f;
+  };
+  return { layer, finish, ox, W, H };
+};
+const pxDisc = (cx, cy, r) => mx => cDisc(mx, '#fff', cx, cy, r);
+const pxRing = (n, d, r, off, cx, cy) => mx => { for(let i = 0; i < n; i++){ const a = i*6.2832/n + (off || 0); cDisc(mx, '#fff', cx + Math.cos(a)*d, cy + Math.sin(a)*d, r); } };
+const pxPoly = pts => mx => cPoly(mx, pts, '#fff');
+const pxStar = (cx, cy, R, r) => { const p = []; for(let i = 0; i < 10; i++){ const a = -Math.PI/2 + i*Math.PI/5, k = i % 2 ? r : R; p.push([cx + Math.cos(a)*k, cy + Math.sin(a)*k]); } return p; };
+const mirX = (pts, W) => pts.map(([a, b]) => [W - a, b]);
+
+// ---------- icône de ruban : NŒUD PAPILLON (2 grandes boucles + 2 pans en V) + blason doré, comme les rubans de concours des jeux ----------
+//   Normal : nœud simple · Super : boucles intérieures + blason + pans centraux · Hyper : + couronne et liserés dorés · Master : boucles arrière, grande couronne à gemme, pans dorés
 function ribbonImg(cat, rank, grey){
-  const key = 'rb' + cat + rank + (grey ? 'g' : ''); if(_cs[key]) return _cs[key];
-  const c = mkc(24, 28), x = c.getContext('2d'), base = grey ? '#4a4660' : catColor(cat), L = mixHex(base, '#ffffff', .45), D = mixHex(base, '#000000', .45), M = grey ? '#6a6682' : CONTEST_RANKS[rank].col;
-  const tail = (dx, sk) => { for(let y = 0; y < 12; y++){ const a = 12 + dx + (sk*y/3 | 0); cRect(x, OL, a - 1, 13 + y, 7, 1); cRect(x, y % 4 < 2 ? base : D, a, 13 + y, 5, 1); } cRect(x, OL, 12 + dx - 1 + (sk*12/3 | 0), 25, 7, 1); };
-  tail(-7, -1); tail(2, 1);
-  cDisc(x, OL, 12, 11, 10); cDisc(x, D, 12, 11, 9); cDisc(x, base, 12, 10, 8); cDisc(x, L, 11, 8, 4); cDisc(x, base, 12, 11, 5);
-  cDisc(x, OL, 12, 11, 4); cDisc(x, M, 12, 11, 3); cRect(x, '#ffffff', 11, 10, 1, 1);
-  for(let i = 0; i <= rank; i++) cRect(x, '#fff', 4 + i*4 - rank*2 + 4, 21, 2, 2);           // petits points = rang
-  return _cs[key] = c.toDataURL();
+  const key = 'rb4' + cat + rank + (grey ? 'g' : ''); if(_cs[key]) return _cs[key];
+  const W = 44, H = 42, CX = 22, B = pxBuilder(W, H), L = B.layer, ox = B.ox, dot = (c, a, y, w, h) => { ox.fillStyle = c; ox.fillRect(a, y, w || 1, h || 1); };
+  const base = grey ? '#5a5672' : catColor(cat), gold = grey ? '#8a86a2' : '#ffd23f', gem = grey ? '#9a96b2' : (rank === 3 ? '#ff4a6a' : '#ff7ac8');
+  const lite = (c, k) => mixHex(c, '#ffffff', k), dark = (c, k) => mixHex(c, '#000000', k), M = pts => mirX(pts, W), both = (pts, col) => { L(pxPoly(pts), col); L(pxPoly(M(pts)), col); };
+  const line = (x0, y0, x1, y1, col) => { for(let k = 0; k <= 10; k++){ const u = k/10, px = Math.round(x0 + (x1 - x0)*u), py = Math.round(y0 + (y1 - y0)*u); dot(col, px, py); dot(col, W - 1 - px, py); } };
+  // pans centraux droits (rang >= 1)
+  if(rank >= 1){ const bt = [33, 36, 38, 41][rank]; const t = [[18, 20], [26, 20], [25, bt - 1], [22, bt - 5], [19, bt - 1]]; L(pxPoly(t), dark(base, .12)); for(let y = 24; y < bt - 6; y++) dot(rank >= 2 ? gold : lite(base, .5), CX, y); if(rank >= 2) dot(gold, 19, bt - 2, 7, 1); }
+  // boucles arrière (Master)
+  if(rank === 3) both([[21, 12], [17, 3], [11, 0], [5, 0], [1, 4], [0, 11], [4, 16], [12, 18]], dark(base, .3));
+  // pans en V (sous le nœud)
+  const tail = [[20, 19], [13, 22], [7, 29], [4, 38], [10, 36], [16, 31], [21, 25]]; both(tail, dark(base, .12));
+  line(19, 23, 8, 35, dark(base, .45));
+  if(rank >= 2) line(20, 23, 9, 34, gold);
+  // grandes boucles du haut
+  const loop = [[21, 15], [17, 7], [11, 3], [5, 3], [1, 7], [1, 14], [4, 19], [10, 21], [17, 20]]; both(loop, base);
+  if(rank >= 1){ const inner = [[19, 15], [16, 9], [11, 6], [6, 6], [3, 9], [3, 14], [6, 17], [11, 18]]; both(inner, lite(base, .26)); }
+  line(19, 14, 7, 8, dark(base, .4)); line(19, 17, 6, 15, dark(base, .4));
+  // nœud / blason
+  if(rank === 0){ L(pxDisc(CX, 16, 4.6), dark(base, .1)); L(pxDisc(CX, 16, 2.6), gold); dot('#fff', CX - 1, 15); }
+  else {
+    L(pxPoly([[17, 11], [27, 11], [28, 16], [26, 21], [22, 23.5], [18, 21], [16, 16]]), gold);
+    L(pxPoly([[19, 13], [25, 13], [26, 16], [24, 20], [22, 21.5], [20, 20], [18, 16]]), lite(gold, .28));
+    for(let k = 0; k < 4; k++) dot(dark(gold, .45), 20 + (k % 2)*3, 15 + k);                                       // petit motif gravé
+    if(rank === 3){ L(pxDisc(CX, 17, 2.6), gem); dot('#fff', CX - 1, 16); } else if(rank === 2){ dot(gem, CX - 1, 16, 2, 2); }
+    if(rank >= 2) L(pxPoly(rank === 3 ? [[16, 11], [16, 4], [19, 7.5], [22, 1], [25, 7.5], [28, 4], [28, 11]] : [[17, 11], [17, 6], [19.5, 8.5], [22, 4], [24.5, 8.5], [27, 6], [27, 11]]), gold);
+  }
+  const f = B.finish(), fx = f.getContext('2d');
+  if(rank === 3 && !grey){ fx.fillStyle = gem; fx.fillRect(22, 1, 1, 1); fx.fillRect(16, 4, 1, 1); fx.fillRect(28, 4, 1, 1); }
+  if(rank >= 2 && !grey){ fx.fillStyle = '#fff'; [[3, 1], [41, 2], [1, 36], [43, 34]].forEach(([a, b]) => { fx.fillRect(a, b, 1, 1); fx.fillRect(a - 1, b, 3, 1); fx.fillRect(a, b - 1, 1, 3); }); }
+  return _cs[key] = f.toDataURL();
 }
 const ribbonTag = (cat, rank, earned) => `<img class='rbn' src='${ribbonImg(cat, rank, !earned)}' title='${esc(ribbonName(cat, rank))}'>`;
+
+// ---------- sprites de baies : PNG PokéSprite (assets/items/xxx-berry.png) ; s'il manque, dessin pixel art de secours ----------
+function berryProc(b){
+  const key = 'bp' + b.id; if(_cs[key]) return _cs[key];
+  const B = pxBuilder(32, 32), L = B.layer, ox = B.ox, px = (c, a, y, w, h) => { ox.fillStyle = c; ox.fillRect(a, y, w || 1, h || 1); }, leaf = '#58b838', stem = '#7a4a1a';
+  if(b.id === 'mepo'){      // Baie Mepo : fruit en cœur, rouge-orangé
+    L(mx => { cDisc(mx, '#fff', 12, 17, 7.5); cDisc(mx, '#fff', 20, 17, 7.5); cPoly(mx, [[5, 19], [27, 19], [16, 30]], '#fff'); }, '#e8602c'); px('#a83a14', 15, 13, 2, 14); px('#a83a14', 9, 17, 1, 6); px('#a83a14', 22, 17, 1, 6);
+    L(pxPoly([[16, 11], [21, 3], [27, 5], [22, 11]]), leaf); px(stem, 15, 7, 2, 6);
+  } else if(b.id === 'wiki'){   // Baie Wiki : ronde, bleu-violet, calice vert
+    L(pxDisc(16, 19, 10), '#6a74d8'); px('#aab4ff', 11, 14, 2, 2); px('#4a54a8', 18, 26, 5, 1); px('#4a54a8', 12, 25, 3, 1);
+    L(pxPoly([[9, 12], [13, 6], [16, 10], [19, 6], [23, 12], [16, 14]]), leaf); px(stem, 15, 3, 2, 5);
+  } else if(b.id === 'kika'){   // Baie Kika : croissant rose
+    L(mx => { cDisc(mx, '#fff', 16, 18, 11); mx.globalCompositeOperation = 'destination-out'; cDisc(mx, '#000', 22, 12, 7); }, '#f08ab4'); px('#ffd0e4', 8, 16, 2, 4); px('#c85a8a', 12, 27, 6, 1);
+    L(pxPoly([[9, 9], [4, 4], [11, 5], [14, 9]]), leaf);
+  } else if(b.id === 'gowav'){  // Baie Gowav : cône vert
+    L(mx => { cPoly(mx, [[16, 4], [25, 20], [16, 29], [7, 20]], '#fff'); cDisc(mx, '#fff', 16, 21, 9); }, '#58b858'); for(let k = 0; k < 5; k++) px('#388848', 11 + k*2, 14 + k*3, 1, 3); px('#b0f0b0', 12, 17, 2, 3);
+    L(pxPoly([[16, 5], [22, 0], [24, 6], [18, 8]]), '#3a9c4e'); px(stem, 15, 4, 2, 4);
+  } else if(b.id === 'papaya'){ // Baie Papaya : ananas jaune quadrillé
+    L(mx => { mx.beginPath(); mx.ellipse(16, 20, 9, 10, 0, 0, 6.283); mx.fill(); }, '#e8c82c');
+    for(let j = 11; j < 30; j++) for(let i = 7; i < 25; i++){ const e = ((i - 16)/9)**2 + ((j - 20)/10)**2; if(e < .8 && ((i + j) % 6 === 0 || (i - j + 60) % 6 === 0)) px('#b8901c', i, j); }
+    L(pxPoly([[16, 11], [11, 3], [16, 6]]), leaf); L(pxPoly([[16, 11], [16, 0], [20, 7]]), '#3a9c4e'); L(pxPoly([[16, 11], [22, 3], [22, 10]]), leaf);
+  } else { L(pxDisc(16, 18, 10), b.col); }
+  return _cs[key] = B.finish().toDataURL();
+}
+const berryImgHtml = (b, cls) => `<img class='bimg ${cls || ''}' src='assets/items/${b.sprite}.png' onerror="this.onerror=null;this.src='${berryProc(b)}'" alt=''>`;
+const _bel = {};
+function berryEl(b){ if(_bel[b.id]) return _bel[b.id]; const im = new Image(); im.onerror = () => { im.onerror = null; im.src = berryProc(b); }; im.src = 'assets/items/' + b.sprite + '.png'; return _bel[b.id] = im; }
+// poffin : biscuit ovale glacé (comme dans les jeux), de la couleur de sa saveur principale, parsemé de vermicelles colorés
+function poffinImg(p){
+  const ent = Object.entries(p.gain || {}).sort((a, b) => b[1] - a[1]), main = ent[0], second = ent[1];
+  const col = main ? catColor(main[0]) : '#b8884a', c2 = second ? catColor(second[0]) : null, key = 'pf3' + col + (c2 || ''); if(_cs[key]) return _cs[key];
+  const B = pxBuilder(32, 32), L = B.layer, ox = B.ox, rot = -.45, cs = Math.cos(rot), sn = Math.sin(rot);
+  const oval = (cx, cy, rx, ry) => mx => { mx.save(); mx.translate(cx, cy); mx.rotate(rot); mx.beginPath(); mx.ellipse(0, 0, rx, ry, 0, 0, 6.2832); mx.fill(); mx.restore(); };
+  L(oval(16, 19, 13, 9.6), '#c98a48');                                   // pâte dorée (dessous)
+  L(oval(16, 16.4, 12.4, 8.8), col); L(oval(14.2, 13.6, 8.2, 4.2), mixHex(col, '#ffffff', .22));   // glaçage + reflet
+  const pal = ['#ffffff', '#ffd23f', '#3fbf5a', '#3b8fd9', '#ff7ac8', '#e8402c'].filter(c => c !== col); if(c2) pal.unshift(c2, c2);
+  const dots = [[-8, -1, 0], [-4, -4, 1], [0, -1, 2], [4, -3, 0], [7, 1, 1], [-3, 3, 2], [2, 4, 0], [-7, 3, 1], [5, 5, 2], [-1, -6, 1]];
+  dots.forEach(([u, v, k], i) => { const px = Math.round(16 + u*cs - v*sn), py = Math.round(16 + u*sn + v*cs - 1); ox.fillStyle = pal[i % pal.length]; if(k === 0){ ox.fillRect(px, py, 3, 1); } else if(k === 1){ ox.fillRect(px, py, 1, 1); ox.fillRect(px + 1, py + 1, 1, 1); ox.fillRect(px + 2, py + 2, 1, 1); } else { ox.fillRect(px, py, 1, 3); } });
+  return _cs[key] = B.finish().toDataURL();
+}
 
 // ---------- stats ----------
 const statSum = s => CONTEST_STATS.reduce((a, t) => a + s[t.id], 0);
@@ -230,7 +315,7 @@ function showContestMon(pid, tab, msg){
   const body = {
     stats:() => CONTEST_STATS.map(t => statBar(t, s[t.id])).join('') + statBar({ name:'Éclat', col:'#ffd23f' }, s.sheen) + `<p class='mini'>L'éclat augmente quand il mange des poffins ; à 255 il n'a plus faim. Ces stats servent uniquement aux concours.</p>`,
     cap:() => `<p class='mini'>Capsule Ball (compte dans la note de Style : C +${CAP_STYLE.C}, PC +${CAP_STYLE.PC}, R +${CAP_STYLE.R}, UR +${CAP_STYLE.UR}) :</p><div class='row capsel'><button class='btn2 ${cap ? '' : 'on'}' data-cap=''>Aucune</button>${owned.map(x => `<button class='btn2 ${cap && cap.id === x.id ? 'on' : ''}' data-cap='${x.id}' title='${esc(x.name)}'><img src='${capIcon(x)}' class='cmc'></button>`).join('')}</div>${cap ? `<p class='mini'><b style='color:${cap.col}'>${esc(cap.name)}</b> — ${esc(cap.desc)}</p>` : ''}`,
-    pof:() => `<p class='mini'>Donner un poffin (${c.poffins.length}) ${msg ? '<br><b>' + esc(msg) + '</b>' : ''}</p><div class='poflist'>${c.poffins.map((p, i) => `<button class='btn2 pof' data-p='${i}'><b>${p.name}</b> ${poffinTxt(p)} <small>éclat +${p.sheen}</small></button>`).join('') || '<small>Aucun poffin : va à la Cuisine.</small>'}</div>`,
+    pof:() => `<p class='mini'>Donner un poffin (${c.poffins.length}) ${msg ? '<br><b>' + esc(msg) + '</b>' : ''}</p><div class='poflist'>${c.poffins.map((p, i) => `<button class='btn2 pof' data-p='${i}'><img class='bimg s' src='${poffinImg(p)}'> <b>${p.name}</b> ${poffinTxt(p)} <small>éclat +${p.sheen}</small></button>`).join('') || '<small>Aucun poffin : va à la Cuisine.</small>'}</div>`,
     rib:() => `<p class='mini'>Rubans remportés :</p><div class='row'>${Con.ribbons(pid).map(r => { const [ct, rk] = r.split('-'); return ribbonTag(ct, +rk, true); }).join('') || '<small>Aucun</small>'}</div>`
   };
   menu(`<h1>${esc(NAME[pid] || pid)}</h1><div class='ctabs'>${[['stats', 'Stats'], ['cap', 'Capsule'], ['pof', 'Poffins'], ['rib', 'Rubans']].map(([k, n]) => `<button class='btn2 ${tab === k ? 'on' : ''}' data-t='${k}'>${n}</button>`).join('')}</div>
@@ -245,7 +330,7 @@ function showContestMon(pid, tab, msg){
 // ---------- Marché aux baies ----------
 function showMarket(msg){
   menu(`<div class='hd'><h1>Marché aux baies</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
-    <div class='scroll igrid cberr'>${BERRIES.map(b => `<div class='berry'><span class='bd' style='background:${b.col}'></span><b>${b.name}</b><span class='fl'>${Object.entries(b.fl).map(([k, v]) => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor} ${v}</i>`).join(' ')}</span><small>Lisse ${b.lisse} · en stock : ${Con.berry(b.id)}</small><button class='btn2' data-b='${b.id}'>Acheter ${money(b.price)}</button></div>`).join('')}</div>
+    <div class='scroll igrid cberr'>${BERRIES.map(b => `<div class='berry'>${berryImgHtml(b)}<b>${b.name}</b><span class='fl'>${Object.entries(b.fl).map(([k, v]) => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor} ${v}</i>`).join(' ')}</span><small>Lisse ${b.lisse} · en stock : ${Con.berry(b.id)}</small><button class='btn2' data-b='${b.id}'>Acheter ${money(b.price)}</button></div>`).join('')}</div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
   bindAll('[data-b]', el => { const b = BERRY[el.dataset.b]; if(Save.spend(b.price)){ Con.addBerry(b.id, 1); showMarket('+1 ' + b.name); } else showMarket('Pas assez de Pokédollars.'); });
   document.getElementById('back').onclick = showContest;
@@ -258,8 +343,8 @@ function showCook(msg){
   COOK_SEL = sel;
   const prev = sel.length ? makePoffin(sel, .8) : null;
   menu(`<h1>Cuisine à Poffin</h1>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
-    <div class='cook'><div class='scroll igrid cberr s'>${BERRIES.filter(b => Con.berry(b.id) > 0).map(b => `<button class='berry sm' data-b='${b.id}'><span class='bd' style='background:${b.col}'></span><b>${b.name.replace('Baie ', '')}</b><small>×${Con.berry(b.id) - COOK_SEL.filter(x => x === b.id).length}</small><span class='fl'>${Object.keys(b.fl).map(k => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor}</i>`).join(' ')}</span></button>`).join('') || '<p>Aucune baie : va au marché.</p>'}</div>
-    <div class='pot'><p class='mini'>Dans la marmite (${sel.length}/${POFFIN_MAX_BERRIES}) :</p><div class='row'>${sel.map((id, i) => `<button class='btn2' data-r='${i}'><span class='bd' style='background:${BERRY[id].col}'></span> ${BERRY[id].name.replace('Baie ', '')} ✕</button>`).join('') || '<small>Choisis 1 à 4 baies</small>'}</div>
+    <div class='cook'><div class='scroll igrid cberr s'>${BERRIES.filter(b => Con.berry(b.id) > 0).map(b => `<button class='berry sm' data-b='${b.id}'>${berryImgHtml(b, 'm')}<b>${b.name.replace('Baie ', '')}</b><small>×${Con.berry(b.id) - COOK_SEL.filter(x => x === b.id).length}</small><span class='fl'>${Object.keys(b.fl).map(k => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor}</i>`).join(' ')}</span></button>`).join('') || '<p>Aucune baie : va au marché.</p>'}</div>
+    <div class='pot'><p class='mini'>Dans la marmite (${sel.length}/${POFFIN_MAX_BERRIES}) :</p><div class='row'>${sel.map((id, i) => `<button class='btn2' data-r='${i}'>${berryImgHtml(BERRY[id], 's')} ${BERRY[id].name.replace('Baie ', '')} ✕</button>`).join('') || '<small>Choisis 1 à 4 baies</small>'}</div>
     <p class='mini'>${prev ? 'Aperçu : ' + poffinTxt(prev) + '<br><small>Plus tu mélanges de saveurs, plus le résultat est faible. Une cuisson réussie donne un poffin plus fort et plus lisse (moins d\'éclat consommé).</small>' : ''}</p>
     <div class='row'><button class='btn' id='go' ${sel.length ? '' : 'disabled'}>Cuisiner</button></div></div></div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
@@ -275,7 +360,7 @@ function showCook(msg){
   };
 }
 function showPoffinDone(p){
-  menu(`<h1>Poffin prêt !</h1><div class='cin'><div class='cinh'><span class='bd big' style='background:#e8a050'></span><div><b>${p.name}</b><br>${poffinTxt(p)}<br><small>Qualité ${p.q} % · lisse ${p.lisse} · éclat +${p.sheen}</small></div></div></div>
+  menu(`<h1>Poffin prêt !</h1><div class='cin'><div class='cinh'><img class='bimg' src='${poffinImg(p)}'><div><b>${p.name}</b><br>${poffinTxt(p)}<br><small>Qualité ${p.q} % · lisse ${p.lisse} · éclat +${p.sheen}</small></div></div></div>
     <div class='row'><button class='btn' id='a'>Cuisiner encore</button><button class='btn2' id='m'>Donner à un Pokémon</button><button class='btn2' id='b'>Retour</button></div>`);
   document.getElementById('a').onclick = () => showCook(); document.getElementById('m').onclick = () => showContestMons(); document.getElementById('b').onclick = showContest;
 }

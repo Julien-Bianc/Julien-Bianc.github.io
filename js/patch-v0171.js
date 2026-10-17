@@ -11,7 +11,7 @@
 //    6. Raids : attaques de zone en plus (météores, fissures, ondes) qu'il faut esquiver
 // ============================================================
 const raidUnlocked = () => Save.cleared(3) >= CH_SIZE || Save.cleared(6) >= CH_SIZE;
-const raidDone = cur => { const d = Save.load().raidDone; return !!(d && cur && d.slot === cur.slot && d.id === cur.id); };
+function raidDone(cur){ const d = Save.load().raidDone; return !!(d && cur && d.slot === cur.slot && d.id === cur.id); }   // (v0.20 : remplacée dans patch-v020.js — 3 tentatives)
 
 // ---------- 1. menu principal ----------
 const HIDE_LEFT = ['boss', 'raid'];

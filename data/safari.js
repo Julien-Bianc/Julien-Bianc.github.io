@@ -16,7 +16,12 @@ const SAFARI = {
       pokemon:['farfuret', 'dracaufeu', 'tortank', 'florizarre', 'lucario', 'raichu', 'fouinar'],
       ticket:{ id:'ticket:depart', name:'Ticket Safari — Grand Départ', price:200, col:'#5aa845' },
       // combat contre le Pokémon sauvage (même format que data/stages.js) — hp élevé : il faut le temps de l'affaiblir
-      stage:{ name:'Safari', level:4, hp:2.0, dmg:.95, speed:1.1, pspeed:1.05, rate:1.0, tele:1.0, aim:.45, boss:1 } }
+      stage:{ name:'Safari', level:4, hp:2.0, dmg:.95, speed:1.1, pspeed:1.05, rate:1.0, tele:1.0, aim:.45, boss:1 } },
+    // v0.20 : les Pokémon du chapitre 2 (Safari en 3 salles chacun : data/safari-rooms.js)
+    { id:'titans', name:'Safari des Titans', desc:'Les Pokémon du chapitre 2 vivent ici.',
+      pokemon:['rondoudou', 'alakazam', 'gardevoir', 'ectoplasma', 'cizayox', 'carchacrok', 'tyranocif'],
+      ticket:{ id:'ticket:titans', name:'Ticket Safari — Titans', price:350, col:'#8a5ae8' },
+      stage:{ name:'Safari des Titans', level:5, hp:2.2, dmg:1.05, speed:1.15, pspeed:1.1, rate:.95, tele:.95, aim:.55, boss:1 } }
   ],
   // Balls vendues au Magasin. mult = multiplicateur de capture
   balls:[

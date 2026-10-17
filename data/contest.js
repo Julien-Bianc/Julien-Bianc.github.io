@@ -47,18 +47,18 @@ const TYPE_CAT = {
 };
 const catOf = type => TYPE_CAT[type] || 'cute';
 
-// Baies : fl = saveurs { statId: valeur }, lisse = douceur (plus c'est bas, plus le poffin est « lisse »), price = prix au marché
+// Baies : sprite = image dans assets/items/ (PokéSprite ; si elle manque, le jeu dessine la baie lui-même), fl = saveurs { statId: valeur }, lisse = douceur (plus c'est bas, plus le poffin est « lisse »), price = prix au marché
 const BERRIES = [
-  { id:'ceriz',  name:'Baie Ceriz',  fl:{ cool:20 },              lisse:25, price:20, col:'#e0443a' },
-  { id:'maron',  name:'Baie Maron',  fl:{ beauty:20 },            lisse:25, price:20, col:'#5a8fe0' },
-  { id:'pecha',  name:'Baie Pêcha',  fl:{ cute:20 },              lisse:25, price:20, col:'#ff9ad0' },
-  { id:'fraive', name:'Baie Fraive', fl:{ smart:20 },             lisse:25, price:20, col:'#58c46a' },
-  { id:'willia', name:'Baie Willia', fl:{ tough:20 },             lisse:25, price:20, col:'#f0c23a' },
-  { id:'mepo',   name:'Baie Mepo',   fl:{ cool:30, beauty:10 },   lisse:20, price:45, col:'#c0301e' },
-  { id:'wiki',   name:'Baie Wiki',   fl:{ beauty:30, cute:10 },   lisse:20, price:45, col:'#3a68c8' },
-  { id:'kika',   name:'Baie Kika',   fl:{ cute:30, smart:10 },    lisse:20, price:45, col:'#e86ab4' },
-  { id:'gowav',  name:'Baie Gowav',  fl:{ smart:30, tough:10 },   lisse:20, price:45, col:'#3a9c4e' },
-  { id:'papaya', name:'Baie Papaya', fl:{ tough:30, cool:10 },    lisse:20, price:45, col:'#d8a418' }
+  { id:'ceriz', sprite:'cheri-berry',  name:'Baie Ceriz',  fl:{ cool:20 },              lisse:25, price:20, col:'#e0443a' },
+  { id:'maron', sprite:'chesto-berry',  name:'Baie Maron',  fl:{ beauty:20 },            lisse:25, price:20, col:'#5a8fe0' },
+  { id:'pecha', sprite:'pecha-berry',  name:'Baie Pêcha',  fl:{ cute:20 },              lisse:25, price:20, col:'#ff9ad0' },
+  { id:'fraive', sprite:'rawst-berry', name:'Baie Fraive', fl:{ smart:20 },             lisse:25, price:20, col:'#58c46a' },
+  { id:'willia', sprite:'aspear-berry', name:'Baie Willia', fl:{ tough:20 },             lisse:25, price:20, col:'#f0c23a' },
+  { id:'mepo', sprite:'figy-berry',   name:'Baie Mepo',   fl:{ cool:30, beauty:10 },   lisse:20, price:45, col:'#c0301e' },
+  { id:'wiki', sprite:'wiki-berry',   name:'Baie Wiki',   fl:{ beauty:30, cute:10 },   lisse:20, price:45, col:'#3a68c8' },
+  { id:'kika', sprite:'mago-berry',   name:'Baie Kika',   fl:{ cute:30, smart:10 },    lisse:20, price:45, col:'#e86ab4' },
+  { id:'gowav', sprite:'aguav-berry',  name:'Baie Gowav',  fl:{ smart:30, tough:10 },   lisse:20, price:45, col:'#3a9c4e' },
+  { id:'papaya', sprite:'iapapa-berry', name:'Baie Papaya', fl:{ tough:30, cool:10 },    lisse:20, price:45, col:'#d8a418' }
 ];
 const BERRY = Object.fromEntries(BERRIES.map(b => [b.id, b]));
 const POFFIN_MAX_BERRIES = 4, POFFIN_STOCK = 40;
