@@ -53,6 +53,12 @@ function rsBolt(x0, y0, x1, y1, col){
   pts.push([x1, y1]); RS.bolts.push({ pts, life:.16, col });
 }
 function drawRaidScene(dt){
+  ctx.save();
+  try{ drawRaidScene2(dt); }
+  catch(e){ console.warn('menu-raid', e); }
+  finally{ ctx.restore(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }   // jamais d'état « lighter » qui reste collé
+}
+function drawRaidScene2(dt){
   if(!RS.L) rsBuild();
   const L = RS.L, t = RS.t += dt;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
@@ -109,7 +115,7 @@ function drawRaidScene(dt){
   // projectiles (bulles, flammes…) vers le boss
   ctx.globalCompositeOperation = 'lighter';
   for(let i = RS.parts.length - 1; i >= 0; i--){
-    const p = RS.parts[i]; p.u += dt*p.sp;
+    const p = RS.parts[i]; if(p.ember) continue; p.u += dt*p.sp;
     if(p.u < 0) continue;
     if(p.u >= 1){ RS.parts.splice(i, 1); RS.hitT = .18; for(let s = 0; s < 4; s++) RS.bolts.push({ spark:1, x:p.tx, y:p.ty, a:Math.random()*6.283, life:.25, col:p.col }); continue; }
     const x = p.x + (p.tx - p.x)*p.u, y = p.y + (p.ty - p.y)*p.u - Math.sin(p.u*Math.PI)*30;
@@ -152,3 +158,5 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #menu.rscene .raidv .right,#menu.rscene .rnl{background:rgba(8,10,30,.55);border-radius:10px}
 #menu.rscene .raidv .left{background:rgba(8,10,30,.35)}
 </style>`);
+// filet de sécurité : chaque image de combat commence dans un état de dessin normal
+draw = (prev => function(){ ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; return prev.apply(this, arguments); })(draw);
