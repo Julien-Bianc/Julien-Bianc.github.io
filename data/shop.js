@@ -11,10 +11,12 @@
 //    Ouverture : on tire une rareté, puis un EMPLACEMENT (slot) de cette rareté, puis un objet au hasard dans cet emplacement.
 //    Un emplacement : { r, label, w?, …contenu }   w = poids (1 par défaut) : w:2 = 2 fois plus de chances que ses voisins
 //      cards:['farfuret', …]   → une carte de rareté r d'un de ces Pokémon (cards:'all' = tous les Pokémon)
-//      held:true               → un objet tenu de rareté r (data/items.js)
+//      held:true               → un objet tenu de rareté r de la 1re série (data/items.js) ; held:'titans' → ceux de la série « titans »
 //      caps:true               → une Capsule Ball de rareté r (data/capsules.js)
 //      items:['restes', …]     → un objet précis parmi cette liste (objets tenus, capsules ou objets spéciaux de data/secret.js)
-//      legend:true             → une carte LÉGENDAIRE (LEGEND_CARDS, data/secret.js)
+//      caps:true / caps:'titans' → une Capsule Ball de rareté r (1re série / série « titans »)
+//      legend:true             → une carte LÉGENDAIRE (toutes) ; legend:['dracaufeu'] → seulement celles de ces Pokémon
+//      balls:{ id, n }         → un lot de Balls du Safari (ex. { id:'ball:poke', n:3 })
 //      hidden:true             → contenu caché dans l'aperçu (« ??? »)
 //    → Nouvel emplacement : une ligne dans slots. Nouvelle caisse : une entrée dans CRATES + une dans SHOP.
 // ============================================================
@@ -46,7 +48,7 @@ const CRATES = [
       { r:'R',  label:'Objet tenu rare',        held:true },
       { r:'R',  label:'Capsule Ball rare',      caps:true },
       { r:'UR', label:'Capsule Ball ultra rare', caps:true },
-      { r:'UR', label:'Carte LÉGENDAIRE',       legend:true },
+      { r:'UR', label:'Carte LÉGENDAIRE',       legend:['dracaufeu'] },
       { r:'S',  label:'???',                    items:['shiny-swapper', 'oeuf-mystere'], hidden:true }
     ] }
 ];
@@ -75,9 +77,14 @@ function shopBuild(){
   CRATES.forEach(c => c.slots.forEach(s => {
     let pool = [];
     if(s.cards) pool = (s.cards === 'all' ? ORDER : s.cards.filter(pid => ORDER.includes(pid))).map(pid => ITEM[`card:${pid}:${s.r}`]);
-    else if(s.held) pool = HELD.filter(h => h.r === s.r).map(h => ITEM[h.id]);
-    else if(s.caps) pool = CAPSULES.filter(h => h.r === s.r).map(h => ITEM[h.id]);
-    else if(s.legend) pool = Object.values(ITEM).filter(it => it.legend);
+    else if(s.held) pool = HELD.filter(h => h.r === s.r && (s.held === true ? !h.set : h.set === s.held)).map(h => ITEM[h.id]);
+    else if(s.caps) pool = CAPSULES.filter(h => h.r === s.r && (s.caps === true ? !h.set : h.set === s.caps)).map(h => ITEM[h.id]);
+    else if(s.legend) pool = Object.values(ITEM).filter(it => it.legend && (s.legend === true || s.legend.includes(it.poke)));
+    else if(s.balls){                                                                  // lot de Balls (le contenu va dans l'inventaire Safari)
+      const B = typeof SAFARI !== 'undefined' && SAFARI.balls.find(b => b.id === s.balls.id), id = `pack:${s.balls.id}:${s.balls.n}`;
+      if(B){ ITEM[id] = ITEM[id] || { id, kind:'ball', name:`${B.name} ×${s.balls.n}`, r:s.r, give:{ id:B.id, n:s.balls.n }, ball:B, crates:[],
+        desc:`${s.balls.n} ${B.name}s pour capturer des Pokémon au Safari (capture ×${String(B.mult).replace('.', ',')}).` }; pool = [ITEM[id]]; }
+    }
     else if(s.items) pool = s.items.map(id => ITEM[id]);
     s.pool = pool.filter(Boolean);
     s.pool.forEach(it => { if(!it.crates.includes(c.id)) it.crates.push(c.id); });

@@ -112,7 +112,7 @@ function legShadow(it, size){
   return `<button class='itc cd ${size === 'mini' ? 'mini' : ''} legsh ${size === 'big' ? 'big' : ''}' data-id='${it.id}' style='${rarCss(it.r)}'><span class='lsf'><img src='${cardArt(it.poke, 'R')}'><b>?</b></span><i class='bar'></i></button>`;
 }
 // image d'un objet (objet tenu → PNG de assets/items/, sinon la caisse)
-const imgOf = it => it.kind === 'capsule' ? capIcon(it) : it.img ? 'assets/items/' + it.img + '.png' : crateImg();
+const imgOf = it => it.kind === 'capsule' ? capIcon(it) : it.kind === 'ball' && typeof ballImg === 'function' ? ballImg(it.ball) : it.img ? 'assets/items/' + it.img + '.png' : crateImg();
 // aperçu animé d'une Capsule Ball (js/capsules.js) ; pid = Pokémon de démonstration
 const demoPoke = () => STARTERS.find(id => ORDER.includes(id)) || ORDER[0];
 const capPrev = (id, w, h, pid) => `<canvas class='cprev' width='${w || 260}' height='${h || 150}' data-cap='${id}' data-poke='${pid || demoPoke()}'></canvas>`;
@@ -276,7 +276,7 @@ function openCrate(id){
   const c = CRATE[id]; if(!c) return;
   if(c.price && !Save.spend(c.price)) return showCrate(id);
   if(c.price) coinSfx();
-  const win = rollItem(c), isNew = Save.itemCount(win.id) === 0, n = Save.addItem(win.id); Save.countOpen();
+  const win = rollItem(c), gid = win.give ? win.give.id : win.id, isNew = Save.itemCount(gid) === 0, n = Save.addItem(gid, win.give ? win.give.n : 1); Save.countOpen();   // lot de Balls : va dans l'inventaire Safari
   const N = 54, wi = 42 + Math.floor(Math.random()*6);                       // position de l'objet gagnant dans la bande
   const filler = () => { let it; for(let k = 0; k < 20; k++){ it = rollItem(c); if(!(RAR[it.r] && RAR[it.r].hidden) && !(it.legend && !(Save.itemCount(it.id) > (it === win ? 1 : 0)))) break; } return it; };   // jamais d'objet secret en décor
   const strip = Array.from({ length:N }, (_, i) => i === wi ? win : filler());
@@ -312,7 +312,7 @@ function openCrate(id){
 function showReveal(win, isNew, id){
   if(win.r === 'S' && !showReveal.intro){ showReveal.intro = true; return secretIntro(() => { showReveal(win, isNew, id); showReveal.intro = false; }); }
   const R = RAR[win.r], c = CRATE[id], shake = win.r === 'S' ? 'shk3' : win.r === 'UR' ? 'shk2' : win.r === 'R' ? 'shk1' : '';
-  const status = () => { const n = Save.itemCount(win.id); return isNew && n === 1 ? 'Nouveau !' : 'Possédé · ×' + n; };
+  const status = () => { if(win.give) return 'Dans ton sac : ×' + Save.itemCount(win.give.id); const n = Save.itemCount(win.id); return isNew && n === 1 ? 'Nouveau !' : 'Possédé · ×' + n; };
   menu(`<div class='rv r-${win.r} ${shake}' style='${rarCss(win.r)}'>
     <div class='rvc'><div class='rays'></div>${win.r === 'S' ? `<div class='rays r2'></div><div class='srings'><i></i><i></i><i></i></div>` : ''}${win.kind === 'card' ? cardHtml(win, 1.3) : win.kind === 'capsule' ? capPrev(win.id, 280, 170) : `<img class='ric' src='${imgOf(win)}'>`}</div>
     <div class='rvt'><small>${esc(c.name)}</small><b class='rn' style='color:${R.col}'>${esc(win.name)}</b>
@@ -320,19 +320,19 @@ function showReveal(win, isNew, id){
       <div><span class='tag' style='background:${R.col};color:${win.r === 'S' ? '#3a2400' : '#fff'}'>${R.label}</span> ${win.kind === 'held' ? `<span class='tag'>Objet tenu</span>` : win.kind === 'capsule' ? `<span class='tag'>Capsule Ball</span>` : win.legend ? `<span class='tag legtag'>Carte Légendaire</span>` : ''}</div>
       ${win.desc ? `<p class='idesc'>${esc(win.desc)}</p>` : ''}
       <p id='rst'>${status()}</p>
-      ${win.use === 'shiny' ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser maintenant</button></div>` : ''}${win.legend ? `<p class='hint'>Touche la carte pour la voir en grand.</p>` : ''}
+      ${win.use ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser maintenant</button></div>` : ''}${win.legend ? `<p class='hint'>Touche la carte pour la voir en grand.</p>` : ''}
       <div class='row'><button class='btn' id='again'>Rouvrir${c.price ? ' — ' + money(c.price) : ''}</button><button class='btn2' id='sell'></button></div>
       <div class='row'><button class='btn2' id='inv'>Inventaire</button><button class='btn2' id='cl'>Fermer</button>${walletHtml()}</div></div></div>`);
   shopReveal(win.r); shopConfetti(win.r); mountCapPreviews();
   const sb = document.getElementById('sell'), ag = document.getElementById('again');
   const upd = () => {
-    const s = Save.sellable(win.id); sb.disabled = !s; sb.textContent = s ? `Vendre le doublon (+${money(sellPrice(win))})` : 'Pas de doublon';
+    const s = win.give ? 0 : Save.sellable(win.id); sb.style.display = win.give ? 'none' : ''; sb.disabled = !s; sb.textContent = s ? `Vendre le doublon (+${money(sellPrice(win))})` : 'Pas de doublon';
     ag.disabled = Save.coins() < c.price; document.getElementById('rst').textContent = status(); refreshWallet();
   };
   upd();
   sb.onclick = () => { if(Save.sell(win.id, 1, sellPrice(win))){ coinSfx(); upd(); } };
   ag.onclick = () => openCrate(id);
-  const ui = document.getElementById('useit'); if(ui) ui.onclick = () => showShinySwap(() => showCrate(id));
+  const ui = document.getElementById('useit'); if(ui) ui.onclick = () => useSpecial(win, () => showCrate(id));
   document.getElementById('inv').onclick = () => showInventory({ tab:win.kind === 'card' ? 'binder' : 'items', sel:win.id, back:() => showCrate(id) });
   document.getElementById('cl').onclick = () => showCrate(id);
 }
@@ -358,7 +358,7 @@ function showInventory(o){
   bindAll('[data-f]', el => showInventory({ ...o, filter:el.dataset.f }));
   bindAll('.invw [data-id]', el => showInventory({ ...o, sel:el.dataset.id }));
   const sel = o.sel && ITEM[o.sel];
-  const ui = document.getElementById('useit'); if(ui) ui.onclick = () => showShinySwap(() => showInventory(o));
+  const ui = document.getElementById('useit'); if(ui) ui.onclick = () => useSpecial(sel, () => showInventory(o));
   const s1 = document.getElementById('s1'), sa = document.getElementById('sa');
   if(s1) s1.onclick = () => { if(Save.sell(sel.id, 1, sellPrice(sel))){ coinSfx(); showInventory(o); } };
   if(sa) sa.onclick = () => { if(Save.sell(sel.id, Save.sellable(sel.id), sellPrice(sel))){ coinSfx(); showInventory(o); } };
@@ -379,7 +379,7 @@ const whereTxt = it => { const w = crateNames(it); return w.length ? 'Trouvable 
 function itemsBody(o, inv, helds){
   const isCap = o.tab === 'caps', order = isCap ? CAPSULES : HELD;
   const list = helds.slice().sort((a, b) => byRarity(a, b) || order.findIndex(h => h.id === a.id) - order.findIndex(h => h.id === b.id));
-  const sp = it => it.kind === 'special' ? `${it.use === 'shiny' ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser</button></div>` : ''}${it.id === 'oeuf-mystere' ? `<p class='hint'>Garde-le précieusement…</p>` : ''}` : '';
+  const sp = it => it.kind === 'special' ? `${it.use ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser</button></div>` : ''}${it.id === 'oeuf-mystere' ? `<p class='hint'>Garde-le précieusement…</p>` : ''}` : '';
   const it = o.sel && ITEM[o.sel] && list.includes(ITEM[o.sel]) ? ITEM[o.sel] : null;
   let detail = isCap
     ? `<p>Les <b>Capsules Ball</b> changent l'arrivée de ton Pokémon dans l'arène (effet quand la Pokéball s'ouvre). Purement visuelles.</p><p>Équipe-les dans <b>Mes équipes</b> : une capsule par Pokémon, la même peut servir à plusieurs.</p>`

@@ -58,15 +58,8 @@ function legFlame(c, x, y, h, w, a){
   c.fillStyle = g; c.beginPath(); c.moveTo(x - w, y); c.quadraticCurveTo(x - w*.9, y - h*.55, x, y - h); c.quadraticCurveTo(x + w*.9, y - h*.55, x + w, y); c.closePath(); c.fill();
   c.fillStyle = 'rgba(255,250,215,.8)'; c.beginPath(); c.moveTo(x - w*.4, y); c.quadraticCurveTo(x - w*.3, y - h*.35, x, y - h*.55); c.quadraticCurveTo(x + w*.3, y - h*.35, x + w*.4, y); c.closePath(); c.fill();
 }
-function drawLegendCard(c, u, t, it, tilt){
-  const D = POKEMON[it.poke] || { name:NAME[it.poke] || it.poke, hp:'?', types:[], moves:[] }, T = LEGEND_THEMES[it.theme] || LEGEND_THEMES.volcan;
-  const W = 120, H = 180, gx = 60 + (tilt ? tilt.x : 0)*55, gy = 90 + (tilt ? tilt.y : 0)*80;
-  c.setTransform(u, 0, 0, u, 0, 0); c.clearRect(0, 0, W, H); c.imageSmoothingEnabled = false;
-  const P = legPose(it.poke, t), fire = P ? P.fire : 0;
-
-  // ---------- illustration (tout l'intérieur de la carte) ----------
-  c.save(); legRound(c, 5, 5, 110, 170, 5); c.clip();
-  const sky = c.createLinearGradient(0, 5, 0, 130); T.sky.forEach((col, i) => sky.addColorStop(i/(T.sky.length - 1), col)); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+function legBgVolcan(c, t, fire, T){
+  const W = 120, H = 180;
   // soleil de feu + rayons
   const pul = 1 + .06*Math.sin(t*2.2) + fire*.12, sx = 60, sy = 74;
   c.globalCompositeOperation = 'lighter';
@@ -99,23 +92,9 @@ function drawLegendCard(c, u, t, it, tilt){
   for(let k = 0; k < 4; k++){ c.globalAlpha = .45; c.beginPath(); const yy = 126 + k*5;
     for(let x = 0; x <= 120; x += 3){ const y = yy + Math.sin(x*.18 + t*(1.4 + k*.3) + k)*.9; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
   c.globalCompositeOperation = 'source-over';
-
-  // ---------- le Pokémon ----------
-  if(P && P.fr){
-    const ib = legFrameBox(P.idleFr), h0 = Math.max(8, ib.y1 - ib.y0 + 1), kd = Math.max(1, Math.round(70*u/h0)), k = kd/u;
-    const fr = P.fr, C = fr.width, feetX = 58, feetY = 131, breath = Math.sin(t*2.4)*.6;
-    const ox = feetX - (C/2)*k, oy = feetY - (C/2 + 14)*k + breath;
-    // ombre portée sur la lave
-    c.globalAlpha = .45; c.fillStyle = '#1a0408'; c.beginPath(); c.ellipse(feetX, feetY + 1, 26, 5, 0, 0, 6.283); c.fill();
-    // halo de contre-jour
-    c.save(); c.shadowColor = T.rim; c.shadowBlur = (7 + fire*4)*u; c.globalAlpha = 1;
-    c.drawImage(fr, Math.round(ox*u)/u, Math.round(oy*u)/u, C*k, C*k); c.restore();
-    c.drawImage(fr, Math.round(ox*u)/u, Math.round(oy*u)/u, C*k, C*k);
-    // liseré lumineux (le côté face au soleil)
-    c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .14 + fire*.06; c.drawImage(tint(fr, '#ff9a40'), Math.round(ox*u)/u - .6, Math.round(oy*u)/u - .6, C*k, C*k); c.restore();
-    // jet de flammes
-    if(fire > 0 && P.shoot){
-      const b = legFrameBox(fr), mx = ox + (b.x0 + (b.x1 - b.x0)*.78)*k, my = oy + (b.y0 + (b.y1 - b.y0)*.24)*k, ang = -.42;
+}
+function legAtkFire(c, mx, my, t, fire){
+  let g; const ang = -.42;
       c.save(); c.globalCompositeOperation = 'lighter';
       for(let i = 0; i < 70; i++){
         const life = .6, age = ((t*1.0 + lgR(i, 1)*life) % life)/life, sp = 125, spread = (lgR(i, 2) - .5)*.6*age;
@@ -126,9 +105,9 @@ function drawLegendCard(c, u, t, it, tilt){
       g = c.createRadialGradient(mx, my, 0, mx, my, 10); g.addColorStop(0, 'rgba(255,255,230,1)'); g.addColorStop(1, 'rgba(255,200,80,0)');
       c.globalAlpha = fire; c.fillStyle = g; c.beginPath(); c.arc(mx, my, 10, 0, 6.283); c.fill();
       c.restore();
-    }
-  }
-  // braises qui montent
+}
+function legFgVolcan(c, t, fire, T){
+  const W = 120, H = 180;
   c.globalCompositeOperation = 'lighter';
   for(let i = 0; i < 46; i++){
     const sp = 6 + lgR(i, 1)*16, y = 178 - ((t*sp + lgR(i, 2)*180) % 180), x = 5 + lgR(i, 3)*110 + Math.sin(t*1.5 + i)*3;
@@ -143,6 +122,38 @@ function drawLegendCard(c, u, t, it, tilt){
   c.globalCompositeOperation = 'source-over';
   // voile chaud qui pulse pendant l'attaque
   if(fire > 0){ c.globalAlpha = fire*.07; c.fillStyle = '#ffb040'; c.fillRect(0, 0, W, H); }
+}
+function drawLegendCard(c, u, t, it, tilt){
+  const D = POKEMON[it.poke] || { name:NAME[it.poke] || it.poke, hp:'?', types:[], moves:[] }, T = LEGEND_THEMES[it.theme] || LEGEND_THEMES.volcan;
+  const W = 120, H = 180, gx = 60 + (tilt ? tilt.x : 0)*55, gy = 90 + (tilt ? tilt.y : 0)*80;
+  c.setTransform(u, 0, 0, u, 0, 0); c.clearRect(0, 0, W, H); c.imageSmoothingEnabled = false;
+  const P = legPose(it.poke, t), fire = P ? P.fire : 0; let g;
+
+  // ---------- illustration (tout l'intérieur de la carte) ----------
+  c.save(); legRound(c, 5, 5, 110, 170, 5); c.clip();
+  const sky = c.createLinearGradient(0, 5, 0, 130); T.sky.forEach((col, i) => sky.addColorStop(i/(T.sky.length - 1), col)); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+  (T.bg || legBgVolcan)(c, t, fire, T);
+
+  // ---------- le Pokémon ----------
+  if(P && P.fr){
+    const ib = legFrameBox(P.idleFr), h0 = Math.max(8, ib.y1 - ib.y0 + 1), kd = Math.max(1, Math.round(70*u/h0)), k = kd/u;
+    const fr = P.fr, C = fr.width, feetX = 58, feetY = 131, breath = Math.sin(t*2.4)*.6;
+    const ox = feetX - (C/2)*k, oy = feetY - (C/2 + 14)*k + breath;
+    // ombre portée sur la lave
+    c.globalAlpha = .45; c.fillStyle = T.shadow || '#1a0408'; c.beginPath(); c.ellipse(feetX, feetY + 1, 26, 5, 0, 0, 6.283); c.fill();
+    // halo de contre-jour
+    c.save(); c.shadowColor = T.rim; c.shadowBlur = (7 + fire*4)*u; c.globalAlpha = 1;
+    c.drawImage(fr, Math.round(ox*u)/u, Math.round(oy*u)/u, C*k, C*k); c.restore();
+    c.drawImage(fr, Math.round(ox*u)/u, Math.round(oy*u)/u, C*k, C*k);
+    // liseré lumineux (le côté face au soleil)
+    c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .14 + fire*.06; c.drawImage(tint(fr, T.rimTint || '#ff9a40'), Math.round(ox*u)/u - .6, Math.round(oy*u)/u - .6, C*k, C*k); c.restore();
+    // attaque (jet de flammes, Ball'Ombre…) : selon le thème
+    if(fire > 0 && P.shoot){
+      const b = legFrameBox(fr), M = T.mouth || [.78, .24], mx = ox + (b.x0 + (b.x1 - b.x0)*M[0])*k, my = oy + (b.y0 + (b.y1 - b.y0)*M[1])*k;
+      (T.atk || legAtkFire)(c, mx, my, t, fire);
+    }
+  }
+  (T.fg || legFgVolcan)(c, t, fire, T);
   c.restore();
 
   // ---------- en-tête ----------
@@ -181,7 +192,7 @@ function drawLegendCard(c, u, t, it, tilt){
   c.fillStyle = holo; c.fillRect(0, 0, W, H);
   c.globalCompositeOperation = 'lighter';
   for(let i = 0; i < 26; i++){ const tw = Math.sin(t*3.2 + i*2.39); if(tw < .55) continue; legStar(c, 8 + lgR(i, 8)*104, 8 + lgR(i, 9)*164, 2.6*(tw - .55)/.45 + .3, '#ffffff', .9); }
-  g = c.createRadialGradient(gx, gy, 0, gx, gy, 70); g.addColorStop(0, 'rgba(255,255,255,.32)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  g = c.createRadialGradient(gx, gy, 0, gx, gy, 70); g.addColorStop(0, `rgba(255,255,255,${T.glare ?? .32})`); g.addColorStop(1, 'rgba(255,255,255,0)');
   c.globalAlpha = 1; c.fillStyle = g; c.fillRect(0, 0, W, H);
   c.restore();
 

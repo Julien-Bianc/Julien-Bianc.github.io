@@ -145,3 +145,35 @@ input#tn{background:rgba(10,8,24,.85);color:var(--txt);border:1px solid var(--li
   text-align:right;padding-right:6px;line-height:0;color:#ffd23f;font-size:11px;pointer-events:none;z-index:3;
   text-shadow:0 0 4px #000,0 0 8px #000;animation:sclb .8s ease-in-out infinite alternate}
 @keyframes sclb{to{transform:translateY(-4px)}}
+
+/* ===== Patch — Caisse des Titans : vitrine des caisses (js/titans.js) ===== */
+.crtlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%;max-width:520px;margin-top:6px}
+.crt{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 8px 9px;border-radius:10px;border:2px solid var(--cg);
+  background:var(--cbg);color:#fff;font:inherit;cursor:pointer;box-shadow:0 0 0 2px #0008 inset,0 4px 0 #0006,0 0 14px -4px var(--cg);transition:transform .12s,box-shadow .12s}
+.crt:hover,.crt:focus-visible{transform:translateY(-2px);box-shadow:0 0 0 2px #0008 inset,0 6px 0 #0006,0 0 22px -2px var(--cg)}
+.crt:active{transform:translateY(1px)}
+.crt::before{content:'';position:absolute;inset:-40% -60%;background:linear-gradient(115deg,transparent 42%,#ffffff22 50%,transparent 58%);animation:crtShine 4.5s linear infinite;pointer-events:none}
+@keyframes crtShine{0%{transform:translateX(-40%)}100%{transform:translateX(40%)}}
+.crt-img{position:relative;display:block;width:96px;height:77px}
+.crt-img img{position:relative;width:96px;height:77px;image-rendering:pixelated;animation:crtBob 2.6s ease-in-out infinite}
+.crt-halo{position:absolute;inset:-6px -14px;border-radius:50%;background:radial-gradient(closest-side,var(--cg),transparent);opacity:.45;animation:crtPulse 2.6s ease-in-out infinite}
+@keyframes crtBob{50%{transform:translateY(-3px)}}
+@keyframes crtPulse{50%{opacity:.75;transform:scale(1.08)}}
+.crt b{font-size:15px;text-shadow:0 2px 0 #000a}.crt small{font-size:11px;opacity:.85;text-align:center;line-height:1.2}
+.crt-info{font-size:10px;opacity:.75;text-align:center}
+.crt .tag{margin-top:3px}
+.crt-rib{position:absolute;top:16px;right:-36px;transform:rotate(38deg);width:130px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 0;background:var(--cg);color:#140820;box-shadow:0 2px 0 #0007;z-index:2}
+.crt-n{position:absolute;top:6px;left:6px;min-width:22px;height:22px;border-radius:11px;background:#ffd23f;color:#3a0808;font-weight:700;font-size:13px;line-height:22px;padding:0 5px;box-shadow:0 0 10px #ffd23f;animation:crtPulse 1.2s ease-in-out infinite;z-index:2}
+.crt-raid{border-style:double;border-width:4px;box-shadow:0 0 0 2px #ffd23f inset,0 4px 0 #0006,0 0 18px -2px #ff4a3a}
+.crt-raid .crt-rib{background:#ffd23f;color:#3a0404;letter-spacing:3px;border-top:3px dashed #1a0404;border-bottom:3px dashed #1a0404}
+.crt-titans .crt-img::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#b070ff55,transparent 60%);animation:crtPulse 1.8s ease-in-out infinite}
+.crt.lock{filter:saturate(.35) brightness(.75)}
+.crt.lock .crt-img img{animation:none}
+.crt-lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:30px;background:#0007;z-index:3}
+.crt-lock small{font-size:11px;opacity:1;background:#000a;padding:3px 7px;border-radius:6px}
+.crv-titans .cr.big{filter:drop-shadow(0 0 12px #a070ff)}
+.crv-raid .cr.big{filter:drop-shadow(0 0 12px #ff4a3a)}
+.crv-depart .cr.big{filter:drop-shadow(0 0 10px #ffc83a88)}
+.hint.bad{color:#ff8a7a}
+.gold-win img{width:120px;height:120px;image-rendering:pixelated;filter:drop-shadow(0 0 16px #ffd23f)}
+.gold-win h1{color:#ffd23f}

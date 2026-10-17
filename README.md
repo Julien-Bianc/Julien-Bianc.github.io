@@ -404,3 +404,17 @@ Ouvre le jeu dans **2 onglets** du même navigateur → Multijoueur → **Test l
 - **Miniatures shiny corrigées** : l'image est recolorée à taille réelle avant d'être réduite (`shinyThumb` dans `js/shiny.js`).
 - **Classique ou Shiny** : Mes équipes → Modifier → toucher un Pokémon shiny → « Apparence : Classique / ✦ Shiny » (choix par équipe,
   Shiny par défaut). Le combat, la Pokéball, l'ATH et les miniatures de l'équipe suivent ce choix (`team.look`).
+
+## Patch — Caisse des Titans
+
+- **Nouvelle caisse « Caisse des Titans »** (150 ₽) — `data/titans.js` (contenu) + `js/titans.js` (effets, visuels)
+  - **Verrouillée** tant que le **chapitre 1 du Solo** (3v3 ou 6v6) n'est pas terminé.
+  - Cartes des 7 Pokémon du chapitre 2 (Rondoudou, Ectoplasma, Alakazam, Gardevoir, Cizayox, Carchacrok, Tyranocif).
+  - Lots de Balls du Safari : Poké Ball ×3 (commun), Super Ball ×3 (peu commun), Hyper Ball ×2 (rare).
+  - 11 nouveaux objets tenus (puissance réduite comme ceux de la 1re caisse) : Poudre Claire, Grosse Racine, Boue Noire, Ballon, Herbe Blanche, Bandeau Muscle, Lunettes Sages, Veste de Combat, Roche Royale, Lentilscope, Bracelet Macho.
+  - 9 nouvelles Capsules Ball animées : Mélodie, Pétales, Spectre, Tempête de Sable, Danse-Lames, Faille Cosmique, Séisme, Distorsion, Éclipse.
+  - Carte LÉGENDAIRE d'**Ectoplasma** — décor « Manoir hanté » (lune, chauves-souris, fantômes, brume) et Ball'Ombre animée.
+  - Secret (1/200) : Shiny Swapper ou **Ticket Doré** (Mewtwo devient jouable pour toujours ; bouton « Utiliser »).
+  - Les objets et capsules de cette série (`set:'titans'`) ne sortent que de cette caisse.
+- **Magasin relooké** : chaque caisse a son propre coffre et sa vitrine (doré = Grand départ, violet runique = Titans, rouge rayé « RAID » + compteur = caisse de raid), cadenas sur les caisses verrouillées.
+- Carte légendaire : les thèmes peuvent régler le reflet (`glare`) — Dracaufeu inchangé.
