@@ -176,3 +176,21 @@ musicGo = (prev => function(){
   if(n && n !== cur && n.el && MU_POS[n.el.src] > 1){ const t = MU_POS[n.el.src]; try{ n.el.currentTime = t; }catch(e){ n.el.addEventListener('loadedmetadata', () => { try{ n.el.currentTime = t; }catch(_){} }, { once:true }); } }
   return r;
 })(musicGo);
+
+// ---------------------------------------------------------------- 8. musique de la Pension (plus fiable) + musique de la Tour
+//  • l'écran « Chargement… » de la Pension compte comme la Pension (la musique ne coupe plus)
+//  • si le fichier de musique est introuvable, un message dit exactement lequel
+if(typeof MUSIC !== 'undefined'){
+  if(!MUSIC['menu:tower']) MUSIC['menu:tower'] = 'assets/music/menu-tower.mp3';    // écran de la Tour de Combat (facultatif)
+  if(!MUSIC.tower) MUSIC.tower = 'assets/music/tower.mp3';                          // combats de la Tour (facultatif ; sinon musique de combat)
+}
+menu = (prev => function(h){
+  prev(h);
+  if(!G && h && h.includes("id='penload'") && typeof musicSet === 'function') musicSet('pension');
+})(menu);
+const MU_WARNED = new Set();
+musicChain = (prev => function(kind, urls, i){
+  const r = prev(kind, urls, i);
+  if(i > 0 && /pension|tower/.test(kind)){ const u = urls[i - 1]; if(u && !MU_WARNED.has(u) && /pension|tower/.test(u)){ MU_WARNED.add(u); if(typeof Notif !== 'undefined') Notif.toast('🎵 Musique introuvable : ' + u, '#ffb0a0'); } }
+  return r;
+})(musicChain);

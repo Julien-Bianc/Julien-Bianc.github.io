@@ -131,7 +131,7 @@ menu = (prev => function(h){
   const m = document.getElementById('menu'), on = !G && !!h && h.includes('data-penscene');
   m.classList.toggle('penscene', on); if(!on) return;
   MBG.scene = 'pension'; m.classList.add('mscene');
-  if(was !== 'pension'){ m.classList.remove('swin'); void m.offsetWidth; m.classList.add('swin'); if(typeof musicSet === 'function') musicSet('menu'); }
+  if(was !== 'pension'){ m.classList.remove('swin'); void m.offsetWidth; m.classList.add('swin'); if(typeof musicSet === 'function') musicSet('pension'); }
 })(menu);
 
 document.head.insertAdjacentHTML('beforeend', `<style>
