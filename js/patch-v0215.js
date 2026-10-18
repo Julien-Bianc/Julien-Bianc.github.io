@@ -145,3 +145,34 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .invw .scroll.right .bdv{margin-bottom:4px}
 .tuh{flex-wrap:wrap}.tumode{display:inline-flex;gap:4px;margin-left:8px}.tumode .btn2{font-size:10px;padding:3px 8px}
 </style>`);
+
+// ---------------------------------------------------------------- 7. la musique ne redémarre plus en changeant d'écran
+//  Si le morceau qui joue est déjà celui que demanderait le nouvel écran, on le laisse continuer.
+//  Les fichiers absents (404) sont retenus et ne sont plus réessayés (ils provoquaient un redémarrage).
+const MU_BAD = new Set();
+const muSame = (src, u) => !!src && src.split('?')[0].endsWith(u.replace(/^\.?\//, ''));
+musicChain = (prev => function(kind, urls, i){
+  if(i > 0 && urls[i - 1]) MU_BAD.add(urls[i - 1]);
+  if(!i) urls = urls.filter(u => !MU_BAD.has(u));
+  return prev(kind, urls, i);
+})(musicChain);
+musicGo = (prev => function(){
+  const kind = MU.kind, cur = MU.cur;
+  if(AU.ctx && kind && cur && cur.el && !cur.el.paused && MU.playing !== kind && typeof MUSIC !== 'undefined'){
+    for(const k of musicKeys(kind)){
+      const v = MUSIC[k]; if(!v) continue;
+      const L = (Array.isArray(v) ? v : [v]).filter(u => !MU_BAD.has(u)); if(!L.length) continue;
+      if(L.some(u => muSame(cur.el.src, u))){ MU.playing = kind; cur.kind = kind; return; }
+      break;
+    }
+  }
+  return prev();
+})(musicGo);
+// retour à un écran : le morceau reprend là où il s'était arrêté (au lieu de recommencer)
+const MU_POS = {};
+musicGo = (prev => function(){
+  const cur = MU.cur; if(cur && cur.el && cur.el.src && !cur.el.paused) MU_POS[cur.el.src] = cur.el.currentTime;
+  const r = prev(), n = MU.cur;
+  if(n && n !== cur && n.el && MU_POS[n.el.src] > 1){ const t = MU_POS[n.el.src]; try{ n.el.currentTime = t; }catch(e){ n.el.addEventListener('loadedmetadata', () => { try{ n.el.currentTime = t; }catch(_){} }, { once:true }); } }
+  return r;
+})(musicGo);
