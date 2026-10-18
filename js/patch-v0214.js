@@ -218,7 +218,8 @@ SCREENS.profile = () => showProfile();
 if(!MAIN_MENU.some(m => m.id === 'profile')){ const i = MAIN_MENU.findIndex(m => m.id === 'badges'); MAIN_MENU.splice(i + 1, 0, { id:'profile', label:'Profil', desc:'Ton profil de dresseur : avatar, titre, favoris, statistiques', screen:'profile' }); }
 // menu : Magasin seul, Profil dans Collection
 (() => { const g = MM_GROUPS.find(x => x.id === 'g-coll'); if(g){ g.kids = ['teams', 'inventory', 'badges', 'profile']; g.desc = 'Équipes, inventaire, badges et profil'; }
-  if(!MM_GROUPS.some(x => x.id === 'shop')) MM_GROUPS.splice(MM_GROUPS.findIndex(x => x.id === 'g-coll'), 0, { id:'shop' }); })();
+  if(!MM_GROUPS.some(x => x.id === 'shop')) MM_GROUPS.splice(MM_GROUPS.findIndex(x => x.id === 'g-coll'), 0, { id:'shop' });
+  if(!MM_GROUPS.some(x => x.id === 'pension')) MM_GROUPS.splice(MM_GROUPS.findIndex(x => x.id === 'contest') + 1, 0, { id:'pension' }); })();
 // les autres joueurs : bouton « Profil » sur chaque ami, pseudo cliquable dans le classement de la Tour
 fillFriends = (prev => function(){
   prev();

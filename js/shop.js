@@ -379,7 +379,7 @@ const whereTxt = it => { const w = crateNames(it); return w.length ? 'Trouvable 
 function itemsBody(o, inv, helds){
   const isCap = o.tab === 'caps', order = isCap ? CAPSULES : HELD;
   const list = helds.slice().sort((a, b) => byRarity(a, b) || order.findIndex(h => h.id === a.id) - order.findIndex(h => h.id === b.id));
-  const sp = it => it.kind === 'special' ? `${it.use ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser</button></div>` : ''}${it.id === 'oeuf-mystere' ? `<p class='hint'>Garde-le précieusement…</p>` : ''}` : '';
+  const sp = it => it.kind === 'special' ? `${it.use ? `<div class='row left'><button class='btn' id='useit'>✦ Utiliser</button></div>` : ''}${it.id === 'oeuf-mystere' ? `<p class='hint'>Dépose-le à la <b>Pension</b> (menu principal) pour le faire éclore et élever son Pokémon.</p>` : ''}` : '';
   const it = o.sel && ITEM[o.sel] && list.includes(ITEM[o.sel]) ? ITEM[o.sel] : null;
   let detail = isCap
     ? `<p>Les <b>Capsules Ball</b> changent l'arrivée de ton Pokémon dans l'arène (effet quand la Pokéball s'ouvre). Purement visuelles.</p><p>Équipe-les dans <b>Mes équipes</b> : une capsule par Pokémon, la même peut servir à plusieurs.</p>`

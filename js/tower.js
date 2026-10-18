@@ -4,7 +4,7 @@
 //      classement en ligne (supabase/tour.sql).
 //    • Tu commences avec 1 Pokémon sans objet ; 3 Pokémon maximum ; des recrues et des bonus en route.
 //    • Entre deux étages : change l'ordre de ton équipe et donne / échange les objets gagnés (le « sac »).
-//    • 3 adversaires par étage, même si des Pokémon de ton équipe sont K.O. (+1 dès l'étage 20, +2 dès l'étage 40) ;
+//    • Autant d'adversaires que de Pokémon obtenus (K.O. compris) : jamais moins de 3 dès que tu as 3 Pokémon (+1 dès l'étage 20, +2 dès l'étage 40) ;
 //      tous les 10 étages, le dernier adversaire est un boss.
 // ============================================================
 const TW = {
@@ -18,7 +18,7 @@ const twStage = f => { const t = Math.min(1, (f - 1)/40), x = Math.max(0, f - 40
   return { name:'Tour — étage ' + f, level:Math.min(10, Math.ceil(f/5)), arena:TW.arenas[(f*7) % TW.arenas.length], hp:r2(.75 + .028*(f - 1) + .03*x), dmg:r2(.65 + .024*(f - 1) + .02*x),
     speed:r2(.8 + .45*t), pspeed:r2(.85 + .5*t), rate:r2(1.3 - .72*t), tele:r2(1.2 - .52*t), aim:r2(Math.min(1, (f - 1)/20)), boss:r2(1.8 + .03*f) }; };
 const twBossFloor = f => f % 10 === 0;
-const twFoesN = f => 3 + TW.extraFoes(f);                  // v0.21.4 : toujours 3 adversaires (et plus en haut de la tour)
+const twFoesN = (f, owned) => Math.min(3, Math.max(1, owned || 1)) + TW.extraFoes(f);   // autant d'adversaires que de Pokémon obtenus (K.O. compris), jamais moins de 3 dès 3 Pokémon
 const twPick = (pool, n) => { const out = []; while(out.length < n){ const P = pool.slice().sort(() => Math.random() - .5); out.push(...P.slice(0, n - out.length)); } return out; };
 
 // ---------------------------------------------------------------- sauvegarde, record, stats, classement
@@ -113,7 +113,7 @@ SCREENS.tower = showTower;
 function twRules(){
   menu(`<div class='hd' data-twscene><h1>Règles de la Tour</h1></div><div class='twrules'>
     <p>${twI('recruit')} Tu entres avec <b>un seul Pokémon, sans objet</b>. D'autres Pokémon proposent de te rejoindre en route (<b>3 maximum</b> ; équipe pleine : l'un d'eux laisse sa place).</p>
-    <p>${twI('foes')} Chaque étage est plus dur. <b>3 adversaires</b> par étage, <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
+    <p>${twI('foes')} Chaque étage est plus dur. autant d'adversaires que de Pokémon dans ton équipe (<b>3</b> dès que tu en as 3, même K.O.), <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
     <p>${twI('heal')} Les PV ne remontent que de 10 % entre deux étages et un Pokémon K.O. le reste (sauf Rappel).</p>
     <p>${twI('item')} Tous les 5 étages : un <b>bonus</b> au choix. Les objets gagnés vont dans ton <b>sac</b> : donne-les et change l'ordre de ton équipe avant chaque combat.</p>
     <p>${twI('runs')} Si toute ton équipe tombe, la tour est finie. <b>Quitter un combat = fin de la tour.</b></p></div>
@@ -142,7 +142,7 @@ let TWSEL = null;      // objet sélectionné : { from:'bag', k } ou { from:'mon
 function twFloor(msg){
   const R = Tower.run(); if(!R) return showTower();
   R.items = R.items || {}; R.bag = R.bag || [];
-  const f = R.floor, alive = R.team.filter(m => m.hp > 0).length, n = twFoesN(f, alive), boss = twBossFloor(f);
+  const f = R.floor, alive = R.team.filter(m => m.hp > 0).length, n = twFoesN(f, R.team.length), boss = twBossFloor(f);
   const selBag = k => TWSEL && TWSEL.from === 'bag' && TWSEL.k === k, selMon = i => TWSEL && TWSEL.from === 'mon' && TWSEL.i === i;
   menu(`<div class='hd' data-twscene><h1>Étage ${f}</h1>${walletHtml()}</div>
     <p class='twnext'>${twI(boss ? 'crown' : 'foes')} ${n} adversaire${n > 1 ? 's' : ''}${boss ? ' — <b>le dernier est un boss !</b>' : ''}</p>
@@ -171,7 +171,7 @@ function twFloor(msg){
 function twFight(){
   const R = Tower.run(); if(!R) return showTower();
   const alive = R.team.filter(m => m.hp > 0); if(!alive.length) return twEnd(R, 'ko');
-  const f = R.floor, S = twStage(f), foes = twPick(ORDER, twFoesN(f, alive.length));
+  const f = R.floor, S = twStage(f), foes = twPick(ORDER, twFoesN(f, R.team.length));
   R.inFight = 1; Tower.set(R);
   start({ mode:'tower', team:alive.map(m => m.id), items:R.items || {}, size:alive.length, stage:S, arena:S.arena, enemies:foes, twBoss:twBossFloor(f) });
   if(!G) return;

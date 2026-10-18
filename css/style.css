@@ -433,3 +433,18 @@ canvas.cprev.sm{width:200px;aspect-ratio:22/12}
 /* v0.19 : épreuves du concours en plein écran */
 #menu.cfull{background:#000!important;padding:0!important}#menu.cfull .mc{display:none!important}
 canvas.cfull{position:absolute;left:0;top:0;width:100%;height:100%;z-index:30;display:block;touch-action:none;cursor:pointer;background:#000}
+
+/* v0.20 : Pension Pokémon */
+.pcard{display:flex;gap:12px;align-items:center;background:#1c1838ee;border:1px solid #fff2;border-radius:10px;padding:10px 14px;max-width:520px;width:100%;text-align:left}
+.pegg,.pthumb{width:64px;height:64px;image-rendering:pixelated;flex:none}.pegg.dim{opacity:.4;filter:grayscale(1)}
+.pbody{flex:1;display:flex;flex-direction:column;gap:4px;font-size:12px}.pbody small{opacity:.85;font-size:10px}
+.pbr{display:block;height:7px;background:#0006;border-radius:3px;overflow:hidden}.pbr u{display:block;height:100%}
+.pgs{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:3px 8px;align-items:center;font-size:10px}
+.pwarn{color:#ffb0a0;font-size:10px;max-width:520px}
+.pshop{max-height:230px;width:100%;max-width:640px;text-align:left}.pshop h2{font-size:13px;margin:4px 0;color:#ffe27a}
+.berry.cf{width:150px}.bimg.big{width:48px;height:48px}
+.plines{display:flex;flex-direction:column;gap:6px;max-height:230px;width:100%;max-width:620px}
+.pline{display:flex;align-items:center;gap:6px;background:#1c1838ee;border:1px solid #fff2;border-radius:8px;padding:4px 8px;font-size:11px}
+.pline>b{width:92px;text-align:left}.pform{display:flex;flex-direction:column;align-items:center;width:56px}.pform img{width:44px;height:44px;image-rendering:pixelated}.pform.unk img{filter:brightness(0) opacity(.7)}
+.parr{display:flex;flex-direction:column;align-items:center;color:#ffe27a;font-size:12px}.parr small{font-size:8px;opacity:.8}
+.tag.ok{background:#2a8a4a}
