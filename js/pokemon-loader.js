@@ -57,6 +57,8 @@ async function loadPokemon(id){
     }));
   });
   S.D.cs = Math.ceil(need) * 2;
+  // v0.21.5 : une animation « CopyOf » (ex. Idle de Draco = Walk) réutilise l'image de l'autre animation
+  Object.entries(S.alias).forEach(([n, cp]) => { if(!S.IM[n] && S.IM[cp]){ S.IM[n] = S.IM[cp]; S.D.anim[n] = S.D.anim[cp]; if(S.D.anc[cp]) S.D.anc[n] = S.D.anc[cp]; S.TOT[n] = S.TOT[cp]; S.CUM[n] = S.CUM[cp]; } });
   if(!S.IM.Idle) throw new Error('Idle-Anim.png manquant dans ' + base);
   SPR[id] = S;
 }

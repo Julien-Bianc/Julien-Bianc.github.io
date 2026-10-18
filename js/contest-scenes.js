@@ -28,7 +28,7 @@ function cPoly(x, pts, col){      // polygone plein sans anti-crénelage
     xs.sort((m, n) => m - n); for(let k = 0; k + 1 < xs.length; k += 2){ const a = Math.round(xs[k]), b = Math.round(xs[k + 1]); if(b > a) x.fillRect(a, y, b - a, 1); } }
 }
 function cTxt(x, s, tx, ty, o){      // texte net : contour sombre + remplissage (police un peu plus grande qu'avant pour la lisibilité)
-  o = o || {}; const sz = (o.sz || 8)*1.14; x.font = `bold ${sz}px "Courier New",monospace`; x.textAlign = o.al || 'left'; x.textBaseline = 'top';
+  o = o || {}; const sz = (o.sz || 8)*1.14; x.font = `bold ${sz}px ${CV.font || '"Courier New",monospace'}`; x.textAlign = o.al || 'left'; x.textBaseline = 'top';
   if(o.sh !== false){ x.lineWidth = Math.max(1.6, sz/4); x.lineJoin = 'round'; x.strokeStyle = '#14101c'; x.strokeText(s, tx, ty); }
   x.fillStyle = o.col || '#fff'; x.fillText(s, tx, ty);
 }
@@ -183,6 +183,7 @@ const perfX = () => (CV.l + CV.r - 110)/2;            // le Pokémon est au cent
 const _menuCS = menu;
 menu = function(h){ const m = document.getElementById('menu'); if(m){ m.classList.remove('cfull'); m.querySelectorAll('#ccv').forEach(e => e.remove()); } return _menuCS(h); };
 function conRun(sc){
+  CV.font = sc.pen ? '"Pixelify Sans","Courier New",monospace' : null;     // v0.21.5 : la Pension utilise la police du jeu
   menu(`<div class='cwrap'></div>`);
   const m = document.getElementById('menu'), cv = document.createElement('canvas'); cv.id = 'ccv'; cv.className = 'cfull'; m.appendChild(cv); m.classList.add('cfull');
   const w = m.clientWidth || 800, h = m.clientHeight || 360, dpr = Math.min(window.devicePixelRatio || 1, 2); let pw = Math.round(w*dpr), ph = Math.round(h*dpr); const cap = Math.min(1, 1700/pw); pw = Math.round(pw*cap); ph = Math.round(ph*cap);

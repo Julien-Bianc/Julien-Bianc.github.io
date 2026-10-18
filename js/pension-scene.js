@@ -325,7 +325,7 @@ function scenePension(){
       }
       toasts.forEach((o, i) => { const a = Math.min(1, (3.2 - o.t)*2, o.t*5); x.globalAlpha = Math.max(0, a); cPanel(x, CV.cx - 100, CV.t + 24 + i*17, 200, 14, '#2a2146'); cTxt(x, o.s, CV.cx, CV.t + 27 + i*17, { sz:8, al:'center', col:o.c }); x.globalAlpha = 1; });
     }
-    conRun(sc);
+    sc.pen = 1; conRun(sc);
   }
 }
 
@@ -364,5 +364,5 @@ function scenePenCatch(onEnd){
     }
   };
   function end(){ sc.finished = true; onEnd(); }
-  conRun(sc);
+  sc.pen = 1; conRun(sc);
 }
