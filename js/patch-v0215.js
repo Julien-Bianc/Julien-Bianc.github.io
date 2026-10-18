@@ -122,11 +122,11 @@ function penMusicStart(){
   MU.id = setInterval(() => {
     if(!AU.ctx || AU.ctx.state !== 'running') return;
     const s = MU.step, bar = Math.floor(s/8) % 4, ch = PEN_TUNE.chords[bar], n = PEN_TUNE.mel[s % 32];
-    if(s % 8 !== 7) tone(F(n), dt*1.6, 'triangle', .1, 0, 0, AU.mu);
-    if(s % 2 === 1) tone(F(n + 12), dt*.6, 'sine', .035, 0, 0, AU.mu);                                  // clochette
-    if(s % 4 === 0) tone(F(ch[0] - 12), dt*3.4, 'triangle', .16, 0, 0, AU.mu);                             // basse
-    if(s % 4 === 2) tone(F(ch[2] - 12), dt*1.6, 'triangle', .09, 0, 0, AU.mu);
-    if(s % 8 === 4) ch.forEach((c, k) => tone(F(c), dt*2.6, 'sine', .04, 0, k*.03, AU.mu));                // accord arpégé
+    if(s % 8 !== 7) tone(F(n), dt*1.6, 'triangle', .26, 0, 0, AU.mu);
+    if(s % 2 === 1) tone(F(n + 12), dt*.6, 'sine', .08, 0, 0, AU.mu);                                  // clochette
+    if(s % 4 === 0) tone(F(ch[0] - 12), dt*3.4, 'triangle', .36, 0, 0, AU.mu);                             // basse
+    if(s % 4 === 2) tone(F(ch[2] - 12), dt*1.6, 'triangle', .2, 0, 0, AU.mu);
+    if(s % 8 === 4) ch.forEach((c, k) => tone(F(c), dt*2.6, 'sine', .09, 0, k*.03, AU.mu));                // accord arpégé
     MU.step++;
   }, dt*1000);
 }
