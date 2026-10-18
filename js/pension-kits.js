@@ -80,14 +80,14 @@ castPlus = (prev => function(s, d, m, c, own, sc, ang){
         PKB.push({ k:'drop', x:s.x, y:s.y, ox:s.x, oy:s.y, a, r:0, sp:O.speed, ph:arm*Math.PI*2/O.arms, spin:O.spin, amp:O.amp || 30, t:-k*.07, life:O.life, dm:dm/n*2.2, own, tp, R:8, hit:0 }); } return true; }
     case 'uppercut': s.mx = { k:'up', t0:G.time, sx:s.x, sy:s.y, a, dist:O.range*(1 + c*.2), dur:O.rush, own, dm, tp, knock:O.knock*(1 + c*.4), st:O.status, hit:0 }; return true;
     case 'whirl': PKZ.push({ k:'whl', x:clX(d.x), y:clY(d.y), t:0, dur:O.time, R:O.radius*(1 + c*.25), pull:O.pull, tick:O.tick, nt:0, dm:dm*O.tick/1.1, burst:dm*O.burst, own, tp, col }); return true;
-    case 'crescent': { const tx = T ? T.x + (T.vx || 0)*.25 : d.x, ty = T ? T.y + (T.vy || 0)*.25 : d.y;
+    case 'crescent': { const tx = d.x, ty = d.y;
         [-1, 1].forEach(sg => PKB.push({ k:'cres', sx:s.x, sy:s.y, tx, ty, sg, bend:O.bend*(1 + c*.3), t:0, dur:O.time, dm:dm*.55, own, tp, R:14, hit:0, fl:O.flinch })); return true; }
     case 'nova': { const n = O.count + Math.round(c*4); for(let i = 0; i < n; i++) PKB.push({ k:'star', ox:s, q:i/n*6.283, ring:O.ring, t:-i*.02, hov:O.hover, sp:O.speed, dm:dm/n*2.4, own, tp, R:8, x:s.x, y:s.y, go:0, life:2.2, hit:0 }); return true; }
-    case 'skydive': { const tx = T ? T.x : d.x, ty = T ? T.y : d.y, dx = tx - s.x, dy = ty - s.y, L = Math.hypot(dx, dy) || 1, ex = clX(tx + dx/L*120), ey = clY(ty + dy/L*120), sg = Math.random() < .5 ? 1 : -1;
+    case 'skydive': { const tx = d.x, ty = d.y, dx = tx - s.x, dy = ty - s.y, L = Math.hypot(dx, dy) || 1, ex = clX(tx + dx/L*120), ey = clY(ty + dy/L*120), sg = Math.random() < .5 ? 1 : -1;
         s.mx = { k:'sky', t0:G.time, dur:O.time, sx:s.x, sy:s.y, mx:tx, my:ty, ex, ey, c1x:(s.x + tx)/2 - dy/L*O.loop*sg, c1y:(s.y + ty)/2 + dx/L*O.loop*sg, c2x:(tx + ex)/2 + dy/L*O.loop*.6*sg, c2y:(ty + ey)/2 - dx/L*O.loop*.6*sg, own, dm, tp, hit:0, trail:O.trail, ts:O.trailShare, lastP:null }; return true; }
     case 'bubbles': { const n = O.count + (c > .6 ? 2 : 0); for(let i = 0; i < n; i++){ const q = a + (i - (n - 1)/2)*.32; PKB.push({ k:'bub', x:s.x + Math.cos(q)*20, y:s.y + Math.sin(q)*20, vx:Math.cos(q)*O.speed*R_(.85, 1.1), vy:Math.sin(q)*O.speed*R_(.85, 1.1), life:O.life, t:0, dm:dm/n*2.6, own, tp, R:O.radius*(1 + c*.3), st:O.status, hit:0 }); } return true; }
     case 'roll': s.mx = { k:'roll', t0:G.time, dur:O.time*(1 + c*.4), vx:Math.cos(a)*O.speed, vy:Math.sin(a)*O.speed, b:O.bounces, own, dm, tp, nh:0, spin:0 }; return true;
-    case 'hug': { const tx = T ? T.x : d.x, ty = T ? T.y : d.y, dd = Math.hypot(tx - s.x, ty - s.y), k = Math.min(1, (O.range*(1 + c*.2))/Math.max(1, dd)), stop = Math.max(0, 1 - (T ? (T.r + s.r + 4)/Math.max(1, dd) : 0));
+    case 'hug': { const tx = d.x, ty = d.y, dd = Math.hypot(tx - s.x, ty - s.y), k = Math.min(1, (O.range*(1 + c*.2))/Math.max(1, dd)), stop = Math.max(0, 1 - (T ? (T.r + s.r + 4)/Math.max(1, dd) : 0));
         s.mx = { k:'hug', t0:G.time, sx:s.x, sy:s.y, ex:s.x + (tx - s.x)*Math.min(k, stop), ey:s.y + (ty - s.y)*Math.min(k, stop), leap:O.leap, hits:O.hits + (c > .6 ? 1 : 0), gap:O.gap, own, dm:dm/O.hits, tp, deb:O.debuff, debT:O.debuffTime, done:0 }; return true; }
   }
   return true;
@@ -304,3 +304,33 @@ step = (prev => function(dt){
   if(!G || G.over) return;
   for(const z of ZONES){ if(!z.trk || z.t >= z.delay*.45) continue; const T = pkFoe(z.trk.own); if(pkOk(T)){ z.x = clX(T.x + z.trk.dx*.6); z.y = clY(T.y + z.trk.dy*.6); } }
 })(step);
+
+// ---------------------------------------------------------------- aperçu de visée adapté à chaque nouvelle attaque
+aimShape = (prev => function(p, m, c){
+  if(!m || !PK_KINDS.includes(m.k)) return prev(p, m, c);
+  const O = m.opt || {}, e = G && G.e, dist = e ? Math.hypot(e.x - p.x, e.y - p.y) : 260;
+  switch(m.k){
+    case 'breath':   return { k:'cone', half:O.arc || .42, rng:(O.length || 250)*(1 + c*.2) };
+    case 'xspeed':   return { k:'line', w:30, rng:Math.min(520, dist + (O.over || 70)), end:true, endR:22 };
+    case 'tornado':  return { k:'line', w:(O.radius || 58)*2*(1 + c*.2), rng:Math.min(560, (O.speed || 120)*(O.time || 3)), end:true };
+    case 'spiral':   return { k:'line', w:(O.amp || 30)*2 + 16, rng:(O.speed || 330)*(O.life || 1.3) };
+    case 'uppercut': return { k:'line', w:34, rng:(O.range || 210)*(1 + c*.2), end:true, endR:30 };
+    case 'whirl':    return { k:'circle', r:(O.radius || 72)*(1 + c*.25) };
+    case 'crescent': return { k:'cone', half:.38, rng:Math.max(160, Math.min(420, dist + 60)) };
+    case 'nova':     return { k:'circle', r:O.ring || 44, self:true };
+    case 'skydive':  return { k:'line', w:30, rng:Math.min(560, dist + 120), end:true, endR:26 };
+    case 'bubbles':  return { k:'cone', half:.36 + (c > .6 ? .3 : 0), rng:Math.min(520, (O.speed || 190)*(O.life || 4)*.55) };
+    case 'roll':     return { k:'line', w:40, rng:Math.min(620, (O.speed || 430)*(O.time || 1.2)*(1 + c*.4)*.8) };
+    case 'hug':      return { k:'line', w:30, rng:Math.min((O.range || 260)*(1 + c*.2), dist), end:true, endR:40 };
+  }
+  return prev(p, m, c);
+})(aimShape);
+// Éclat Magique : l'anneau d'étoiles se forme autour de toi (aperçu centré sur ton Pokémon)
+drawAimShape = (prev => function(p, i){
+  const m = p.mv[i]; if(!m || m.k !== 'nova') return prev(p, i);
+  if(!AIM.on[i] || (AIM.cancel && AIM.cancel[i])) return;
+  const col = COL[m.tp] || '#ff7ac8', A = .55 + .2*Math.sin(G.time*10), R = (m.opt && m.opt.ring || 44) + 8;
+  ctx.save(); ctx.translate(p.x, p.y - 8); ctx.setLineDash([6, 6]); ctx.lineWidth = 3; ctx.strokeStyle = hexA(col, .9*A); ctx.beginPath(); ctx.ellipse(0, 0, R, R*.7, 0, 0, 6.283); ctx.stroke(); ctx.setLineDash([]);
+  const e = G.e, a = Math.atan2(e.y - p.y, e.x - p.x); ctx.strokeStyle = `rgba(255,255,255,${.6*A})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(Math.cos(a)*R, Math.sin(a)*R*.7); ctx.lineTo(Math.cos(a)*(R + 60), Math.sin(a)*(R + 60)*.7); ctx.stroke();
+  ctx.restore();
+})(drawAimShape);

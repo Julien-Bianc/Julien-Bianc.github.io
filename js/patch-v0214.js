@@ -206,7 +206,7 @@ async function showTrainer(q, back){
   menu(`<div class='hd'><h1>Profil de dresseur</h1></div><p class='hint'>Chargement…</p><div class='row'><button class='btn2' id='back'>Retour</button></div>`);
   document.getElementById('back').onclick = back || showMain;
   let row = null, err = '';
-  try{ row = await Prof.fetch(q); }catch(e){ err = /card/.test(e.message) ? 'Les profils en ligne ne sont pas encore installés sur le serveur.' : 'Profil indisponible pour l\'instant.'; }
+  try{ row = await Prof.fetch(q); }catch(e){ err = /card/.test(e.message) ? 'Les profils en ligne ne sont pas encore installés sur le serveur (supabase/profil.sql).' : 'Profil indisponible pour l\'instant (' + esc(e.message) + ').'; }
   if(!document.querySelector('#menu #back')) return;
   if(!row){ menu(`<div class='hd'><h1>Profil de dresseur</h1></div><p>${err || `Aucun dresseur « ${esc(q.pseudo || '')} ».`}</p><div class='row'><button class='btn2' id='back'>Retour</button></div>`); document.getElementById('back').onclick = back || showMain; return; }
   const C = row.card || { title:'debutant', badges:[], cards:[], st:{} };
@@ -261,3 +261,13 @@ span.pfslot{cursor:default}.pfslot img{width:44px;height:44px}.pfslot em{font-st
 .pfpick{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.pfo{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:70px;padding:5px;border-radius:10px;border:2px solid #5a3a24;background:rgba(40,16,56,.9);color:#fff3c8;cursor:pointer;font-family:var(--font)}
 .pfo:hover{border-color:#ffd23f}.pfo img{width:42px;height:42px;image-rendering:pixelated}.pfo small{font-size:9px}.pfo.lock{opacity:.45;cursor:default}.pftl .pfo{min-width:150px}.pfo em{font-style:normal;font-size:20px}
 </style>`);
+
+// v0.21.5 : accès au profil depuis le Multijoueur (bouton « Mon profil » + pseudo cliquable)
+showOnline = (prev => function(tab, keep){
+  prev(tab, keep);
+  const hd = document.querySelector('.onl-hub .hd'); if(!hd || document.getElementById('o-prof')) return;
+  hd.insertAdjacentHTML('beforeend', `<button class='btn2 sm' id='o-prof'>Mon profil</button>`);
+  document.getElementById('o-prof').onclick = () => showProfile();
+  const who = hd.querySelector('.who'); if(who){ who.style.cursor = 'pointer'; who.title = 'Mon profil'; who.onclick = () => showProfile(); }
+})(showOnline);
+SCREENS.online = () => showOnline();
