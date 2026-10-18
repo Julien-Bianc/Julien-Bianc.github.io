@@ -19,6 +19,7 @@ const MUSIC = {
   'menu:mewtwo':   'assets/music/menu-mewtwo.mp3',      // écran « Défi : Mewtwo »
   'menu:raid':     'assets/music/menu-raid.mp3',        // écrans des raids (salon, choix d'équipe)
   'menu:contest':  'assets/music/menu-concours.mp3',    // écrans du Concours Pokémon
+  pension:        'assets/music/pension.mp3',          // Pension Pokémon (sans fichier : une petite mélodie est générée)
   // ----- combats -----
   battle:  [ 'assets/music/battle.mp3', 'assets/music/battle2.mp3', 'assets/music/battle3.mp3' ],   // combats Solo (au hasard)
   'battle:chapitre2': [ 'assets/music/battle-ch2.mp3' ],                                         // chapitre 2 « L'Éveil des Titans »
