@@ -70,8 +70,18 @@ const TW_BONUS = {
            go:R => { const L = HELD.filter(h => h.r === 'PC' || h.r === 'R'), h = L[Math.floor(Math.random()*L.length)]; (R.bag = R.bag || []).push(h.id); return `${h.name} rejoint ton sac !`; } },
   coins: { name:'Bourse',        desc:'Des Pokédollars tout de suite.', ok:() => true, go:R => { const n = Math.round((40 + R.floor*8)*.65); Save.addCoins(n); R.coins = (R.coins || 0) + n; Tower.stats().coins += n; return `+ ${money(n)}`; } }
 };
+function twItemOffer(not){
+  const L = HELD.filter(h => (h.r === 'PC' || h.r === 'R') && !not.includes(h.id)), h = L[Math.floor(Math.random()*L.length)], k = 'item:' + h.id;
+  TW_BONUS[k] = { name:h.name, desc:h.desc + ' (va dans ton sac)', held:h.id, ok:() => true, go:R => { (R.bag = R.bag || []).push(h.id); return `${h.name} rejoint ton sac !`; } };
+  return k;
+}
 function twOffer(R, f){
-  if(f % 5 === 0) return { kind:'bonus', opts:twPick(Object.keys(TW_BONUS).filter(k => TW_BONUS[k].ok(R)), 3).filter((v, i, a) => a.indexOf(v) === i) };
+  if(f % 5 === 0){
+    const pick = a => a[Math.floor(Math.random()*a.length)], boosts = ['atk', 'def', 'spd', 'hpm'].filter(k => TW_BONUS[k].ok(R)), heals = ['heal', 'revive'].filter(k => TW_BONUS[k].ok(R));
+    const o = [pick(boosts)]; o.push(heals.length ? pick(heals) : pick(boosts.filter(k => !o.includes(k)).concat(['coins'])));
+    const i1 = twItemOffer([]), i2 = twItemOffer([TW_BONUS[i1].held]); o.push(i1, i2);
+    return { kind:'bonus', opts:o };
+  }
   if(f % 5 === 2 || (f % 5 === 4 && R.team.length < TW.teamMax)) return { kind:'recruit', opts:ORDER.filter(id => !R.team.some(m => m.id === id)).sort(() => Math.random() - .5).slice(0, 3) };
   return null;
 }
@@ -137,37 +147,80 @@ function twNew(){
   twOn('bk', showTower);
 }
 
-// ---------------------------------------------------------------- préparation d'un étage : ordre de l'équipe + objets
+// ---------------------------------------------------------------- préparation d'un étage : ordre de l'équipe + objets (glisser-déposer, comme « Mes équipes »)
 let TWSEL = null;      // objet sélectionné : { from:'bag', k } ou { from:'mon', i }
+let TWDRAG = null;
 function twFloor(msg){
   const R = Tower.run(); if(!R) return showTower();
   R.items = R.items || {}; R.bag = R.bag || [];
-  const f = R.floor, alive = R.team.filter(m => m.hp > 0).length, n = twFoesN(f, R.team.length), boss = twBossFloor(f);
+  const f = R.floor, n = twFoesN(f, R.team.length), boss = twBossFloor(f);
   const selBag = k => TWSEL && TWSEL.from === 'bag' && TWSEL.k === k, selMon = i => TWSEL && TWSEL.from === 'mon' && TWSEL.i === i;
+  const selId = TWSEL ? (TWSEL.from === 'bag' ? R.bag[TWSEL.k] : R.items[(R.team[TWSEL.i] || {}).id]) : null, selH = selId && HELD_BY_ID[selId];
   menu(`<div class='hd' data-twscene><h1>Étage ${f}</h1>${walletHtml()}</div>
     <p class='twnext'>${twI(boss ? 'crown' : 'foes')} ${n} adversaire${n > 1 ? 's' : ''}${boss ? ' — <b>le dernier est un boss !</b>' : ''}</p>
-    <div class='twteam ed'>${R.team.map((m, i) => `<div class='twm ${m.hp <= 0 ? 'ko' : ''} ${i === 0 ? 'lead' : ''}'>
+    <div class='twteam ed'>${R.team.map((m, i) => `<div class='twm ${m.hp <= 0 ? 'ko' : ''} ${i === 0 ? 'lead' : ''}' data-tc='${i}'>
         <span class='twn'>${i + 1}</span>${thumb(m.id)}<b>${esc(NAME[m.id] || m.id)}</b>${twHp(m.hp)}
-        <span class='twmr'><button class='twa' data-mv='${i},-1' ${i === 0 ? 'disabled' : ''}>◀</button>
-        <button class='twslot ${selMon(i) ? 'sel' : ''} ${TWSEL && !selMon(i) ? 'drop' : ''}' data-slot='${i}' title='Objet tenu'>${twItemImg(R.items[m.id]) || '<em>+</em>'}</button>
-        <button class='twa' data-mv='${i},1' ${i === R.team.length - 1 ? 'disabled' : ''}>▶</button></span></div>`).join('')}</div>
-    <div class='twbag ${TWSEL && TWSEL.from === 'mon' ? 'drop' : ''}' id='twbag'>${twI('bag')}<span>Sac :</span>${R.bag.length ? R.bag.map((id, k) => `<button class='twslot ${selBag(k) ? 'sel' : ''}' data-bag='${k}' title='${esc(HELD_BY_ID[id] ? HELD_BY_ID[id].name : id)}'>${twItemImg(id)}</button>`).join('') : '<small>vide</small>'}</div>
-    <small class='sub'>${msg ? `<b>${esc(msg)}</b>` : TWSEL ? 'Touche l\'emplacement d\'un Pokémon pour lui donner cet objet (ou le sac pour le ranger).' : 'Flèches : changer l\'ordre (le 1er commence) · touche un objet puis un Pokémon pour le lui donner.'}</small>
+        <button class='twslot ${selMon(i) ? 'sel' : ''} ${TWSEL && !selMon(i) ? 'drop' : ''}' data-slot='${i}' title='Objet tenu'>${twItemImg(R.items[m.id]) || '<em>+</em>'}</button></div>`).join('')}</div>
+    <div class='twbag ${TWSEL && TWSEL.from === 'mon' ? 'drop' : ''}' id='twbag'>${twI('bag')}<span>Sac :</span>${R.bag.length ? R.bag.map((id, k) => `<button class='twslot ${selBag(k) ? 'sel' : ''}' data-bag='${k}'>${twItemImg(id)}</button>`).join('') : '<small>vide</small>'}</div>
+    <div class='twinfo'>${selH ? `<img src='${heldImg(selH)}'><span><b>${esc(selH.name)}</b> — ${esc(selH.desc)}</span>` : `<small>${msg ? `<b>${esc(msg)}</b>` : 'Glisse un Pokémon sur un autre pour changer l\'ordre (le 1er commence). Glisse un objet sur un Pokémon pour le lui donner (ou touche l\'objet puis le Pokémon).'}</small>`}</div>
     ${twBuffs(R) ? `<div class='twbs'>${twBuffs(R)}</div>` : ''}
     <div class='row'><button class='btn' id='twgo'>Combattre</button><button class='btn2' id='twm'>Menu</button></div>`);
-  const save = m => { Tower.set(R); twFloor(m); };
-  bindAll('[data-mv]', el => { const [i, d] = el.dataset.mv.split(',').map(Number), j = i + d; if(j < 0 || j >= R.team.length) return; [R.team[i], R.team[j]] = [R.team[j], R.team[i]]; TWSEL = null; save(); });
-  bindAll('[data-bag]', el => { const k = +el.dataset.bag; TWSEL = selBag(k) ? null : { from:'bag', k }; twFloor(); });
+  document.querySelectorAll('#menu .twteam img, #menu .twbag img').forEach(i => { i.draggable = false; });
+  const save = m => { TWSEL = null; Tower.set(R); twFloor(m); };
+  const give = (it, i, from) => {           // donne l'objet `it` au Pokémon i ; from = { bag:k } ou { mon:j }
+    const pid = R.team[i].id, cur = R.items[pid];
+    if(from.bag != null){ R.bag.splice(from.bag, 1); if(cur) R.bag.push(cur); }
+    else if(from.mon != null){ const src = R.team[from.mon].id; if(src === pid) return save(); if(cur) R.items[src] = cur; else delete R.items[src]; }
+    R.items[pid] = it; save(`${NAME[pid]} tient ${HELD_BY_ID[it].name}.`);
+  };
+  const toBag = j => { const pid = R.team[j].id; if(!R.items[pid]) return; R.bag.push(R.items[pid]); delete R.items[pid]; save(); };
+  const swap = (i, j) => { if(i === j) return; [R.team[i], R.team[j]] = [R.team[j], R.team[i]]; save(); };
+  // touches (sans glisser)
+  bindAll('[data-bag]', el => { if(TWDRAG && TWDRAG.moved) return; const k = +el.dataset.bag; TWSEL = selBag(k) ? null : { from:'bag', k }; twFloor(); });
   bindAll('[data-slot]', el => {
-    const i = +el.dataset.slot, pid = R.team[i].id, cur = R.items[pid];
+    if(TWDRAG && TWDRAG.moved) return;
+    const i = +el.dataset.slot, cur = R.items[R.team[i].id];
     if(!TWSEL){ if(cur){ TWSEL = { from:'mon', i }; twFloor(); } else twFloor('Choisis d\'abord un objet dans ton sac.'); return; }
     if(TWSEL.from === 'mon' && TWSEL.i === i){ TWSEL = null; return twFloor(); }
-    if(TWSEL.from === 'bag'){ const it = R.bag.splice(TWSEL.k, 1)[0]; if(cur) R.bag.push(cur); R.items[pid] = it; TWSEL = null; return save(`${NAME[pid]} tient ${HELD_BY_ID[it].name}.`); }
-    const src = R.team[TWSEL.i].id, it = R.items[src]; R.items[src] = cur || undefined; if(!cur) delete R.items[src]; R.items[pid] = it; TWSEL = null; save(`${NAME[pid]} tient ${HELD_BY_ID[it].name}.`);
+    const it = TWSEL.from === 'bag' ? R.bag[TWSEL.k] : R.items[R.team[TWSEL.i].id];
+    give(it, i, TWSEL.from === 'bag' ? { bag:TWSEL.k } : { mon:TWSEL.i });
   });
-  twOn('twbag', ev => { if(!TWSEL || TWSEL.from !== 'mon' || ev.target.closest('[data-bag]')) return; const pid = R.team[TWSEL.i].id; R.bag.push(R.items[pid]); delete R.items[pid]; TWSEL = null; save(); });
+  twOn('twbag', ev => { if(!TWSEL || TWSEL.from !== 'mon' || ev.target.closest('[data-bag]')) return; toBag(TWSEL.i); });
+  // glisser-déposer
+  const ghost = (el, x, y) => { const g = document.createElement('div'); g.className = 'tdrag'; const im = el.querySelector('img'); if(im){ const c = document.createElement('img'); c.src = im.src; g.appendChild(c); } document.body.appendChild(g); g.style.left = x + 'px'; g.style.top = y + 'px'; return g; };
+  const target = (x, y) => { const t = document.elementFromPoint(x, y); return t && t.closest ? { card:t.closest('[data-tc]'), bag:t.closest('#twbag') } : {}; };
+  const startDrag = (el, src) => el.addEventListener('pointerdown', e => {
+    if(e.button > 0) return; e.stopPropagation();
+    TWDRAG = { el, src, x0:e.clientX, y0:e.clientY, x:e.clientX, y:e.clientY, pid:e.pointerId, moved:false, g:null };
+  });
+  document.querySelectorAll('[data-tc]').forEach(el => startDrag(el, { card:+el.dataset.tc }));
+  document.querySelectorAll('[data-bag]').forEach(el => startDrag(el, { bag:+el.dataset.bag }));
+  document.querySelectorAll('[data-slot]').forEach(el => { const i = +el.dataset.slot; if(R.items[R.team[i].id]) startDrag(el, { mon:i }); });
+  TW_DROP = (D) => {
+    const T = target(D.x, D.y), j = T.card ? +T.card.dataset.tc : null;
+    if(D.src.card != null){ if(j != null) swap(D.src.card, j); else twFloor(); return; }
+    const it = D.src.bag != null ? R.bag[D.src.bag] : R.items[R.team[D.src.mon].id]; if(!it) return twFloor();
+    if(j != null) return give(it, j, D.src.bag != null ? { bag:D.src.bag } : { mon:D.src.mon });
+    if(T.bag && D.src.mon != null) return toBag(D.src.mon);
+    twFloor();
+  };
   twOn('twgo', () => { TWSEL = null; twFight(); }); twOn('twm', () => { TWSEL = null; showMain(); });
 }
+let TW_DROP = null;
+addEventListener('pointermove', e => {
+  const D = TWDRAG; if(!D || e.pointerId !== D.pid) return;
+  D.x = e.clientX; D.y = e.clientY;
+  if(!D.moved && Math.hypot(D.x - D.x0, D.y - D.y0) > 8){ D.moved = true; D.el.classList.add('dragsrc');
+    const g = D.g = document.createElement('div'); g.className = 'tdrag'; const im = D.el.querySelector('img'); if(im){ const c = document.createElement('img'); c.src = im.src; g.appendChild(c); } document.body.appendChild(g); }
+  if(D.g){ D.g.style.left = D.x + 'px'; D.g.style.top = D.y + 'px';
+    const t = document.elementFromPoint(D.x, D.y), c = t && t.closest && t.closest('[data-tc]'); document.querySelectorAll('.twm.dropon').forEach(x => x !== c && x.classList.remove('dropon')); if(c) c.classList.add('dropon'); }
+});
+addEventListener('pointerup', e => {
+  const D = TWDRAG; if(!D || e.pointerId !== D.pid) return;
+  if(D.g) D.g.remove(); D.el.classList.remove('dragsrc');
+  if(D.moved && TW_DROP){ setTimeout(() => { TWDRAG = null; }, 0); TW_DROP(D); } else TWDRAG = null;
+});
+addEventListener('pointercancel', () => { if(TWDRAG && TWDRAG.g) TWDRAG.g.remove(); TWDRAG = null; });
 function twFight(){
   const R = Tower.run(); if(!R) return showTower();
   const alive = R.team.filter(m => m.hp > 0); if(!alive.length) return twEnd(R, 'ko');
@@ -203,9 +256,10 @@ battleEnd = (prev => function(win, why){
 
 // ---------------------------------------------------------------- après un étage : bonus / recrue
 function twAfter(R, note){
+  ((R.pending && R.pending.opts) || []).forEach(k => { if(typeof k === 'string' && k.startsWith('item:') && !TW_BONUS[k]){ const id = k.slice(5), h = HELD_BY_ID[id]; if(h) TW_BONUS[k] = { name:h.name, desc:h.desc + ' (va dans ton sac)', held:id, ok:() => true, go:R => { (R.bag = R.bag || []).push(id); return `${h.name} rejoint ton sac !`; } }; } });
   const P = R.pending, L = R.last || { f:R.floor - 1, gain:0 };
   const body = !P ? '' : P.kind === 'bonus'
-    ? `<p class='twq'>Choisis un bonus :</p><div class='twopts'>${P.opts.map(k => { const B = TW_BONUS[k]; return `<button class='twopt' data-two='${k}'>${twI(k, 'big')}<b>${B.name}</b><small>${B.desc}</small></button>`; }).join('')}</div>`
+    ? `<p class='twq'>Choisis un bonus :</p><div class='twopts'>${P.opts.map(k => { const B = TW_BONUS[k]; if(!B) return ''; return `<button class='twopt' data-two='${k}'>${B.held && HELD_BY_ID[B.held] ? `<img class='twi big' src='${heldImg(HELD_BY_ID[B.held])}'>` : twI(k, 'big')}<b>${B.name}</b><small>${B.desc}</small></button>`; }).join('')}</div>`
     : `<p class='twq'>Un Pokémon veut te rejoindre ! <small>(${R.team.length}/${TW.teamMax}${R.team.length >= TW.teamMax ? ' — l\'un des tiens devra laisser sa place' : ''})</small></p><div class='twopts'>${P.opts.map(id => `<button class='twopt' data-two='${id}'>${thumb(id)}<b>${esc(NAME[id] || id)}</b><small class='ty'>${twTypes(id)}</small></button>`).join('')}
       <button class='twopt skip' data-two=''><em>✖</em><b>Personne</b><small>Garder mon équipe</small></button></div>`;
   menu(`<div class='hd' data-twscene><h1>Étage ${L.f} réussi !</h1>${walletHtml()}</div>
@@ -213,7 +267,7 @@ function twAfter(R, note){
     ${P ? '' : `<div class='row'><button class='btn' id='twnx'>Préparer l'étage ${R.floor}</button><button class='btn2' id='twm'>Menu</button></div>`}`);
   bindAll('[data-two]', el => {
     const v = el.dataset.two, S = Tower.stats();
-    if(P.kind === 'bonus'){ const msg = TW_BONUS[v].go(R) || TW_BONUS[v].name; S.bonus++; R.pending = null; Tower.set(R); return twAfter(R, msg); }
+    if(P.kind === 'bonus'){ if(!TW_BONUS[v] && v.startsWith('item:')){ const id = v.slice(5), h = HELD_BY_ID[id]; if(h) TW_BONUS[v] = { name:h.name, go:R => { (R.bag = R.bag || []).push(id); return `${h.name} rejoint ton sac !`; } }; } const msg = TW_BONUS[v].go(R) || TW_BONUS[v].name; S.bonus++; R.pending = null; Tower.set(R); return twAfter(R, msg); }
     if(!v){ R.pending = null; Tower.set(R); return twAfter(R); }
     if(R.team.length < TW.teamMax){ R.team.push({ id:v, hp:1 }); S.recruits++; R.pending = null; Tower.set(R); return twAfter(R, `${NAME[v]} rejoint ton équipe !`); }
     twReplace(R, v);
@@ -351,7 +405,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .twm.lead{border-color:#ffd23f;box-shadow:0 0 8px rgba(255,210,63,.45)}.twm.ko{filter:grayscale(1);opacity:.5}
 .twm .twit{position:absolute;top:3px;right:3px}.twm .twit img{width:18px;height:18px}
 .twn{position:absolute;top:3px;left:5px;font-size:10px;color:#ffe27a}
-.twteam.ed .twm{width:104px}.twmr{display:flex;align-items:center;gap:3px;margin-top:3px}
+.twteam.ed .twm{width:104px;cursor:grab;touch-action:none}.twm.dropon{border-color:#7aff9a!important;box-shadow:0 0 10px rgba(122,255,154,.5)}.twm.dragsrc{opacity:.45}
+.twinfo{display:flex;align-items:center;gap:6px;justify-content:center;min-height:24px;max-width:560px;margin:2px auto;font-size:11px;text-align:left}.twinfo img{width:22px;height:22px}.twinfo b{color:#ffe27a}.twmr{display:flex;align-items:center;gap:3px;margin-top:3px}
 .twa{width:22px;height:22px;padding:0;border-radius:6px;border:1px solid #8a5a20;background:#2a1440;color:#ffe27a;font-size:10px;cursor:pointer}.twa:disabled{opacity:.3;cursor:default}
 .twslot{width:30px;height:30px;padding:2px;border-radius:7px;border:2px dashed #8a5a20;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#ffe27a}
 .twslot img{width:22px;height:22px}.twslot em{font-style:normal;font-size:14px;opacity:.7}.twslot.sel{border-style:solid;border-color:#ffd23f;box-shadow:0 0 8px #ffd23f}.twslot.drop{animation:twdrop 1s ease-in-out infinite}
@@ -361,7 +416,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .twbs{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:4px 0}.twb{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:1px 7px 1px 2px;border-radius:9px;background:rgba(255,210,63,.15);color:#ffe9a0}.twb .twi{width:16px;height:16px}
 .twnext,.twgain{font-size:13px;margin:4px 0;color:#ffe9a0;display:flex;align-items:center;gap:5px;justify-content:center}.twq{font-size:13px;margin:6px 0 2px;color:#fff3c8}.twq small{font-size:10px;color:var(--txt2,#c9bcd8)}.twq img{width:30px;height:30px;image-rendering:pixelated;vertical-align:middle}
 .twopts,.twpick{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:6px 0}
-.twopt{width:146px;padding:7px 6px;border-radius:12px;border:2px solid #8a5a20;background:linear-gradient(180deg,#3a1a50,#1c0c28);box-shadow:inset 0 0 0 1px #14081e,0 3px 0 #120818;color:#fff3c8;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:var(--font)}
+.twopt{width:128px;padding:7px 6px;border-radius:12px;border:2px solid #8a5a20;background:linear-gradient(180deg,#3a1a50,#1c0c28);box-shadow:inset 0 0 0 1px #14081e,0 3px 0 #120818;color:#fff3c8;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:var(--font)}
 .twopt:hover{border-color:#ffd23f;transform:translateY(-1px)}.twopt b{font-size:12px;color:#ffe27a;font-weight:700}.twopt small{font-size:9px;line-height:1.25;color:#e8dcf4}.twopt img{width:46px;height:46px;image-rendering:pixelated}.twopt .twi.big{width:40px;height:40px;image-rendering:auto}
 .twopt em{font-style:normal;font-size:22px;color:#ff8a7a}.twopt.skip{width:112px;opacity:.85}.twopt.ko{filter:grayscale(.8)}
 .twpick .twopt{width:104px}

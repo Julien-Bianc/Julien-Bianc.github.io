@@ -3,7 +3,7 @@
 //    1. Musiques : la Tour garde sa musique dans tous ses écrans ; la musique ne revient plus au début entre deux
 //       écrans qui ont le même morceau (les fichiers absents sont repérés dès le démarrage)
 //    2. Tartard « Élan Combatif » : +5 % par ATTAQUE DIFFÉRENTE qui a touché (3 max), au lieu de +7 % par coup
-//    3. Tour : description des objets du sac ; plus de récompenses (₽ ×1,5, objets trouvés, objet réel tous les 10 étages)
+//    3. Tour : Pokédollars par étage ×1,5
 //    4. Profil : les cartes favorites s'affichent (les tiennes et celles des autres) et se choisissent à nouveau
 //    5. Concours : les épreuves utilisent la police du jeu
 //    6. Solo : mention « Combat difficile » à partir du niveau 8
@@ -44,26 +44,7 @@ doSwap = (prev => function(n){ if(G && G.p){ G.p.momSet = null; } return prev(n)
 
 // ---------------------------------------------------------------- 3. Tour : sac expliqué + récompenses
 TW.coins = f => Math.round((10 + 2*f)*.65*1.5);
-twFloor = (prev => function(msg){
-  prev(msg);
-  const R = Tower.run(), bag = document.getElementById('twbag'); if(!R || !bag) return;
-  const sel = typeof TWSEL !== 'undefined' && TWSEL ? (TWSEL.from === 'bag' ? R.bag[TWSEL.k] : R.items[R.team[TWSEL.i].id]) : null;
-  const held = R.team.filter(m => R.items[m.id]).map(m => [R.items[m.id], NAME[m.id]]);
-  const line = (id, who) => { const h = HELD_BY_ID[id]; return h ? `<li class='${id === sel ? 'on' : ''}'><img src='${heldImg(h)}'><b>${esc(h.name)}</b>${who ? ` <em>(${esc(who)})</em>` : ''} — ${esc(h.desc)}</li>` : ''; };
-  const list = R.bag.map(id => line(id)).join('') + held.map(([id, w]) => line(id, w)).join('');
-  if(list) bag.insertAdjacentHTML('afterend', `<ul class='twbagi'>${list}</ul>`);
-})(twFloor);
-twAfter = (prev => function(R, note){
-  const L = R.last;
-  if(L && R._rw !== L.f){
-    R._rw = L.f; const notes = [], pick = a => a[Math.floor(Math.random()*a.length)];
-    if(Math.random() < .25){ const h = pick(HELD.filter(x => x.r === 'C' || x.r === 'PC')); (R.bag = R.bag || []).push(h.id); notes.push(`objet trouvé : ${h.name} (dans ton sac)`); }
-    if(L.f % 10 === 0){ const h = pick(HELD.filter(x => x.r === 'PC' || x.r === 'R')); Save.addItem(h.id, 1); notes.push(`récompense du boss : ${h.name} ajouté à ton inventaire !`); }
-    if(L.f % 5 === 0){ const n = Math.round((60 + L.f*6)*.65); Save.addCoins(n); R.coins = (R.coins || 0) + n; Tower.stats().coins += n; notes.push(`prime d'étage +${money(n)}`); }
-    if(notes.length){ Tower.set(R); note = [note].concat(notes).filter(Boolean).join(' · '); }
-  }
-  return prev(R, note);
-})(twAfter);
+// (v0.21.8 : les objets en plus ont été retirés — à la place, plus de CHOIX dans les bonus : js/tower.js)
 
 // ---------------------------------------------------------------- 4. profil : cartes favorites
 showProfile = (prev => function(msg){ if(typeof shopBuild === 'function') shopBuild(); return prev(msg); })(showProfile);
