@@ -27,7 +27,7 @@ const TSave = {
   team(){ const T = this.d(); if(!T.team || !Array.isArray(T.team.members)){ const t = Save.teams().find(x => x.size === 3 && x.members.length) || { members:ORDER.filter(id => Owned.has(id)).slice(0, 3), items:{} }; T.team = { members:t.members.filter(id => Owned.has(id)).slice(0, 3), items:{ ...(t.items || {}) } }; } if(T.team.res && (!Owned.has(T.team.res) || T.team.members.includes(T.team.res))) T.team.res = null; return T.team; },
   squad(){ const t = this.team(); return t.members.concat(t.res ? [t.res] : []); },
   teamObj(){ const t = this.team(); return { id:'tour', name:'Tournoi', size:3, members:t.members.slice(), items:{ ...t.items }, caps:{} }; },
-  items(){ const t = this.team(), o = {}; t.members.forEach(id => { const it = t.items[id]; if(it && HELD_BY_ID[it] && Save.itemCount(it) > 0) o[id] = it; }); return o; }
+  items(){ const t = this.team(), o = {}; t.members.concat(t.res ? [t.res] : []).forEach(id => { const it = t.items[id]; if(it && HELD_BY_ID[it] && Save.itemCount(it) > 0) o[id] = it; }); return o; }
 };
 
 // ---------------------------------------------------------------- IA : équipes et simulation
@@ -41,7 +41,9 @@ function tAiTeam(roster, foe, n){
   const sc = id => tStrength(id) + (foe && foe.length ? foe.reduce((s, f) => s + tMatchup(id, f), 0)*.35 : 0) + Math.random()*.45;
   const out = [], L = roster.slice().sort((x, y) => sc(y) - sc(x));
   for(const id of L){ if(out.length >= n) break; if(out.some(o => typesOf(o)[0] === typesOf(id)[0]) && L.length - L.indexOf(id) > n - out.length) continue; out.push(id); }
-  return out.length === n ? out : L.slice(0, n);
+  const R2 = out.length === n ? out : L.slice(0, n);
+  if(foe && foe[0]) R2.sort((x, y) => tMatchup(y, foe[0]) - tMatchup(x, foe[0]));     // le meilleur contre ton 1er Pokémon ouvre le combat
+  return R2;
 }
 function tNewAi(name, i){
   const pool = tPool().sort(() => Math.random() - .5), roster = tAiTeam(pool.slice(0, 7), null, 4);   // 4 Pokémon pour tout le tournoi
@@ -76,7 +78,7 @@ const TEng = {
   },
   begin(T){
     this.fill(T);
-    T.players.forEach(P => { if(P.kind !== 'ai') P.squad = (P.squad && P.squad.length ? P.squad : (P.team || []).concat(P.res ? [P.res] : [])).slice(0, 4); else P.squad = P.ai.roster.slice(); });
+    T.players.forEach(P => { if(P.kind !== 'ai'){ P.squad = (P.squad && P.squad.length ? P.squad : (P.team || []).concat(P.res ? [P.res] : [])).slice(0, 4); P.lockItems = { ...(P.items || {}) }; } else { P.squad = P.ai.roster.slice(); P.items = P.lockItems = tAiItems(P.squad); } });
     const ids = T.players.map(p => p.id).sort(() => Math.random() - .5), R = [];
     for(let k = 0; k < ids.length; k += 2) R.push({ a:ids[k], b:ids[k + 1], w:null, state:'wait' });
     T.rounds = [R]; T.round = 0; this.prep(T);
@@ -100,7 +102,7 @@ const TEng = {
       if(m.state === 'live' && m.sim && now >= m.endAt){ this.result(T, m, m.sim.w, m.sim.st); ch = true; }
       if(m.state === 'live' && !m.sim && now - m.t0 > 12*60e3){ this.result(T, m, Math.random() < .5 ? m.a : m.b, {}); ch = true; }   // sécurité : combat bloqué
       // joueur absent : forfait 45 s après le début de son combat
-      if(m.state === 'live' && !m.sim && !m.started && now - m.t0 > 45000){ const hum = [m.a, m.b].filter(id => tP(T, id).kind !== 'ai'), gone = hum.filter(id => !m['go' + id]);
+      if(!T.solo && m.state === 'live' && !m.sim && !m.started && now - m.t0 > 45000){ const hum = [m.a, m.b].filter(id => tP(T, id).kind !== 'ai'), gone = hum.filter(id => !m['go' + id]);
         if(gone.length === hum.length) { this.result(T, m, Math.random() < .5 ? m.a : m.b, {}); ch = true; } else if(gone.length){ this.result(T, m, hum.find(id => !gone.includes(id)) || (m.a === gone[0] ? m.b : m.a), {}); ch = true; } }
     });
     if(T.solo && !R.some(x => (x.a === tMyId() || x.b === tMyId()) && x.state !== 'done')){ let k = 0; R.forEach(x => { if(x.state === 'live' && x.sim && x.endAt > now + 4000) x.endAt = now + 1200 + 900*k++; }); }
@@ -137,7 +139,7 @@ function tNetOpen(code, host){
 }
 function tNetClose(){ if(!TNET) return; try{ if(!TNET.host) TNET.T.send('leave', { id:tMyId() }); }catch(e){} const T = TNET.T; TNET = null; setTimeout(() => T.close(), 300); }
 const tSend = (k, d) => { if(TNET) TNET.T.send(k, d); };
-function tSnapshot(T){ return { ...T, players:T.players.map(p => ({ id:p.id, name:p.name, kind:p.kind, team:p.team, items:p.items, res:p.res, squad:p.squad, skill:p.ai ? p.ai.skill : null })), now:Date.now() }; }
+function tSnapshot(T){ return { ...T, players:T.players.map(p => ({ id:p.id, name:p.name, kind:p.kind, team:p.team, items:p.items, res:p.res, squad:p.squad, lockItems:p.lockItems, skill:p.ai ? p.ai.skill : null })), now:Date.now() }; }
 function tBroadcast(){ if(TNET && TNET.host && TO) tSend('st', tSnapshot(TO)); }
 function tNetMsg(k, d){
   if(!TNET) return;
@@ -149,7 +151,7 @@ function tNetMsg(k, d){
       if(!P){ if(T.phase !== 'lobby' || T.players.length >= T.size){ tSend('full', { id:d.id, why:T.phase !== 'lobby' ? 'started' : 'full' }); return; } P = { id:d.id, name:d.name, kind:'human', team:d.team, items:d.items || {}, res:d.res || null }; T.players.push(P); Notif.toast('🏆 ' + d.name + ' rejoint le tournoi', '#ffd23f'); }
       else if(P.kind === 'gone'){ P.kind = 'human'; }
       tBroadcast(); tRender();
-    } else if(k === 'team'){ const P = tP(T, d.id); if(P && T.phase !== 'done'){ if(T.phase !== 'lobby' && P.squad && !d.team.every(id => P.squad.includes(id))) return; P.team = d.team; P.items = d.items || {}; P.res = d.res || null; tBroadcast(); tRender(); } }
+    } else if(k === 'team'){ const P = tP(T, d.id); if(P && T.phase !== 'done'){ if(T.phase !== 'lobby' && P.squad && !d.team.every(id => P.squad.includes(id))) return; P.team = d.team; P.items = P.lockItems || d.items || {}; P.res = d.res || null; tBroadcast(); tRender(); } }
     else if(k === 'ready'){ T.ready[d.id] = !!d.r; tBroadcast(); tRender(); }
     else if(k === 'go'){ const m = (T.rounds[T.round] || []).find(x => x.a === d.id || x.b === d.id); if(m){ m['go' + d.id] = 1; m.started = [m.a, m.b].every(id => tP(T, id).kind === 'ai' || m['go' + id]); } }
     else if(k === 'res'){ const m = (T.rounds[d.r] || [])[d.i]; if(m && m.state === 'live'){ const st = { [d.id]:d.st }; const o = m.a === d.id ? m.b : m.a; if(tP(T, o).kind === 'ai'){ st[o] = { ko:d.st.kod, kod:d.st.ko, dmg:d.st.dmgT, dmgT:d.st.dmg, time:d.st.time, mvp:{} }; TEng.result(T, m, d.win ? d.id : o, st); }
@@ -193,22 +195,23 @@ function tAfterUpdate(){
 
 // ---------------------------------------------------------------- COMBAT
 let TLIVE = null;          // { r, i, foe, st:{…} }
+function tMyItems(){ const P = TO && tP(TO, tMyId()), L = P && P.lockItems; if(!L) return TSave.items(); const o = {}; Object.entries(L).forEach(([k, v]) => { if(HELD_BY_ID[v] && Save.itemCount(v) > 0) o[k] = v; }); return o; }
 function tStartMatch(m){
   const T = TO, me = tMyId(), foeId = m.a === me ? m.b : m.a, F = tP(T, foeId), r = T.round, i = T.rounds[r].indexOf(m);
   if(TLIVE && TLIVE.r === r && TLIVE.i === i) return;
   TLIVE = { r, i, foe:foeId, st:{ ko:0, kod:0, dmg:0, dmgT:0, time:0, mvp:{} } };
   const team = TSave.team();
   if(team.members.length < 1){ Notif.toast('Ton équipe de tournoi est vide !'); return; }
-  if(TNET){ if(TNET.host){ m['go' + me] = 1; m.started = [m.a, m.b].every(id => tP(T, id).kind === 'ai' || m['go' + id]); } else tSend('go', { id:me }); }
+  if(!TNET || TNET.host){ m['go' + me] = 1; m.started = [m.a, m.b].every(id => tP(T, id).kind === 'ai' || m['go' + id]); } else tSend('go', { id:me });
   if(F.kind !== 'ai' && TNET){                 // contre un autre joueur : combat en ligne en temps réel
     const cid = 'tour-' + T.code + '-' + r + '-' + i;
-    NetMatch.open({ cid, host:m.a === me, kind:TNET.kind, team:TSave.teamObj(), foePseudo:F.name, myPseudo:tMyName(), waitText:`Combat de tournoi contre ${esc(F.name)}…`, onAbort:() => { tReport(false); } });
+    NetMatch.open({ cid, host:m.a === me, kind:TNET.kind, team:{ ...TSave.teamObj(), items:tMyItems() }, foePseudo:F.name, myPseudo:tMyName(), waitText:`Combat de tournoi contre ${esc(F.name)}…`, onAbort:() => { tReport(false); } });
     NET.m.tour = TLIVE;
     return;
   }
   G = null;
   const arena = [0, 1, 2, 3, 4, 5][Math.floor(Math.random()*6)];
-  start({ mode:'tourney', team:team.members.slice(), items:TSave.items(), size:3, stage:{ ...TOUR_STAGE, arena }, arena, enemies:F.team.slice() });
+  start({ mode:'tourney', team:team.members.slice(), items:tMyItems(), size:3, stage:{ ...TOUR_STAGE, arena }, arena, enemies:F.team.slice(), tourItems:{ ...(F.items || {}) } });
   if(!G) return;
   G.tour = { skill:F.ai ? F.ai.skill : 1 };
   if(typeof musicSet === 'function') musicSet(r === T.rounds.length - 1 && T.rounds[r].length === 1 ? 'tourney:final|tourney|boss|battle' : 'tourney|battle');
@@ -236,7 +239,6 @@ hurtE = (prev => function(d, b){
   return r;
 })(hurtE);
 hurtP = (prev => function(d, b){
-  if(G && G.cfg && G.cfg.mode === 'tourney') d /= 1 + .12*Math.min(G.wave, 3);        // pas de bonus de dégâts des adversaires suivants
   const p = G && G.p, hp0 = p ? p.hp : 0, r = prev(d, b);
   if(tFight() && p && TLIVE) TLIVE.st.dmgT += Math.max(0, hp0 - Math.max(0, p.hp));
   return r;
@@ -245,11 +247,11 @@ hurtP = (prev => function(d, b){
 spawn = (prev => function(){
   prev();
   if(!G || !G.cfg || G.cfg.mode !== 'tourney' || !G.e) return;
-  const e = G.e; e.boss = false; e.r = 24; e.hp = e.max = Math.round(HERO[e.t].hp*(G.stage.hp || 1)); e.tq = { dodge:0, last:-9 };
+  const e = G.e; e.boss = false; e.r = 24; if(e.hp >= e.max) e.hp = e.max = Math.round(HERO[e.t].hp*(G.stage.hp || 1)); e.tq = { dodge:0, last:-9 }; e.item = tEnemyItem(e.t);
 })(spawn);
 battleEnd = (prev => function(win, why){
   if(!(G && G.cfg && G.cfg.mode === 'tourney')) return prev(win, why);
-  if(TLIVE){ TLIVE.st.ko = win ? G.et.length : G.wave; TLIVE.st.kod = G.team.filter(c => c.hp <= 0).length + (win ? 0 : 0); TLIVE.st.time = G.time; }
+  if(TLIVE){ TLIVE.st.ko = win ? G.et.length : (G.eko ? G.eko.filter(Boolean).length : G.wave); TLIVE.st.kod = G.team.filter(c => c.hp <= 0).length + (win ? 0 : 0); TLIVE.st.time = G.time; }
   const foe = TLIVE && TO ? tP(TO, TLIVE.foe) : null;
   tReport(!!win);
   if(typeof playSfx === 'function') playSfx(win ? 'victory' : 'ko');
@@ -264,47 +266,136 @@ netEndScreen = (prev => function(M){
 })(netEndScreen);
 
 // ---------------------------------------------------------------- IA COMPÉTITIVE (combats de tournoi)
+//  Mêmes stats que tes Pokémon. Ce qui la rend forte :
+//   • prévision : elle vise là où tu VAS être (et pas toujours, pour punir les changements de direction) ;
+//     ses rayons te suivent pendant la charge puis se bloquent au dernier moment
+//   • réflexes : elle voit arriver tes projectiles, ruées et zones et esquive sur le côté (en évitant les murs)
+//   • placement : distance idéale selon ses attaques et les tiennes, tourne autour de toi, se replie quand elle a peu de PV
+//   • choix d'attaque : efficacité de type, distance, temps de recharge, statut, achever un Pokémon affaibli
+//   • relèves : change de Pokémon quand le type est défavorable ou pour sauver un Pokémon affaibli
+//   • équipe : 4 Pokémon pour le tournoi, les 3 meilleurs contre ton équipe, le meilleur face à ton 1er Pokémon
+//   • objets : chaque Pokémon de l'IA porte un objet adapté (figé pour le tournoi, comme les tiens)
+const tMel = m => !!(m && (m.mel || ['melee', 'uppercut', 'roll', 'hug', 'xspeed'].includes(m.k)));
+function tAiItems(team){
+  const used = new Set(), o = {};
+  team.forEach(id => {
+    const H = HERO[id], mv = (MV[id] || []).filter(m => m.d > 0), main = mv.slice().sort((a, b) => b.d - a.d)[0];
+    const tb = main && HELD.find(h => h.fx && h.fx.type === (main.tp || typesOf(id)[0]));
+    const c = [];
+    if(H.hp < 105) c.push('ceinture-force');
+    if(H.hp >= 130) c.push('restes');
+    if(mv.filter(tMel).length >= 2) c.push('grelot-coque');
+    c.push('orbe-vie'); if(tb) c.push(tb.id); c.push('ceinture-pro', 'baie-sitrus', 'baie-prine', 'bandeau');
+    const pick = c.find(x => HELD_BY_ID[x] && !used.has(x)); if(pick){ used.add(pick); o[id] = pick; }
+  });
+  return o;
+}
+const tEnemyItem = id => { const it = G && G.cfg && G.cfg.tourItems && G.cfg.tourItems[id]; return it && HELD_BY_ID[it] ? it : null; };
+// un Pokémon de l'IA qui entre par une relève : vrais PV + objet
+if(typeof freshEnemy === 'function') freshEnemy = (prev => function(idx, x, y){ const o = prev(idx, x, y); if(G && G.cfg && G.cfg.mode === 'tourney'){ o.hp = o.max = Math.round(HERO[o.t].hp*(G.stage.hp || 1)); o.item = tEnemyItem(o.t); o.tq = { dodge:0, last:-9 }; } return o; })(freshEnemy);
+// objets de l'IA : attaque (type, Ceinture Pro, Orbe Vie, Grelot Coque)
+hurtP = (prev => function(d, b){
+  const e = G && G.e, fx = G && G.cfg && G.cfg.mode === 'tourney' && e && e.item && HELD_BY_ID[e.item] ? HELD_BY_ID[e.item].fx : null;
+  if(!fx || !b || d <= 0) return prev(d, b);
+  const tp = b.t || b.tp || e.t;
+  if(fx.type && tp === fx.type) d *= fx.mult || 1.1;
+  if(fx.superEff && typeMult(tp, G.p.t) > 1) d *= fx.superEff;
+  if(fx.dmg) d *= fx.dmg;
+  const p = G.p, h0 = p.hp, r = prev(d, b), dealt = Math.max(0, h0 - Math.max(0, p.hp));
+  if(dealt > 0 && e.hp > 0){
+    if(fx.drainHit) e.hp = Math.min(e.max, e.hp + dealt*fx.drainHit);
+    if(fx.recoil && G.time - (e.recT || -9) > .4){ e.recT = G.time; e.hp = Math.max(1, e.hp - e.max*fx.recoil); }
+  }
+  return r;
+})(hurtP);
+// objets de l'IA : défense (Ceinture Force, Bandeau, Casque Brut)
+hurtE = (prev => function(d, b){
+  const e = G && G.e, h = G && G.cfg && G.cfg.mode === 'tourney' && e && e.item && HELD_BY_ID[e.item], fx = h && h.fx;
+  if(!fx || e.hp <= 0) return prev(d, b);
+  const sash = fx.sash && !e.sashUsed && e.hp >= e.max - .01, band = fx.endure && Math.random() < fx.endure;
+  let r;
+  if(sash || band){ const BIG = 1e6; e.hp += BIG; e.max += BIG; r = prev(d, b); e.hp -= BIG; e.max -= BIG; if(e.hp <= 0){ e.hp = 1; if(sash) e.sashUsed = 1; heldPop(e, h, '#ffb070'); } }
+  else r = prev(d, b);
+  if(fx.helmet && b && tMel(b) && G.p && G.p.hp > 0){ const l = Math.max(1, G.p.max*fx.helmet); G.p.hp -= l; dmgTxt(G.p.x, G.p.y - 48, '-' + Math.round(l*10) + ' ' + h.name, '#ffb08a'); }
+  return r;
+})(hurtE);
+function tAiItemsStep(e, dt){
+  const h = e.item && HELD_BY_ID[e.item], fx = h && h.fx; if(!fx || e.hp <= 0 || e.hid) return;
+  if(fx.regen && e.hp < e.max) e.hp = Math.min(e.max, e.hp + e.max*fx.regen*dt);
+  if(fx.heal && !e.berryHp && e.hp < e.max*fx.heal.below){ e.berryHp = 1; const g = e.max*fx.heal.amount; e.hp = Math.min(e.max, e.hp + g); heldPop(e, h, '#8dff9a'); }
+  if(fx.cure && !e.berrySt && e.st && (fx.cure.includes('any') || fx.cure.includes(e.st))){ e.berrySt = 1; e.st = null; e.stT = 0; heldPop(e, h, '#9fe3ff'); }
+}
+// prévision : la plupart du temps elle anticipe ton déplacement, parfois elle vise où tu es (pour punir les demi-tours)
+eFire = (prev => function(){
+  if(!(G && G.cfg && G.cfg.mode === 'tourney' && G.p)) return prev();
+  const p = G.p, vx = p.vx, vy = p.vy, w = G.wave, r = Math.random(), k = r < .6 ? 1 : r < .82 ? .5 : 0;
+  p.vx = (vx || 0)*k; p.vy = (vy || 0)*k; G.wave = 0;          // G.wave = 0 : pas de bonus de dégâts « adversaire suivant »
+  try{ return prev(); } finally { p.vx = vx; p.vy = vy; G.wave = w; }
+})(eFire);
 function tAiThink(dt){
-  const e = G.e, p = G.p; if(!e || e.hp <= 0 || G.intro > 0 || G.wait || !p || p.hp <= 0 || !MV[e.t]) return;
-  const sk = (G.tour && G.tour.skill) || 1, Q = e.tq || (e.tq = { dodge:0, last:-9 }), dist = Math.hypot(p.x - e.x, p.y - e.y);
-  // 1. esquive : projectiles qui arrivent, ruée au corps à corps, zones au sol
-  if(G.time >= Q.dodge && !e.kb){
+  const e = G.e, p = G.p; if(!e || e.hp <= 0 || G.intro > 0 || G.wait || !p || p.hp <= 0 || !MV[e.t] || e.hid) return;
+  const sk = (G.tour && G.tour.skill) || 1, Q = e.tq || (e.tq = { dodge:0, last:-9, orb:Math.random() < .5 ? 1 : -1, orbT:0 }), dx0 = p.x - e.x, dy0 = p.y - e.y, dist = Math.hypot(dx0, dy0) || 1;
+  if(!Q.orb){ Q.orb = Math.random() < .5 ? 1 : -1; Q.orbT = 0; }
+  tAiItemsStep(e, dt);
+  // 1. réflexes : esquive sur le côté le plus sûr
+  if(G.time >= Q.dodge && !e.kb && !(e.tele > 0 && e.tele < .12)){
     let threat = null;
     for(const b of bullets){ if(!b.own) continue; const dx = e.x - b.x, dy = e.y - b.y, vv = b.vx*b.vx + b.vy*b.vy; if(vv < 1) continue;
-      const t = (dx*b.vx + dy*b.vy)/vv; if(t < 0 || t > .45) continue; const mx = b.x + b.vx*t - e.x, my = b.y + b.vy*t - e.y;
-      if(Math.hypot(mx, my) < e.r + (b.r || 5) + 10){ threat = Math.atan2(b.vy, b.vx) + (mx*b.vy - my*b.vx > 0 ? -1 : 1)*Math.PI/2; break; } }
-    if(!threat && p.rs && dist < 200) threat = Math.atan2(e.y - p.y, e.x - p.x) + (Math.random() < .5 ? 1 : -1)*1.2;
-    if(!threat && typeof ZONES !== 'undefined') for(const z of ZONES){ if(!z.own || z.done) continue; const dd = Math.hypot(e.x - z.x, e.y - z.y); if(dd < z.R + e.r + 6){ threat = Math.atan2(e.y - z.y, e.x - z.x); break; } }
-    if(threat != null && Math.random() < .55 + .3*(sk - .85)/.3){ throwBack(e, threat, 85, .18); Q.dodge = G.time + 1.1/sk; e.invT = Math.max(e.invT || 0, G.time + .12); }
+      const t = (dx*b.vx + dy*b.vy)/vv; if(t < 0 || t > .5) continue; const mx = b.x + b.vx*t - e.x, my = b.y + b.vy*t - e.y;
+      if(Math.hypot(mx, my) < e.r + (b.r || 5) + 12){ threat = Math.atan2(b.vy, b.vx); threat += (mx*b.vy - my*b.vx > 0 ? -1 : 1)*Math.PI/2; break; } }
+    if(threat == null && p.rs && dist < 230) threat = Math.atan2(e.y - p.y, e.x - p.x) + (Math.random() < .5 ? 1 : -1)*1.25;
+    if(threat == null && typeof ZONES !== 'undefined') for(const z of ZONES){ if(!z.own || z.done) continue; if(Math.hypot(e.x - z.x, e.y - z.y) < z.R + e.r + 8){ threat = Math.atan2(e.y - z.y, e.x - z.x); break; } }
+    if(threat != null && Math.random() < Math.min(.95, .78 + .3*(sk - 1))){
+      // si l'esquive mène dans un mur, on part de l'autre côté
+      const land = a => { const x = e.x + Math.cos(a)*90, y = e.y + Math.sin(a)*90; return Math.min(x - 40, W - 40 - x, y - 50, H - 40 - y); };
+      if(land(threat) < 0 && land(threat + Math.PI) > land(threat)) threat += Math.PI;
+      throwBack(e, threat, 90, .17); Q.dodge = G.time + .8/sk;
+    }
   }
-  // 2. distance : les Pokémon de corps à corps se rapprochent, les autres gardent leurs distances
-  const mel = MV[e.t].filter(m => m.mel || ['melee', 'uppercut', 'roll', 'hug', 'xspeed'].includes(m.k)).length, want = mel >= 2 ? 150 : 250;
-  if(!e.kb && dist > 1){ const k = (dist - want)*Math.min(1, dt*1.4); e.x = clX(e.x + (p.x - e.x)/dist*k*.6); e.y = clY(e.y + (p.y - e.y)/dist*k*.6); }
+  if(e.kb) return;
+  // 2. placement : distance idéale, on tourne autour, repli quand les PV sont bas
+  const myMel = MV[e.t].filter(tMel).length, hisMel = (MV[p.t] || []).filter(tMel).length, low = e.hp < e.max*.35;
+  let want = myMel >= 2 ? 150 : 250;
+  if(myMel < 2 && hisMel >= 2) want = 290;            // garde le corps à corps adverse à distance
+  if(low && myMel < 2) want += 90;                    // repli stratégique
+  if(p.hp < p.max*.3 && !low) want -= 40;             // presse un adversaire affaibli
+  const k = (dist - want)*Math.min(1, dt*1.6);
+  let nx = e.x + dx0/dist*k*.65, ny = e.y + dy0/dist*k*.65;
+  if(G.time > Q.orbT){ Q.orbT = G.time + 1.5 + Math.random()*2; if(Math.random() < .4) Q.orb *= -1; }
+  const os = 60*dt*(low ? 1.4 : 1); nx += -dy0/dist*os*Q.orb; ny += dx0/dist*os*Q.orb;
+  if(nx < 50 || nx > W - 50 || ny < 60 || ny > H - 50) Q.orb *= -1;
+  e.x = clX(nx); e.y = clY(ny);
+  // 3. rayons : la visée suit pendant la charge et se bloque juste avant le tir
+  if(e.tele > .2 && MV[e.t][e.pat] && MV[e.t][e.pat].k === 'beam'){ const T = .25; e.aim = Math.atan2(p.y + (p.vy || 0)*T - e.y, p.x + (p.vx || 0)*T - e.x); }
 }
 function tAiPick(e){
   const p = G.p, L = MV[e.t], dist = Math.hypot(p.x - e.x, p.y - e.y), cd = e.tcd || (e.tcd = {});
+  const stuck = p.st === 'par' || p.st === 'slow' || p.st === 'slp' || p.st === 'frz' || p.dC > 0;
   let best = 0, bs = -1e9;
   L.forEach((m, i) => {
     if((cd[i] || 0) > G.time) return;
-    let s = (m.d || 5)*typeMult(m.tp || e.t, p.t);
-    const melee = m.mel || ['melee', 'uppercut', 'roll', 'hug', 'xspeed'].includes(m.k);
-    if(melee) s *= dist < 230 ? 1.35 : .12;
-    if(isBig(m)) s *= (p.st === 'par' || p.st === 'slow' || p.st === 'slp' || p.st === 'frz' || p.dC > 0) ? 1.5 : .9;
-    if(p.hp < p.max*.25 && !isBig(m)) s *= 1.25;          // finir vite
-    s *= .85 + Math.random()*.3;
+    let s = (m.d || 5)*typeMult(m.tp || e.t, p.t)/Math.sqrt(Math.max(.6, m.cd || 1));
+    if(tMel(m)) s *= dist < 230 ? 1.4 : .1;
+    else if(dist < 110 && !isBig(m)) s *= .8;
+    if(isBig(m)) s *= stuck ? 1.7 : dist > 350 ? .7 : .95;
+    if(m.d <= 0 && (m.st || m.k === 'status')) s = p.st ? 0 : 14;          // statut : seulement si tu n'en as pas déjà un
+    if(p.hp < p.max*.25 && !isBig(m)) s *= 1.3;                            // achever vite, avec une attaque rapide
+    s *= .9 + Math.random()*.2;
     if(s > bs){ bs = s; best = i; }
   });
   cd[best] = G.time + (L[best].cd || 1)*.85;
   return best;
 }
+const AI_SWAP_DEF = typeof AI_SWAP !== 'undefined' ? { ...AI_SWAP } : null;
 step = (prev => function(dt){
   const T = G && G.cfg && G.cfg.mode === 'tourney' && !G.over && !G.paused, e = T ? G.e : null, n0 = e ? e.next : 0;
+  if(AI_SWAP_DEF){ if(T) Object.assign(AI_SWAP, { chance:.75, lowChance:.4, gain:1, cooldown:6, think:.35 }); else Object.assign(AI_SWAP, AI_SWAP_DEF); }
   prev(dt);
   if(!T || !G || G.over || G.paused || HS > 0 || G.e !== e) return;
   try{
     if(e.tele > 0 && !e._tq){ e._tq = 1; e.pat = tAiPick(e); const big = isBig(MV[e.t][e.pat]); e.tele = e.tm = Math.max(.3, (big ? .85 : .5)*G.stage.tele); if(MV[e.t][e.pat].k === 'beam') e.aim = Math.atan2(G.p.y - e.y, G.p.x - e.x); }
     if(!(e.tele > 0)) e._tq = 0;
-    if(e.next > n0 + .15) e.next = (.7 + Math.random()*.35)*G.stage.rate;          // cadence fixe (pas de bonus « adversaire suivant »)
+    if(e.next > n0 + .15) e.next = (.62 + Math.random()*.3)*G.stage.rate;          // cadence fixe (pas de bonus « adversaire suivant »)
     tAiThink(dt);
   }catch(err){ console.warn('tour ai', err); }
 })(step);
@@ -419,6 +510,7 @@ function tTeamEdit(back){
     if(!t.members.every(id => lock.includes(id)) || t.members.length !== Math.min(3, lock.length)){ t.members = lock.slice(0, 3); t.res = lock[3] || null; }
     if(t.res && !lock.includes(t.res)) t.res = lock.find(id => !t.members.includes(id)) || null;
   }
+  const LP = lock && tP(TO, me); if(LP && LP.lockItems) t.items = { ...LP.lockItems };
   const arr = [t.members[0], t.members[1], t.members[2], t.res || null];
   const mine = ORDER.filter(id => Owned.has(id)), items = HELD.filter(h => (inv[h.id] || 0) > 0), used = id => arr.some(x => x && t.items[x] === id);
   const cur = arr[TSEL], curIt = cur && t.items[cur] && HELD_BY_ID[t.items[cur]];
@@ -426,15 +518,16 @@ function tTeamEdit(back){
     return `<div class='trslw'>${i === 3 ? `<small class='trlab'>Remplaçant</small>` : `<small class='trlab'>Titulaire ${i + 1}</small>`}<button class='trsl ${i === 3 ? 'trres' : ''} ${i === TSEL ? 'on' : ''}' data-sl='${i}'>${id ? tSprite(id) + `<b>${esc(NAME[id])}</b>` : '<em>+</em>'}${it ? `<img class='trit' src='${heldImg(it)}'>` : ''}</button>
       ${lock && i < 3 && arr[3] && id ? `<button class='btn2 sm trx' data-x='${i}' title='Échanger avec le remplaçant'>⇄ ${esc(NAME[arr[3]])}</button>` : ''}</div>`; };
   menu(`<div class='hd' data-trscene><h1>Équipe de tournoi</h1>${TO && TO.phase === 'prep' && m && m.state === 'wait' ? `<span class='trtime' id='trtime'>${tFmt((TO.deadline - tNow())/1000)}</span>` : ''}</div>
-    ${F ? `<p class='trfoe'>Prochain adversaire : <b>${esc(F.name)}</b> ${(F.team || []).map(id => `<span class='trfm'>${tSprite(id)}<small>${typesOf(id).map(x => TN[x] || x).join('/')}</small></span>`).join('')}</p>` : ''}
+    ${F ? `<p class='trfoe'>Prochain adversaire : <b>${esc(F.name)}</b> ${(F.team || []).map(id => `<span class='trfm'>${tSprite(id)}${F.items && HELD_BY_ID[F.items[id]] ? `<img class='trfi' src='${heldImg(HELD_BY_ID[F.items[id]])}' title='${esc(HELD_BY_ID[F.items[id]].name)}'>` : ''}<small>${typesOf(id).map(x => TN[x] || x).join('/')}</small></span>`).join('')}</p>` : ''}
     <div class='edit trte'><div class='scroll left'>${lock
       ? `<p class='trh'>Équipe figée pour le tournoi</p><p class='mini'>Ton équipe de 4 est fixée jusqu'à la fin du tournoi. Entre deux combats, tu peux faire entrer ton <b>remplaçant</b> à la place d'un titulaire :
-         <b>glisse-le sur un titulaire</b> (ou utilise le bouton ⇄). Tu peux aussi changer l'ordre des titulaires (le 1er commence le combat) et leurs objets.</p>`
-      : `<p class='mini'>Choisis <b>3 titulaires + 1 remplaçant</b>. Attention : cette équipe est <b>figée pour tout le tournoi</b> ; entre deux combats, seul le remplaçant pourra prendre la place d'un titulaire.
+         <b>glisse-le sur un titulaire</b> (ou utilise le bouton ⇄). Tu peux aussi changer l'ordre des titulaires (le 1er commence le combat). Les objets tenus restent ceux du début du tournoi.</p>`
+      : `<p class='mini'>Choisis <b>3 titulaires + 1 remplaçant</b> et leurs objets. Attention : équipe et objets sont <b>figés pour tout le tournoi</b> ; entre deux combats, seul le remplaçant pourra prendre la place d'un titulaire.
          Touche un Pokémon pour l'ajouter, ou glisse-le sur une place.</p><div class='trro'>${mine.map(id => `<button class='trr ${arr.includes(id) ? 'in' : ''}' data-tr='${id}' title='${esc(NAME[id])}'>${tSprite(id)}<small>${typesOf(id).map(x => `<i style='background:${COL[x]}'></i>`).join('')}</small></button>`).join('')}</div>`}</div>
       <div class='scroll right'><div class='trslots'>${[0, 1, 2].map(slot).join('')}<span class='trsep'></span>${slot(3)}</div>
         <p class='trh'>${cur ? `Objet de ${esc(NAME[cur])}${TSEL === 3 ? ' <small>(remplaçant)</small>' : ''}` : 'Choisis une place'}</p>
-        ${cur ? `<div class='tritems'><button class='btn2 sm ${!curIt ? 'on' : ''}' data-it=''>Aucun</button>${items.map(h => `<button class='triti ${t.items[cur] === h.id ? 'on' : ''} ${used(h.id) && t.items[cur] !== h.id ? 'used' : ''}' data-it='${h.id}' title='${esc(h.name)}'><img src='${heldImg(h)}'></button>`).join('')}</div>
+        ${cur && lock ? `<p class='trdesc'>${curIt ? `<img class='trdi' src='${heldImg(curIt)}'> <b>${esc(curIt.name)}</b> — ${esc(curIt.desc)}` : '<small>Aucun objet.</small>'}</p><p class='mini'>🔒 Les objets tenus sont figés pour tout le tournoi (le remplaçant garde le sien).</p>`
+        : cur ? `<div class='tritems'><button class='btn2 sm ${!curIt ? 'on' : ''}' data-it=''>Aucun</button>${items.map(h => `<button class='triti ${t.items[cur] === h.id ? 'on' : ''} ${used(h.id) && t.items[cur] !== h.id ? 'used' : ''}' data-it='${h.id}' title='${esc(h.name)}'><img src='${heldImg(h)}'></button>`).join('')}</div>
           <p class='trdesc'>${curIt ? `<b>${esc(curIt.name)}</b> — ${esc(curIt.desc)}` : '<small>Touche un objet pour voir son effet et l\'équiper.</small>'}</p>` : ''}
       </div></div>
     <div class='row'><button class='btn' id='tok'>Valider</button></div>`);
@@ -461,7 +554,7 @@ function tTeamEdit(back){
   document.querySelectorAll('[data-tr]').forEach(b => { b.onpointerdown = ev => { ev.preventDefault(); const id = b.dataset.tr; startDrag(b, ev, { tap:() => tapRoster(id), drop:i => put(id, i) }); }; });
   document.querySelectorAll('[data-sl]').forEach(b => { b.onpointerdown = ev => { ev.preventDefault(); const i = +b.dataset.sl; if(!arr[i]){ TSEL = i; return tTeamEdit(back); } startDrag(b, ev, { tap:() => { TSEL = i; tTeamEdit(back); }, drop:j => swap(i, j) }); }; });
   bindAll('[data-x]', b => swap(3, +b.dataset.x));
-  bindAll('[data-it]', b => { if(!cur) return; const v = b.dataset.it; if(!v) delete t.items[cur]; else { arr.forEach(x => { if(x && t.items[x] === v && (inv[v] || 0) < 2) delete t.items[x]; }); t.items[cur] = v; } redraw(); });
+  bindAll('[data-it]', b => { if(!cur || lock) return; const v = b.dataset.it; if(!v) delete t.items[cur]; else { arr.forEach(x => { if(x && t.items[x] === v && (inv[v] || 0) < 2) delete t.items[x]; }); t.items[cur] = v; } redraw(); });
   document.getElementById('tok').onclick = () => { if(!lock && !t.res && mine.length > 3) return gameConfirm('Pas de remplaçant', 'Tu n\'as pas choisi de remplaçant. Sans lui, tu ne pourras rien changer pendant le tournoi.', 'Continuer quand même', () => { TSEL = 0; back(); }); TSEL = 0; back(); };
 }
 // statistiques détaillées du tournoi (tous les participants) ou d'un joueur
@@ -508,13 +601,13 @@ input#trcode{width:96px;text-align:center;font:700 16px var(--font,monospace);le
 .trp em{font-style:normal;color:#ffd23f;font-weight:700}.trp.win{background:rgba(70,216,106,.18)}.trp.win span{color:#aef5c0}.trp.lose{opacity:.5}.trp.me span{color:#ffe27a;font-weight:700}
 .trs{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-style:normal;font-size:8px;color:#ffb070}.trc.champ .trm{border-color:#ffd23f}
 .trlob{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:640px}.trlob .trp{border:1px solid #5a3a24;border-radius:8px;background:rgba(20,10,30,.8)}
-.trfoe{font-size:12px;display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap}.trfm{display:inline-flex;flex-direction:column;align-items:center}.trfm img{width:30px;height:30px;image-rendering:pixelated}.trfm small{font-size:8px}
+.trfoe{font-size:12px;display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap}.trfm{display:inline-flex;flex-direction:column;align-items:center}.trfm img{width:30px;height:30px;image-rendering:pixelated}.trfm small{font-size:8px}.trfm{position:relative}.trfm .trfi{position:absolute;top:0;right:-4px;width:14px!important;height:14px!important}
 .trte .left{flex:0 0 52%}.trro{display:flex;flex-wrap:wrap;gap:4px}.trr{width:52px;padding:2px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);cursor:pointer;display:flex;flex-direction:column;align-items:center}
 .trr img{width:40px;height:40px;image-rendering:pixelated}.trr small{display:flex;gap:2px}.trr small i{width:8px;height:4px;border-radius:2px}.trr.in{border-color:#ffd23f;background:rgba(255,210,63,.15)}
 .trslots{display:flex;gap:6px;justify-content:center;align-items:flex-end}.trslw{display:flex;flex-direction:column;align-items:center;gap:2px}.trlab{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#ffd890}.trsep{width:2px;align-self:stretch;background:rgba(255,210,63,.35);margin:0 4px}.trsl.trres{border-color:#3a8ae8}.trsl.trres.on{border-color:#7ab8ff}.trsl.dropon{box-shadow:0 0 0 3px #7aff9a}.trsl,.trr{touch-action:none}.trx{font-size:9px!important;padding:2px 5px!important}.trsl{position:relative;width:84px;min-height:70px;border-radius:10px;border:2px dashed #8a5a20;background:rgba(0,0,0,.3);color:#fff3c8;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font)}
 .trsl.on{border-style:solid;border-color:#ffd23f}.trsl img{width:42px;height:42px;image-rendering:pixelated}.trsl b{font-size:10px}.trsl em{font-style:normal;font-size:20px;opacity:.6}.trsl .trit{position:absolute;top:3px;right:3px;width:18px!important;height:18px!important}
 .tritems{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}.triti{width:30px;height:30px;padding:2px;border-radius:7px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);cursor:pointer}.triti img{width:24px;height:24px}.triti.on{border-color:#ffd23f;box-shadow:0 0 6px #ffd23f}.triti.used{opacity:.35}
-.trdesc{font-size:10px;margin:4px 0;text-align:left}.trdesc b{color:#ffe27a}
+.trdesc{font-size:10px;margin:4px 0;text-align:left}.trdi{width:20px;height:20px;vertical-align:middle}.trdesc b{color:#ffe27a}
 .trone{max-width:620px;width:100%}.trone>div:nth-child(2) img{width:34px;height:34px;image-rendering:pixelated}.trsc{max-width:760px;width:100%;background:rgba(14,8,30,.8);border-radius:12px;padding:6px}.trone{background:rgba(14,8,30,.8);border-radius:12px;padding:6px;margin-bottom:6px}
 </style>`);
 

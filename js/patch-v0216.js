@@ -53,12 +53,13 @@ pfPick = (prev => function(title, L, fn, cls){ if(typeof shopBuild === 'function
 // ---------------------------------------------------------------- 5. concours : police du jeu dans les épreuves
 conRun = (prev => function(sc){ if(sc) sc.pen = 1; return prev(sc); })(conRun);
 
-// ---------------------------------------------------------------- 6. Solo : « Combat difficile » dès le niveau 8
+// ---------------------------------------------------------------- 6. Solo : « Combat difficile » niveaux 8 à 10 et 18+ (v0.21.9 : 11 à 17 adoucis)
+const soloHard = i => (i >= 7 && i <= 9) || i >= 17;
 showSoloCh = (prev => function(sel){
   prev(sel);
-  document.querySelectorAll('.stg[data-stage]').forEach(b => { if(+b.dataset.stage >= 7) b.insertAdjacentHTML('beforeend', `<i class='hdx'>DIFFICILE</i>`); });
+  document.querySelectorAll('.stg[data-stage]').forEach(b => { if(soloHard(+b.dataset.stage)) b.insertAdjacentHTML('beforeend', `<i class='hdx'>DIFFICILE</i>`); });
   const go = document.getElementById('go'), on = document.querySelector('.stg.on[data-stage]');
-  if(go && on && +on.dataset.stage >= 7) go.insertAdjacentHTML('beforeend', ` <span class='hdgo'>· combat difficile</span>`);
+  if(go && on && soloHard(+on.dataset.stage)) go.insertAdjacentHTML('beforeend', ` <span class='hdgo'>· combat difficile</span>`);
 })(showSoloCh);
 showSolo = sel => showSoloCh(sel); SCREENS.solo = sel => showSoloCh(sel);
 

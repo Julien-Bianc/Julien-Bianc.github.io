@@ -20,8 +20,8 @@ const AI_SWAP = {
   chance:.35,        // probabilité de changer à chaque réflexion (x la difficulté du niveau)
   lowChance:.12
 };
-const swapActive = () => AI_SWAP.on && G && G.cfg && G.cfg.mode === 'solo' && !G.training && G.et && G.et.length >= 2;
-const bossIdx = () => (G.et.length >= 3 ? G.et.length - 1 : -1);
+const swapActive = () => AI_SWAP.on && G && G.cfg && (G.cfg.mode === 'solo' || G.cfg.mode === 'tourney') && !G.training && G.et && G.et.length >= 2;
+const bossIdx = () => (G.cfg && G.cfg.mode === 'tourney' ? -1 : G.et.length >= 3 ? G.et.length - 1 : -1);
 
 // ---------- évaluation des types ----------
 const lg2 = x => Math.log2(Math.max(.25, x));

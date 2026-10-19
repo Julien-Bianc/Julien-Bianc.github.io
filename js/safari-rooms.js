@@ -88,11 +88,11 @@ function updAdds(dt){
   for(let i = bullets.length - 1; i >= 0; i--){
     const b = bullets[i]; if(!b.own) continue;
     for(const a of S.adds){
-      if(a.hp <= 0 || (b.hitA && b.hitA.includes(a)) || Math.hypot(b.x - a.x, b.y - a.y) > b.r + a.r) continue;
+      if(a.hp <= 0 || (b.hitA && (b.hitA.has ? b.hitA.has(a) : b.hitA.includes(a))) || Math.hypot(b.x - a.x, b.y - a.y) > b.r + a.r) continue;
       const x = typeMult(b.t, a.t), dm = Math.max(1, b.d*x); a.hp -= dm; a.hitT = .2;
       dmgTxt(a.x + R_(-6, 6), a.y - 34, String(Math.round(dm*10)), x > 1 ? '#ffe27a' : '#ffffff'); vp({ x:a.x, y:a.y - 8, life:.25, s:4, s1:22, kind:'ring', col:COL[b.t] || '#fff' });
       if(typeof playSfx === 'function') playSfx('hit:' + b.t);
-      if(b.pierce){ (b.hitA = b.hitA || []).push(a); } else { bullets.splice(i, 1); }
+      if(b.pierce){ b.hitA = b.hitA || []; if(b.hitA.push) b.hitA.push(a); else b.hitA.add(a); } else { bullets.splice(i, 1); }
       break;
     }
   }

@@ -57,9 +57,9 @@ step = (prev => function(dt){
   for(let i = bullets.length - 1; i >= 0; i--){
     const b = bullets[i]; if(!b.own) continue;
     for(const a of G.rm.adds){
-      if(a.hp <= 0 || (b.hitA && b.hitA.has(a)) || Math.hypot(b.x - a.x, b.y - a.y) >= b.r + (a.r || 20)) continue;
+      if(a.hp <= 0 || (b.hitA && (b.hitA.has ? b.hitA.has(a) : b.hitA.includes && b.hitA.includes(a))) || Math.hypot(b.x - a.x, b.y - a.y) >= b.r + (a.r || 20)) continue;
       hitAdd(a, b.d, b.t);
-      if(b.pierce){ (b.hitA = b.hitA || new Set()).add(a); continue; }
+      if(b.pierce){ b.hitA = b.hitA || new Set(); if(b.hitA.add) b.hitA.add(a); else b.hitA.push(a); continue; }
       if(b.split) explode(b);
       bullets.splice(i, 1); break;
     }
