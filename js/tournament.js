@@ -3,6 +3,7 @@
 //    • Solo ou en ligne (salon par code ; test local entre 2 onglets) — 8 ou 16 participants, l'IA complète
 //    • Élimination directe, arbre du tournoi en direct, 3 minutes de préparation entre chaque combat
 //      (le combat part tout de suite quand les 2 joueurs sont prêts)
+//    • Une équipe de 3 + 1 remplaçant pour TOUT le tournoi : entre deux combats, le remplaçant peut prendre la place d'un des 3
 //    • Combats 3 contre 3, sans bonus de stats : l'IA a les vrais Pokémon… mais joue très bien
 //      (esquive tes tirs, garde la bonne distance, choisit l'attaque qui fait le plus mal, choisit son équipe
 //       contre la tienne)
@@ -23,7 +24,8 @@ const tMyId = () => (typeof Online !== 'undefined' && Online.user && Online.user
 const tMyName = () => (typeof Online !== 'undefined' && Online.user && Online.user.pseudo) || (typeof LocalLobby !== 'undefined' && LocalLobby.pseudo) || 'Toi';
 const TSave = {
   d(){ const d = Save.load(); if(!d.tour) d.tour = { team:null, stats:{ played:0, won:0, finals:0, semis:0, best:0, matches:0, wins:0, ko:0, kod:0, dmg:0, dmgT:0, time:0, mons:{}, hist:[] } }; return d.tour; },
-  team(){ const T = this.d(); if(!T.team || !Array.isArray(T.team.members)){ const t = Save.teams().find(x => x.size === 3 && x.members.length) || { members:ORDER.filter(id => Owned.has(id)).slice(0, 3), items:{} }; T.team = { members:t.members.filter(id => Owned.has(id)).slice(0, 3), items:{ ...(t.items || {}) } }; } return T.team; },
+  team(){ const T = this.d(); if(!T.team || !Array.isArray(T.team.members)){ const t = Save.teams().find(x => x.size === 3 && x.members.length) || { members:ORDER.filter(id => Owned.has(id)).slice(0, 3), items:{} }; T.team = { members:t.members.filter(id => Owned.has(id)).slice(0, 3), items:{ ...(t.items || {}) } }; } if(T.team.res && (!Owned.has(T.team.res) || T.team.members.includes(T.team.res))) T.team.res = null; return T.team; },
+  squad(){ const t = this.team(); return t.members.concat(t.res ? [t.res] : []); },
   teamObj(){ const t = this.team(); return { id:'tour', name:'Tournoi', size:3, members:t.members.slice(), items:{ ...t.items }, caps:{} }; },
   items(){ const t = this.team(), o = {}; t.members.forEach(id => { const it = t.items[id]; if(it && HELD_BY_ID[it] && Save.itemCount(it) > 0) o[id] = it; }); return o; }
 };
@@ -34,14 +36,15 @@ const tPool = () => ORDER.filter(id => HERO[id] && MV[id] && !(POKEMON[id] && PO
 function tStrength(id){ const H = HERO[id]; return H.hp/120 + H.sp/420 + MV[id].reduce((s, m) => s + (m.d || 0), 0)/55; }
 function tMatchup(a, b){ return (lg2(bestHit(a, b)) - .8*lg2(bestHit(b, a))); }
 // l'IA choisit 3 Pokémon de sa réserve de 6 contre l'équipe adverse
-function tAiTeam(roster, foe){
+function tAiTeam(roster, foe, n){
+  n = n || 3;
   const sc = id => tStrength(id) + (foe && foe.length ? foe.reduce((s, f) => s + tMatchup(id, f), 0)*.35 : 0) + Math.random()*.45;
   const out = [], L = roster.slice().sort((x, y) => sc(y) - sc(x));
-  for(const id of L){ if(out.length >= 3) break; if(out.some(o => typesOf(o)[0] === typesOf(id)[0]) && L.length - L.indexOf(id) > 3 - out.length) continue; out.push(id); }
-  return out.length === 3 ? out : L.slice(0, 3);
+  for(const id of L){ if(out.length >= n) break; if(out.some(o => typesOf(o)[0] === typesOf(id)[0]) && L.length - L.indexOf(id) > n - out.length) continue; out.push(id); }
+  return out.length === n ? out : L.slice(0, n);
 }
 function tNewAi(name, i){
-  const pool = tPool().sort(() => Math.random() - .5), roster = pool.slice(0, 6);
+  const pool = tPool().sort(() => Math.random() - .5), roster = tAiTeam(pool.slice(0, 7), null, 4);   // 4 Pokémon pour tout le tournoi
   return { id:'ai' + i + Math.random().toString(36).slice(2, 5), name, kind:'ai', ai:{ skill:+(.85 + Math.random()*.3).toFixed(2), roster }, team:tAiTeam(roster), items:{} };
 }
 function tPower(team, opp, skill){ let s = 0; team.forEach(a => { s += tStrength(a); opp.forEach(b => s += tMatchup(a, b)*.25); }); return s + (skill - 1)*3; }
@@ -73,6 +76,7 @@ const TEng = {
   },
   begin(T){
     this.fill(T);
+    T.players.forEach(P => { if(P.kind !== 'ai') P.squad = (P.squad && P.squad.length ? P.squad : (P.team || []).concat(P.res ? [P.res] : [])).slice(0, 4); else P.squad = P.ai.roster.slice(); });
     const ids = T.players.map(p => p.id).sort(() => Math.random() - .5), R = [];
     for(let k = 0; k < ids.length; k += 2) R.push({ a:ids[k], b:ids[k + 1], w:null, state:'wait' });
     T.rounds = [R]; T.round = 0; this.prep(T);
@@ -133,7 +137,7 @@ function tNetOpen(code, host){
 }
 function tNetClose(){ if(!TNET) return; try{ if(!TNET.host) TNET.T.send('leave', { id:tMyId() }); }catch(e){} const T = TNET.T; TNET = null; setTimeout(() => T.close(), 300); }
 const tSend = (k, d) => { if(TNET) TNET.T.send(k, d); };
-function tSnapshot(T){ return { ...T, players:T.players.map(p => ({ id:p.id, name:p.name, kind:p.kind, team:p.team, items:p.items, skill:p.ai ? p.ai.skill : null })), now:Date.now() }; }
+function tSnapshot(T){ return { ...T, players:T.players.map(p => ({ id:p.id, name:p.name, kind:p.kind, team:p.team, items:p.items, res:p.res, squad:p.squad, skill:p.ai ? p.ai.skill : null })), now:Date.now() }; }
 function tBroadcast(){ if(TNET && TNET.host && TO) tSend('st', tSnapshot(TO)); }
 function tNetMsg(k, d){
   if(!TNET) return;
@@ -142,16 +146,16 @@ function tNetMsg(k, d){
     if(d && d.id) TNET.seen[d.id] = Date.now();
     if(k === 'join'){
       let P = tP(T, d.id);
-      if(!P){ if(T.phase !== 'lobby' || T.players.length >= T.size){ tSend('full', { id:d.id, why:T.phase !== 'lobby' ? 'started' : 'full' }); return; } P = { id:d.id, name:d.name, kind:'human', team:d.team, items:d.items || {} }; T.players.push(P); Notif.toast('🏆 ' + d.name + ' rejoint le tournoi', '#ffd23f'); }
+      if(!P){ if(T.phase !== 'lobby' || T.players.length >= T.size){ tSend('full', { id:d.id, why:T.phase !== 'lobby' ? 'started' : 'full' }); return; } P = { id:d.id, name:d.name, kind:'human', team:d.team, items:d.items || {}, res:d.res || null }; T.players.push(P); Notif.toast('🏆 ' + d.name + ' rejoint le tournoi', '#ffd23f'); }
       else if(P.kind === 'gone'){ P.kind = 'human'; }
       tBroadcast(); tRender();
-    } else if(k === 'team'){ const P = tP(T, d.id); if(P && T.phase !== 'done'){ P.team = d.team; P.items = d.items || {}; tBroadcast(); tRender(); } }
+    } else if(k === 'team'){ const P = tP(T, d.id); if(P && T.phase !== 'done'){ if(T.phase !== 'lobby' && P.squad && !d.team.every(id => P.squad.includes(id))) return; P.team = d.team; P.items = d.items || {}; P.res = d.res || null; tBroadcast(); tRender(); } }
     else if(k === 'ready'){ T.ready[d.id] = !!d.r; tBroadcast(); tRender(); }
     else if(k === 'go'){ const m = (T.rounds[T.round] || []).find(x => x.a === d.id || x.b === d.id); if(m){ m['go' + d.id] = 1; m.started = [m.a, m.b].every(id => tP(T, id).kind === 'ai' || m['go' + id]); } }
     else if(k === 'res'){ const m = (T.rounds[d.r] || [])[d.i]; if(m && m.state === 'live'){ const st = { [d.id]:d.st }; const o = m.a === d.id ? m.b : m.a; if(tP(T, o).kind === 'ai'){ st[o] = { ko:d.st.kod, kod:d.st.ko, dmg:d.st.dmgT, dmgT:d.st.dmg, time:d.st.time, mvp:{} }; TEng.result(T, m, d.win ? d.id : o, st); }
         else { m.rep = m.rep || {}; m.rep[d.id] = d; if(m.rep[o] || d.win === false){ const W = d.win ? d.id : o, s2 = m.rep[o] ? m.rep[o].st : { ko:d.st.kod, kod:d.st.ko, dmg:d.st.dmgT, dmgT:d.st.dmg, time:d.st.time, mvp:{} }; st[o] = s2; TEng.result(T, m, W, st); } }
         tBroadcast(); tRender(); } }
-    else if(k === 'leave'){ const P = tP(T, d.id); if(P){ if(T.phase === 'lobby') T.players = T.players.filter(p => p.id !== d.id); else { P.kind = 'ai'; P.ai = { skill:1, roster:P.team.slice() }; P.name += ' (IA)'; } tBroadcast(); tRender(); } }
+    else if(k === 'leave'){ const P = tP(T, d.id); if(P){ if(T.phase === 'lobby') T.players = T.players.filter(p => p.id !== d.id); else { P.kind = 'ai'; P.ai = { skill:1, roster:(P.squad || P.team).slice() }; P.name += ' (IA)'; } tBroadcast(); tRender(); } }
   } else {
     if(k === 'st'){ TNET.last = Date.now(); TNET.skew = d.now - Date.now(); const was = TO; TO = d; if(!tP(TO, tMyId()) && TO.phase !== 'lobby'){ /* pas dans ce tournoi */ } tAfterUpdate(was); tRender(); }
     else if(k === 'full' && d.id === tMyId()){ const why = d.why; tNetClose(); TO = null; gameConfirm('Tournoi indisponible', why === 'started' ? 'Ce tournoi a déjà commencé.' : 'Ce tournoi est complet.', 'OK', showTourney); }
@@ -166,7 +170,7 @@ function tLoop(){
     if(!TO){ clearInterval(TTICK); TTICK = null; return; }
     if(TO.solo || (TNET && TNET.host)){
       // joueurs en ligne partis (plus de nouvelles depuis 40 s) : l'IA les remplace
-      if(TNET && TNET.host && TO.phase !== 'lobby') TO.players.forEach(p => { if(p.kind === 'human' && Date.now() - (TNET.seen[p.id] || Date.now()) > 40000){ p.kind = 'ai'; p.ai = { skill:1, roster:p.team.slice() }; p.name += ' (IA)'; } });
+      if(TNET && TNET.host && TO.phase !== 'lobby') TO.players.forEach(p => { if(p.kind === 'human' && Date.now() - (TNET.seen[p.id] || Date.now()) > 40000){ p.kind = 'ai'; p.ai = { skill:1, roster:(p.squad || p.team).slice() }; p.name += ' (IA)'; } });
       const was = JSON.stringify(TO.rounds.map(r => r.map(m => m.state))) + TO.phase;
       if(TEng.tick(TO) || was !== JSON.stringify(TO.rounds.map(r => r.map(m => m.state))) + TO.phase){ tSave(); tBroadcast(); tAfterUpdate(); }
       else if(TNET && TNET.host && Date.now() % 3000 < 1000) tBroadcast();
@@ -329,11 +333,11 @@ function showTourney(){
       ${C.hist.length ? `<p class='trh'>Derniers tournois</p>${C.hist.slice(-5).reverse().map(h => `<p class='trhi'>${new Date(h.t).toLocaleDateString('fr-FR')} · ${h.size} joueurs${h.online ? ' · en ligne' : ''} · <b>${h.place === 1 ? '🏆 Vainqueur' : h.place + 'e'}</b></p>`).join('')}` : ''}
     </div></div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
-  bindAll('[data-ts]', b => { const T = TEng.create({ solo:true, size:+b.dataset.ts, players:[{ id:tMyId(), name:tMyName(), kind:'me', team:TSave.team().members.slice(), items:TSave.items() }] }); TO = T; TEng.begin(T); tSave(); tLoop(); tShow(); });
-  bindAll('[data-to]', b => { const code = Math.random().toString(36).slice(2, 7).toUpperCase().replace(/[^A-Z0-9]/g, 'X'); tNetOpen(code, true); TO = TEng.create({ code, size:+b.dataset.to, players:[{ id:tMyId(), name:tMyName(), kind:'human', team:TSave.team().members.slice(), items:TSave.items() }] }); tLoop(); tShow(); });
+  bindAll('[data-ts]', b => { const T = TEng.create({ solo:true, size:+b.dataset.ts, players:[{ id:tMyId(), name:tMyName(), kind:'me', team:TSave.team().members.slice(), res:TSave.team().res || null, items:TSave.items() }] }); TO = T; TEng.begin(T); tSave(); tLoop(); tShow(); });
+  bindAll('[data-to]', b => { const code = Math.random().toString(36).slice(2, 7).toUpperCase().replace(/[^A-Z0-9]/g, 'X'); tNetOpen(code, true); TO = TEng.create({ code, size:+b.dataset.to, players:[{ id:tMyId(), name:tMyName(), kind:'human', team:TSave.team().members.slice(), res:TSave.team().res || null, items:TSave.items() }] }); tLoop(); tShow(); });
   const inp = document.getElementById('trcode'); inp.oninput = () => { inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); };
   document.getElementById('trjoin').onclick = () => { const c = inp.value; if(c.length !== 5) return inp.classList.add('bad'); TO = { code:c, phase:'lobby', players:[], rounds:[], wait:true }; tNetOpen(c, false); tLoop();
-    const hello = () => { if(!TNET || TNET.host) return; if(TO && TO.wait){ tSend('join', { id:tMyId(), name:tMyName(), team:TSave.team().members.slice(), items:TSave.items() }); setTimeout(hello, 1500); } };
+    const hello = () => { if(!TNET || TNET.host) return; if(TO && TO.wait){ tSend('join', { id:tMyId(), name:tMyName(), team:TSave.team().members.slice(), res:TSave.team().res || null, items:TSave.items() }); setTimeout(hello, 1500); } };
     hello(); setTimeout(() => { if(TO && TO.wait){ tNetClose(); TO = null; gameConfirm('Tournoi introuvable', 'Aucun tournoi avec le code <b>' + esc(c) + '</b>.', 'OK', showTourney); } }, 10000); tShow(); };
   document.getElementById('trteam').onclick = () => tTeamEdit(showTourney);
   document.getElementById('back').onclick = showMain;
@@ -366,7 +370,7 @@ function tRender(force){
   menu(`<div class='hd' data-trscene><h1>Tournoi${T.code ? ' ' + esc(T.code) : ''}</h1>${walletHtml()}</div>
     <div class='trv'><p class='trhead'>${head}</p>${TMSG ? `<p class='trmsg'>${esc(TMSG)}</p>` : ''}
       <div class='trtree'>${tree}</div></div>
-    <div class='row'>${m && m.state === 'wait' ? `<button class='btn2' id='trteam'>Mon équipe ${TSave.team().members.map(tSprite).join('')}</button><button class='btn ${T.ready[me] ? 'on' : ''}' id='trready'>${T.ready[me] ? '✔ Prêt — en attente' : 'Prêt !'}</button>` : ''}
+    <div class='row'>${m && m.state === 'wait' ? `<button class='btn2' id='trteam'>Mon équipe ${TSave.team().members.map(tSprite).join('')}${TSave.team().res ? ` <small>+</small> <span style='opacity:.6'>${tSprite(TSave.team().res)}</span>` : ''}</button><button class='btn ${T.ready[me] ? 'on' : ''}' id='trready'>${T.ready[me] ? '✔ Prêt — en attente' : 'Prêt !'}</button>` : ''}
       <button class='btn2' id='trstats'>Statistiques</button>${T.phase === 'done' || out ? `<button class='btn2' id='trquit'>Quitter</button>` : `<button class='btn2' id='trab'>Abandonner</button>`}</div>`);
   TMSG = '';
   const on = (id, fn) => { const b = document.getElementById(id); if(b) b.onclick = fn; };
@@ -404,31 +408,61 @@ function tFinish(){
   if(typeof Badges !== 'undefined') Badges.check();
   TMSG = pl === 1 ? `🏆 Tu remportes le tournoi ! +${money(gain)}` : `Tournoi terminé : ${pl === 2 ? 'finaliste' : pl + 'e place'} · +${money(gain)}`;
 }
-// équipe de tournoi : 3 Pokémon + objets (pendant les 3 minutes de préparation)
+// équipe de tournoi : 3 titulaires + 1 remplaçant, figés pour tout le tournoi.
+//   Avant le début : choix libre parmi tes Pokémon. Pendant le tournoi : seul échange possible, remplaçant ⇄ titulaire
+//   (glisser-déposer comme dans « Mes équipes », ou bouton ⇄). Les objets se changent entre deux combats.
 let TSEL = 0;
+function tLocked(){ const P = TO && TO.phase !== 'lobby' && !TO.wait ? tP(TO, tMyId()) : null; return P && P.squad && P.squad.length ? P.squad : null; }
 function tTeamEdit(back){
-  const t = TSave.team(), inv = Save.inv(), mine = ORDER.filter(id => Owned.has(id)), m = TO && tMine(TO), me = tMyId(), F = m ? tP(TO, m.a === me ? m.b : m.a) : null;
-  const used = id => t.members.some(x => t.items[x] === id), items = HELD.filter(h => (inv[h.id] || 0) > 0);
-  const cur = t.members[TSEL], curIt = cur && t.items[cur] && HELD_BY_ID[t.items[cur]];
+  const t = TSave.team(), inv = Save.inv(), m = TO && tMine(TO), me = tMyId(), F = m ? tP(TO, m.a === me ? m.b : m.a) : null, lock = tLocked();
+  if(lock){ // sécurité : l'équipe locale doit rester dans l'escouade du tournoi
+    if(!t.members.every(id => lock.includes(id)) || t.members.length !== Math.min(3, lock.length)){ t.members = lock.slice(0, 3); t.res = lock[3] || null; }
+    if(t.res && !lock.includes(t.res)) t.res = lock.find(id => !t.members.includes(id)) || null;
+  }
+  const arr = [t.members[0], t.members[1], t.members[2], t.res || null];
+  const mine = ORDER.filter(id => Owned.has(id)), items = HELD.filter(h => (inv[h.id] || 0) > 0), used = id => arr.some(x => x && t.items[x] === id);
+  const cur = arr[TSEL], curIt = cur && t.items[cur] && HELD_BY_ID[t.items[cur]];
+  const slot = i => { const id = arr[i], it = id && t.items[id] && HELD_BY_ID[t.items[id]];
+    return `<div class='trslw'>${i === 3 ? `<small class='trlab'>Remplaçant</small>` : `<small class='trlab'>Titulaire ${i + 1}</small>`}<button class='trsl ${i === 3 ? 'trres' : ''} ${i === TSEL ? 'on' : ''}' data-sl='${i}'>${id ? tSprite(id) + `<b>${esc(NAME[id])}</b>` : '<em>+</em>'}${it ? `<img class='trit' src='${heldImg(it)}'>` : ''}</button>
+      ${lock && i < 3 && arr[3] && id ? `<button class='btn2 sm trx' data-x='${i}' title='Échanger avec le remplaçant'>⇄ ${esc(NAME[arr[3]])}</button>` : ''}</div>`; };
   menu(`<div class='hd' data-trscene><h1>Équipe de tournoi</h1>${TO && TO.phase === 'prep' && m && m.state === 'wait' ? `<span class='trtime' id='trtime'>${tFmt((TO.deadline - tNow())/1000)}</span>` : ''}</div>
     ${F ? `<p class='trfoe'>Prochain adversaire : <b>${esc(F.name)}</b> ${(F.team || []).map(id => `<span class='trfm'>${tSprite(id)}<small>${typesOf(id).map(x => TN[x] || x).join('/')}</small></span>`).join('')}</p>` : ''}
-    <div class='edit trte'><div class='scroll left'><div class='trro'>${mine.map(id => `<button class='trr ${t.members.includes(id) ? 'in' : ''}' data-tr='${id}' title='${esc(NAME[id])}'>${tSprite(id)}<small>${typesOf(id).map(x => `<i style='background:${COL[x]}'></i>`).join('')}</small></button>`).join('')}</div></div>
-      <div class='scroll right'><div class='trslots'>${[0, 1, 2].map(i => { const id = t.members[i], it = id && t.items[id] && HELD_BY_ID[t.items[id]];
-        return `<button class='trsl ${i === TSEL ? 'on' : ''}' data-sl='${i}'>${id ? tSprite(id) + `<b>${esc(NAME[id])}</b>` : '<em>+</em>'}${it ? `<img class='trit' src='${heldImg(it)}'>` : ''}</button>`; }).join('')}</div>
-        <p class='trh'>${cur ? `Objet de ${esc(NAME[cur])}` : 'Choisis une place'}</p>
+    <div class='edit trte'><div class='scroll left'>${lock
+      ? `<p class='trh'>Équipe figée pour le tournoi</p><p class='mini'>Ton équipe de 4 est fixée jusqu'à la fin du tournoi. Entre deux combats, tu peux faire entrer ton <b>remplaçant</b> à la place d'un titulaire :
+         <b>glisse-le sur un titulaire</b> (ou utilise le bouton ⇄). Tu peux aussi changer l'ordre des titulaires (le 1er commence le combat) et leurs objets.</p>`
+      : `<p class='mini'>Choisis <b>3 titulaires + 1 remplaçant</b>. Attention : cette équipe est <b>figée pour tout le tournoi</b> ; entre deux combats, seul le remplaçant pourra prendre la place d'un titulaire.
+         Touche un Pokémon pour l'ajouter, ou glisse-le sur une place.</p><div class='trro'>${mine.map(id => `<button class='trr ${arr.includes(id) ? 'in' : ''}' data-tr='${id}' title='${esc(NAME[id])}'>${tSprite(id)}<small>${typesOf(id).map(x => `<i style='background:${COL[x]}'></i>`).join('')}</small></button>`).join('')}</div>`}</div>
+      <div class='scroll right'><div class='trslots'>${[0, 1, 2].map(slot).join('')}<span class='trsep'></span>${slot(3)}</div>
+        <p class='trh'>${cur ? `Objet de ${esc(NAME[cur])}${TSEL === 3 ? ' <small>(remplaçant)</small>' : ''}` : 'Choisis une place'}</p>
         ${cur ? `<div class='tritems'><button class='btn2 sm ${!curIt ? 'on' : ''}' data-it=''>Aucun</button>${items.map(h => `<button class='triti ${t.items[cur] === h.id ? 'on' : ''} ${used(h.id) && t.items[cur] !== h.id ? 'used' : ''}' data-it='${h.id}' title='${esc(h.name)}'><img src='${heldImg(h)}'></button>`).join('')}</div>
           <p class='trdesc'>${curIt ? `<b>${esc(curIt.name)}</b> — ${esc(curIt.desc)}` : '<small>Touche un objet pour voir son effet et l\'équiper.</small>'}</p>` : ''}
       </div></div>
     <div class='row'><button class='btn' id='tok'>Valider</button></div>`);
-  const sync = () => { Save.save(); if(TO){ const P = tP(TO, me); if(P){ P.team = t.members.slice(); P.items = TSave.items(); } if(TNET && !TNET.host) tSend('team', { id:me, team:t.members.slice(), items:TSave.items() }); else tBroadcast(); } };
-  bindAll('[data-tr]', b => { const id = b.dataset.tr, k = t.members.indexOf(id);
-    if(k >= 0){ if(t.members.length > 1){ t.members.splice(k, 1); delete t.items[id]; } TSEL = Math.min(TSEL, t.members.length); }
-    else if(t.members.length < 3){ t.members.push(id); TSEL = t.members.length - 1; }
-    else { const old = t.members[TSEL]; delete t.items[old]; t.members[TSEL] = id; }
-    sync(); tTeamEdit(back); });
-  bindAll('[data-sl]', b => { TSEL = +b.dataset.sl; tTeamEdit(back); });
-  bindAll('[data-it]', b => { if(!cur) return; const v = b.dataset.it; if(!v) delete t.items[cur]; else { t.members.forEach(x => { if(t.items[x] === v && (inv[v] || 0) < 2) delete t.items[x]; }); t.items[cur] = v; } sync(); tTeamEdit(back); });
-  document.getElementById('tok').onclick = () => { TSEL = 0; back(); };
+  const write = () => { const L = arr.slice(0, 3).filter(Boolean); t.members = L; t.res = arr[3] || null; Object.keys(t.items).forEach(k => { if(!arr.includes(k)) delete t.items[k]; }); };
+  const sync = () => { write(); Save.save(); if(TO){ const P = tP(TO, me); if(P){ P.team = t.members.slice(); P.res = t.res; P.items = TSave.items(); if(!lock && TO.phase === 'lobby') P.squad = null; }
+    if(TNET && !TNET.host) tSend('team', { id:me, team:t.members.slice(), res:t.res, items:TSave.items() }); else tBroadcast(); } };
+  const redraw = () => { sync(); tTeamEdit(back); };
+  const swap = (a, b) => { if(a === b) return; if(lock && a < 3 && b < 3 && (!arr[a] || !arr[b])) return; [arr[a], arr[b]] = [arr[b], arr[a]];
+    if(arr.slice(0, 3).filter(Boolean).length === 0){ [arr[a], arr[b]] = [arr[b], arr[a]]; return; } TSEL = b; redraw(); };
+  const put = (id, i) => { if(lock) return; const k = arr.indexOf(id); if(k >= 0){ arr[k] = arr[i]; } arr[i] = id; TSEL = i; redraw(); };
+  const tapRoster = id => { const k = arr.indexOf(id);
+    if(k >= 0){ if(arr.filter(Boolean).length > 1){ arr[k] = null; delete t.items[id]; } return redraw(); }
+    let i = arr.indexOf(null); if(i < 0 || (arr[TSEL] == null)) i = arr[TSEL] == null ? TSEL : i; if(i < 0) i = TSEL;
+    put(id, i); };
+  // glisser-déposer (Pokémon de la liste → place ; place → place)
+  const startDrag = (el, ev, data) => {
+    const x0 = ev.clientX, y0 = ev.clientY; let ghost = null;
+    const mv = e => { if(!ghost && Math.hypot(e.clientX - x0, e.clientY - y0) > 8){ ghost = el.querySelector('img').cloneNode(); ghost.className = 'tdrag'; ghost.style.cssText = 'position:fixed;pointer-events:none;z-index:99;width:48px;height:48px;image-rendering:pixelated'; document.body.appendChild(ghost); el.classList.add('dragsrc'); }
+      if(ghost){ ghost.style.left = e.clientX - 24 + 'px'; ghost.style.top = e.clientY - 24 + 'px'; document.querySelectorAll('.trsl').forEach(s => s.classList.remove('dropon')); const t2 = document.elementFromPoint(e.clientX, e.clientY), sl = t2 && t2.closest('[data-sl]'); if(sl) sl.classList.add('dropon'); } };
+    const up = e => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); el.classList.remove('dragsrc');
+      if(!ghost){ data.tap(); return; } ghost.remove(); const t2 = document.elementFromPoint(e.clientX, e.clientY), sl = t2 && t2.closest('[data-sl]'); if(sl) data.drop(+sl.dataset.sl); else redraw(); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up);
+  };
+  document.querySelectorAll('[data-tr]').forEach(b => { b.onpointerdown = ev => { ev.preventDefault(); const id = b.dataset.tr; startDrag(b, ev, { tap:() => tapRoster(id), drop:i => put(id, i) }); }; });
+  document.querySelectorAll('[data-sl]').forEach(b => { b.onpointerdown = ev => { ev.preventDefault(); const i = +b.dataset.sl; if(!arr[i]){ TSEL = i; return tTeamEdit(back); } startDrag(b, ev, { tap:() => { TSEL = i; tTeamEdit(back); }, drop:j => swap(i, j) }); }; });
+  bindAll('[data-x]', b => swap(3, +b.dataset.x));
+  bindAll('[data-it]', b => { if(!cur) return; const v = b.dataset.it; if(!v) delete t.items[cur]; else { arr.forEach(x => { if(x && t.items[x] === v && (inv[v] || 0) < 2) delete t.items[x]; }); t.items[cur] = v; } redraw(); });
+  document.getElementById('tok').onclick = () => { if(!lock && !t.res && mine.length > 3) return gameConfirm('Pas de remplaçant', 'Tu n\'as pas choisi de remplaçant. Sans lui, tu ne pourras rien changer pendant le tournoi.', 'Continuer quand même', () => { TSEL = 0; back(); }); TSEL = 0; back(); };
 }
 // statistiques détaillées du tournoi (tous les participants) ou d'un joueur
 function tStats(pid){
@@ -477,7 +511,7 @@ input#trcode{width:96px;text-align:center;font:700 16px var(--font,monospace);le
 .trfoe{font-size:12px;display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap}.trfm{display:inline-flex;flex-direction:column;align-items:center}.trfm img{width:30px;height:30px;image-rendering:pixelated}.trfm small{font-size:8px}
 .trte .left{flex:0 0 52%}.trro{display:flex;flex-wrap:wrap;gap:4px}.trr{width:52px;padding:2px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);cursor:pointer;display:flex;flex-direction:column;align-items:center}
 .trr img{width:40px;height:40px;image-rendering:pixelated}.trr small{display:flex;gap:2px}.trr small i{width:8px;height:4px;border-radius:2px}.trr.in{border-color:#ffd23f;background:rgba(255,210,63,.15)}
-.trslots{display:flex;gap:6px;justify-content:center}.trsl{position:relative;width:84px;min-height:70px;border-radius:10px;border:2px dashed #8a5a20;background:rgba(0,0,0,.3);color:#fff3c8;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font)}
+.trslots{display:flex;gap:6px;justify-content:center;align-items:flex-end}.trslw{display:flex;flex-direction:column;align-items:center;gap:2px}.trlab{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#ffd890}.trsep{width:2px;align-self:stretch;background:rgba(255,210,63,.35);margin:0 4px}.trsl.trres{border-color:#3a8ae8}.trsl.trres.on{border-color:#7ab8ff}.trsl.dropon{box-shadow:0 0 0 3px #7aff9a}.trsl,.trr{touch-action:none}.trx{font-size:9px!important;padding:2px 5px!important}.trsl{position:relative;width:84px;min-height:70px;border-radius:10px;border:2px dashed #8a5a20;background:rgba(0,0,0,.3);color:#fff3c8;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font)}
 .trsl.on{border-style:solid;border-color:#ffd23f}.trsl img{width:42px;height:42px;image-rendering:pixelated}.trsl b{font-size:10px}.trsl em{font-style:normal;font-size:20px;opacity:.6}.trsl .trit{position:absolute;top:3px;right:3px;width:18px!important;height:18px!important}
 .tritems{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}.triti{width:30px;height:30px;padding:2px;border-radius:7px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);cursor:pointer}.triti img{width:24px;height:24px}.triti.on{border-color:#ffd23f;box-shadow:0 0 6px #ffd23f}.triti.used{opacity:.35}
 .trdesc{font-size:10px;margin:4px 0;text-align:left}.trdesc b{color:#ffe27a}
