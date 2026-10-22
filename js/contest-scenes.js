@@ -183,7 +183,7 @@ const perfX = () => (CV.l + CV.r - 110)/2;            // le Pokémon est au cent
 const _menuCS = menu;
 menu = function(h){ const m = document.getElementById('menu'); if(m){ m.classList.remove('cfull'); m.querySelectorAll('#ccv').forEach(e => e.remove()); } return _menuCS(h); };
 function conRun(sc){
-  CV.font = sc.pen ? '"Pixelify Sans","Courier New",monospace' : null;     // v0.21.5 : la Pension utilise la police du jeu
+  CV.pen = !!sc.pen; CV.font = (sc.pen || sc.gfont) ? '"Pixelify Sans","Courier New",monospace' : null;     // v0.21.5 : la Pension utilise la police du jeu
   menu(`<div class='cwrap'></div>`);
   const m = document.getElementById('menu'), cv = document.createElement('canvas'); cv.id = 'ccv'; cv.className = 'cfull'; m.appendChild(cv); m.classList.add('cfull');
   const w = m.clientWidth || 800, h = m.clientHeight || 360, dpr = Math.min(window.devicePixelRatio || 1, 2); let pw = Math.round(w*dpr), ph = Math.round(h*dpr); const cap = Math.min(1, 1700/pw); pw = Math.round(pw*cap); ph = Math.round(ph*cap);
@@ -409,20 +409,24 @@ function sceneShow(C, ct, idx, kind, score, done){
 //   Souris / doigt : fais tourner le pointeur autour de la marmite à la bonne vitesse (flèche verte = bon rythme).
 //   Clavier : maintiens Espace (relâche pour ralentir).   done(q) avec q de 0 à 1
 // ============================================================
+const COOK_SENS = () => (matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window ? .38 : 1;   // doigt : 0,38
 function sceneCook(berryIds, done){
   const DUR = 10, CXp = 160, CYp = 82, R = 54, GO = [2.9, 5.1];   // v0.21.2 : zone verte plus étroite et qui bouge
   const berries = berryIds.map((id, i) => ({ b:BERRY[id], im:berryEl(BERRY[id]), t0:.6 + i*.6, in:false }));
+  const smp = [];
   let ph = 'intro', tt = 0, ang = -Math.PI/2, om = 0, lastA = null, lastT = 0, down = false, held = false, good = 0, elapsed = 0, msg = '', q = 0, poff = null, sw = 0, bub = 0;
   const avgCol = () => { const ins = berries.filter(b => b.in); if(!ins.length) return '#fff0a8'; let r = 0, g = 0, b = 0; ins.forEach(e => { const h = e.b.col; r += parseInt(h.slice(1, 3), 16); g += parseInt(h.slice(3, 5), 16); b += parseInt(h.slice(5, 7), 16); }); const n = ins.length; return mixHex('#fff0a8', '#' + [r/n, g/n, b/n].map(v => Math.round(v).toString(16).padStart(2, '0')).join(''), .3*ins.length/berries.length + .06); };
   const sc = {
     en:.3, enT:.3,
     key(k){ if(k === ' ' || k === 'enter'){ if(ph === 'result' && tt > 1) return end(); held = true; return true; } },
     keyup(k){ if(k === ' ' || k === 'enter') held = false; },
-    down(a, b){ if(ph === 'result' && tt > 1) return end(); down = true; lastA = Math.atan2(b - CYp, a - CXp); lastT = sc.t; },
+    down(a, b){ if(ph === 'result' && tt > 1) return end(); down = true; lastA = Math.atan2(b - CYp, a - CXp); lastT = sc.t; smp.length = 0; smp.push([sc.t, ang]); },
     move(a, b){
       if(!down || ph !== 'stir') return; const dx = a - CXp, dy = b - CYp; if(dx*dx + dy*dy < 100) return;
       const an = Math.atan2(dy, dx); let da = an - lastA; if(da > Math.PI) da -= 6.2832; if(da < -Math.PI) da += 6.2832; const dt = Math.max(.008, sc.t - lastT);
-      om = om*.55 + (da/dt)*.45; ang += da; lastA = an; lastT = sc.t;
+      // v0.21.10 : vitesse mesurée sur 0,3 s (plus de saccades) et sensibilité bien plus faible au doigt (téléphone)
+      ang += da; lastA = an; lastT = sc.t; smp.push([sc.t, ang]); while(smp.length > 2 && sc.t - smp[0][0] > .3) smp.shift();
+      const span = sc.t - smp[0][0]; if(span > .04){ const raw = (ang - smp[0][1])/span*COOK_SENS(); om = om*.7 + raw*.3; }
     },
     up(){ down = false; },
     update(dt){

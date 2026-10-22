@@ -113,7 +113,7 @@ function pkUpdCaster(s, dt){
     } }
   const M = s.mx; if(!M) return false;
   const t = G.time - M.t0, T = pkFoe(M.own);
-  if(own) s.inv = Math.max(s.inv || 0, .05); else s.invT = Math.max(s.invT || 0, G.time + .05);
+  if(M.k !== 'sky'){ if(own) s.inv = Math.max(s.inv || 0, .05); else s.invT = Math.max(s.invT || 0, G.time + .05); }     // v0.21.10 : Piqué Céleste n'est plus invulnérable
   if(M.k === 'xs'){
     const u = Math.min(1, (G.time - M.lt)/M.leg), e = ease(u); s.x = M.sx + (M.ex - M.sx)*e; s.y = M.sy + (M.ey - M.sy)*e;
     M.trail.push({ x:s.x, y:s.y, t:G.time }); if(M.trail.length > 30) M.trail.shift();

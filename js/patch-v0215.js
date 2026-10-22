@@ -133,7 +133,7 @@ function penMusicStart(){
 musicGen = (prev => function(kind){ if(String(MU.kind || kind).split('|')[0] === 'pension'){ MU.playing = MU.kind; return penMusicStart(); } return prev(kind); })(musicGen);
 menu = (prev => function(h){
   prev(h);
-  const pen = !G && !!h && (h.includes('data-penscene') || (h.includes("class='cwrap'") && CV.font));
+  const pen = !G && !!h && (h.includes('data-penscene') || (h.includes("class='cwrap'") && CV.pen));
   if(pen && typeof musicSet === 'function') musicSet('pension');
 })(menu);
 

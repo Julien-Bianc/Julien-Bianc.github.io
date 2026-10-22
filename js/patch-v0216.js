@@ -51,7 +51,7 @@ showProfile = (prev => function(msg){ if(typeof shopBuild === 'function') shopBu
 showTrainer = (prev => function(q, back){ if(typeof shopBuild === 'function') shopBuild(); return prev(q, back); })(showTrainer);
 pfPick = (prev => function(title, L, fn, cls){ if(typeof shopBuild === 'function') shopBuild(); return prev(title, L, fn, cls); })(pfPick);
 // ---------------------------------------------------------------- 5. concours : police du jeu dans les épreuves
-conRun = (prev => function(sc){ if(sc) sc.pen = 1; return prev(sc); })(conRun);
+conRun = (prev => function(sc){ if(sc) sc.gfont = 1; return prev(sc); })(conRun);      // v0.21.10 : gfont (police) ≠ pen (pension → sa musique)
 
 // ---------------------------------------------------------------- 6. Solo : « Combat difficile » niveaux 8 à 10 et 18+ (v0.21.9 : 11 à 17 adoucis)
 const soloHard = i => (i >= 7 && i <= 9) || i >= 17;
