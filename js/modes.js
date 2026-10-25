@@ -22,7 +22,7 @@ function battleEnd(win){
     if(win){
       const first = c.stageIndex >= Save.cleared(c.size), rw = soloReward(c.stageIndex, G.et.length, first), before = Save.coins();
       Save.clear(c.size, c.stageIndex); Save.addCoins(rw.total);
-      menu(`<h1>🏆 Victoire !</h1><p>${esc(STAGES[c.stageIndex].name)} terminé</p>
+      menu(`<h1>🏆 Victoire !</h1><p>Niveau terminé : ${esc(STAGES[c.stageIndex].name)}</p>
         <div class='gain'><b>+${money(rw.total)}</b>${rw.bonus ? `<small>Victoire ${money(rw.win)} + premier passage ${money(rw.bonus)}</small>` : ''}</div>
         <p>Solde : <span id='gsol'>${money(before)}</span></p><div class='row'>
         ${next ? `<button class='btn' id='nx'>Niveau suivant</button>` : '<p>Tous les niveaux sont terminés !</p>'}

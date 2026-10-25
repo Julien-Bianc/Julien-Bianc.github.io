@@ -70,7 +70,7 @@ function twFixLayout(){
       if(sel === b) return pick();
       par.querySelectorAll('.twopt').forEach(x => x.classList.toggle('twsel', x === b)); sel = b;
       const nm = b.querySelector('b'), ds = b.querySelector('small, p');
-      info.innerHTML = `<b>${nm ? nm.textContent : ''}</b>${ds ? ' — ' + ds.textContent : ''}`; go.disabled = false;
+      const rc = b.querySelector('.twrc'); info.innerHTML = `<b>${nm ? nm.textContent : ''}</b>${ds ? ' — ' + ds.textContent : ''}${rc ? ` · ${[...rc.children].map(x => x.textContent).join(' · ')}` : ''}`; go.disabled = false;
     }, true);
     const pick = () => { if(!sel) return; pass = true; sel.click(); pass = false; };
     go.onclick = pick;

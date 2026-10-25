@@ -123,7 +123,7 @@ SCREENS.tower = showTower;
 function twRules(){
   menu(`<div class='hd' data-twscene><h1>Règles de la Tour</h1></div><div class='twrules'>
     <p>${twI('recruit')} Tu entres avec <b>un seul Pokémon, sans objet</b>. D'autres Pokémon proposent de te rejoindre en route (<b>3 maximum</b> ; équipe pleine : l'un d'eux laisse sa place).</p>
-    <p>${twI('foes')} Chaque étage est plus dur. autant d'adversaires que de Pokémon dans ton équipe (<b>3</b> dès que tu en as 3, même K.O.), <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
+    <p>${twI('foes')} Chaque étage est plus dur. Tu affrontes autant d'adversaires que de Pokémon dans ton équipe (<b>3</b> dès que tu en as 3, même K.O.), <b>un de plus dès l'étage 20</b>, deux dès l'étage 40. Tous les 10 étages, le dernier est un <b>boss</b>.</p>
     <p>${twI('heal')} Les PV ne remontent que de 10 % entre deux étages et un Pokémon K.O. le reste (sauf Rappel).</p>
     <p>${twI('item')} Tous les 5 étages : un <b>bonus</b> au choix. Les objets gagnés vont dans ton <b>sac</b> : donne-les et change l'ordre de ton équipe avant chaque combat.</p>
     <p>${twI('runs')} Si toute ton équipe tombe, la tour est finie. <b>Quitter un combat = fin de la tour.</b></p></div>
@@ -287,7 +287,7 @@ function twEnd(R, why){
   S.runs++; S.last = { f, team }; Tower.set(null); if(f) Tower.record(f, team); else Save.save(); G = null;
   const best = Tower.best();
   menu(`<div class='hd' data-twscene><h1>${why === 'ko' ? 'Ton équipe est K.O.' : 'Fin de la tour'}</h1></div>
-    <p>${why === 'abandon' ? 'Tu as quitté un combat : la tour est terminée.<br>' : ''}Tu es arrivé à l'<b>étage ${f}</b>${f && f >= best ? ' — <b class="gold">nouveau record !</b>' : ` (record : étage ${best})`}</p>
+    <p>${why === 'abandon' ? 'Tu as quitté un combat : la tour est terminée.<br>' : ''}Tu as franchi <b>${f} étage${f > 1 ? 's' : ''}</b>${f && f >= best ? ' — <b class="gold">nouveau record !</b>' : ` (record : étage ${best})`}</p>
     <p class='twgain'>${twI('coins')} Gains de la tour : ${money(R.coins || 0)}</p>${twTeamView(R)}
     <div class='row'><button class='btn' id='twr'>Retour à la tour</button><button class='btn2' id='twm'>Menu</button></div>`);
   twOn('twr', showTower); twOn('twm', showMain);

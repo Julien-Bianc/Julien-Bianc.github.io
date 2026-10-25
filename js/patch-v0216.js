@@ -19,7 +19,9 @@ menu = (prev => function(h){
 (() => {
   if(typeof MUSIC === 'undefined' || typeof MU_BAD === 'undefined') return;
   const all = new Set(); Object.values(MUSIC).forEach(v => (Array.isArray(v) ? v : [v]).forEach(u => u && all.add(u)));
-  all.forEach(u => fetch(u, { method:'HEAD', cache:'no-store' }).then(r => { if(!r.ok) MU_BAD.add(u); }).catch(() => {}));
+  // v0.22 : la liste des musiques présentes vient de assets/manifest.json (plus de requêtes en erreur 404) ; sinon on vérifie fichier par fichier
+  const probe = () => all.forEach(u => fetch(u, { method:'HEAD', cache:'no-store' }).then(r => { if(!r.ok) MU_BAD.add(u); }).catch(() => {}));
+  (typeof ASSETS_READY !== 'undefined' ? ASSETS_READY : Promise.resolve(null)).then(A => { if(A && A.music) all.forEach(u => { if(!A.music.includes(u.split('/').pop())) MU_BAD.add(u); }); else probe(); });
 })();
 // quand le jeu retombe sur un autre fichier (ex. pas de musique propre à l'écran → musique du menu), il reprend à l'endroit où il était
 musicChain = (prev => function(kind, urls, i){

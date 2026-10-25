@@ -27,6 +27,9 @@ function shadowAnchors(img, fw, fh, nf){
   return rows;
 }
 
+// animations utilisées quelque part dans le jeu (combat, menus, concours, pension) ; les autres feuilles ne sont plus chargées
+const ANIM_USED = ['Idle', 'Walk', 'Hurt', 'Faint', 'Charge', 'Hop', 'Pain', 'Wake', 'Double', 'Attack', 'Shoot', 'Swing', 'Strike', 'Sleep', 'EventSleep', 'Eat', 'Pose',
+  'Appeal', 'Rotate', 'RearUp', 'QuickStrike', 'Hover', 'Float', 'MultiScratch', 'Twirl', 'SpAttack'];
 async function loadPokemon(id){
   const def = POKEMON[id], base = def.folder.replace(/\/?$/, '/');
   const r = await fetch(base + 'AnimData.xml');
@@ -44,9 +47,15 @@ async function loadPokemon(id){
     ['RushFrame','HitFrame','ReturnFrame'].forEach(k => { if(g(k) != null) o[k.slice(0, -5).toLowerCase()] = +g(k); });
     list.push([n, o]);
   });
+  // v0.22 : on ne télécharge que les animations dont le jeu se sert (avant : toutes → ~1 650 fichiers au démarrage)
+  const use = new Set(ANIM_USED); Object.values(def.anims || {}).forEach(v => use.add(v)); (def.moves || []).forEach(m => m.anim && use.add(m.anim));
+  Object.entries(S.alias).forEach(([n, cp]) => { if(use.has(n)) use.add(cp); });
+  const have = ASSETS && ASSETS.pokemon && ASSETS.pokemon[base.split('/').filter(Boolean).pop()];       // fichiers présents (assets/manifest.json) : plus de 404
+  for(let i = list.length - 1; i >= 0; i--) if(!use.has(list[i][0]) || (have && !have.includes(list[i][0] + '-Anim'))) list.splice(i, 1);
+  S.noShadow = have ? new Set(list.filter(([n]) => !have.includes(n + '-Shadow')).map(([n]) => n)) : null;
   await Promise.all(list.map(async ([n, o]) => {
     try{ S.IM[n] = await loadImg(base + n + '-Anim.png'); S.D.anim[n] = o; }catch(e){ return; }   // animation absente : ignorée
-    try{ S.D.anc[n] = shadowAnchors(await loadImg(base + n + '-Shadow.png'), o.fw, o.fh, o.dur.length); }catch(e){}
+    if(!(S.noShadow && S.noShadow.has(n))) try{ S.D.anc[n] = shadowAnchors(await loadImg(base + n + '-Shadow.png'), o.fw, o.fh, o.dur.length); }catch(e){}
   }));
   let need = 48;
   Object.keys(S.D.anim).forEach(n => {
@@ -63,12 +72,24 @@ async function loadPokemon(id){
   SPR[id] = S;
 }
 
-// Charge tous les Pokémon de data/pokemon.js. Renvoie { ok:[ids], errors:[messages] }.
+// Liste des fichiers présents (générée avec le jeu) : évite de demander des images ou musiques absentes.
+let ASSETS = null;
+const ASSETS_READY = fetch('assets/manifest.json', { cache:'no-cache' }).then(r => r.ok ? r.json() : null).then(j => { ASSETS = j; return j; }).catch(() => null);
+
+// Charge les Pokémon de data/pokemon.js. Renvoie { ok:[ids], errors:[messages] }.
+//  v0.22 : les Pokémon « sauvages seulement » (Safari) se chargent en arrière-plan, après l'affichage du menu → démarrage 2× plus rapide.
+let WILD_READY = Promise.resolve();
 async function loadAllPokemon(){
-  const ok = [], errors = [];
-  await Promise.all(Object.keys(POKEMON).map(async id => {
+  await ASSETS_READY;
+  const ok = [], errors = [], ids = Object.keys(POKEMON), wild = ids.filter(id => POKEMON[id].wildOnly), main = ids.filter(id => !POKEMON[id].wildOnly);
+  let done = 0; const prog = () => { const el = document.getElementById('ldbar'); if(el) el.style.width = Math.round(++done/main.length*100) + '%'; };
+  if(!document.getElementById('ldbar')) menu(`<h1>Chargement des Pokémon…</h1><div class='ldbox'><i id='ldbar'></i></div><small class='hint'>Première visite : quelques secondes</small>`);
+  await Promise.all(main.map(async id => {
     try{ await loadPokemon(id); ok.push(id); }
     catch(e){ errors.push(id + ' : ' + e.message); delete POKEMON[id]; }
+    prog();
   }));
-  return { ok: Object.keys(POKEMON).filter(id => ok.includes(id)), errors };
+  WILD_READY = new Promise(res => setTimeout(() => Promise.all(wild.map(id => loadPokemon(id).catch(e => console.warn('sauvage ignoré', id, e.message)))).then(res), 800));
+  return { ok: Object.keys(POKEMON).filter(id => ok.includes(id) || wild.includes(id)), errors };
 }
+document.head.insertAdjacentHTML('beforeend', `<style>.ldbox{width:min(320px,70vw);height:12px;border:2px solid #ffd23f;border-radius:8px;background:rgba(0,0,0,.4);overflow:hidden;margin:8px auto}.ldbox i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb020,#ffe27a);transition:width .2s}</style>`);

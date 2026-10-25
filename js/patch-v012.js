@@ -68,7 +68,7 @@ battleEnd = function(win){
   const rw = soloReward(c.stageIndex, beaten, false), gain = Math.max(5, Math.round(rw.win*SOLO_DEFEAT_SHARE/5)*5);
   Save.addCoins(gain);
   const h = document.querySelector('#menu h1');
-  if(h) h.insertAdjacentHTML('afterend', `<div class='gain'><b>+${money(gain)}</b><small>${beaten} Pokémon battu${beaten > 1 ? 's' : ''}</small></div>`);
+  if(h) h.insertAdjacentHTML('afterend', `<div class='gain'><b>+${money(gain)}</b><small>gain partiel</small></div>`);
 };
 
 // ---------- 5. touches de la Ball ----------

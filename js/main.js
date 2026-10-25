@@ -2,7 +2,7 @@
 //  DÉMARRAGE : charge les sprites, enregistre les Pokémon, affiche le menu, lance la boucle.
 // ============================================================
 (async function main(){
-  menu('<h1>Chargement des sprites…</h1>');
+  menu(`<h1>Chargement des Pokémon…</h1><div class='ldbox'><i id='ldbar'></i></div><small class='hint'>Première visite : quelques secondes</small>`);
   let res;
   try{
     res = await loadAllPokemon();
