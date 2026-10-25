@@ -140,7 +140,7 @@ function renderPension(msg, miss){
       <div class='pgs'><span>Faim</span>${penBar(m.hunger, '#ff9a3c')}<span>Bonheur</span>${penBar(m.joy, '#ff7ac8')}<span>Énergie</span>${penBar(m.energy, '#ffd23f')}<span>Propreté</span>${penBar(m.clean, '#5ad8ff')}</div>
       <small>${PEN_MOOD_TXT[penMood(m)]}${ev ? ` · Évolution : âge ${ev.ageOK ? '✓' : penFmt(ev.age)} · bonheur ${ev.joyOK ? '✓' : ev.joy + ' %'}` : ''}</small></div>`;
   } else {
-    card = `<img class='pegg dim' src='assets/items/${PEN.egg}.png'><div class='pbody'><b>La pension est vide</b><small>Œufs Mystère dans ton inventaire : ${Pen.eggs()}</small><small>L'œuf se trouve dans la <b>caisse</b> (rareté secrète dorée).</small></div>`;
+    card = `<img class='pegg dim' src='assets/items/${PEN.egg}.png'><div class='pbody'><b>La pension est vide</b><small>Œufs Mystère dans ton inventaire : ${Pen.eggs()}</small><small>L'œuf se trouve dans les <b>caisses</b> (rareté secrète dorée) ou en récompense de la <b>fin du chapitre 1</b>.</small></div>`;
   }
   menu(`<div class='hd'><h1>Pension Pokémon</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
     <div class='pcard'>${card}</div>

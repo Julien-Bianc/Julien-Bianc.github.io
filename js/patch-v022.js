@@ -152,7 +152,7 @@ showShop = (prev => function(tab){
     const id = b.dataset.buy, n = +b.dataset.n, p = n === 5 ? Math.round(unit(id)*5*V22_X5/5)*5 : unit(id);
     if(n === 5) b.innerHTML = `×5 · ${money(p)} <s>${money(unit(id)*5)}</s>`;
     b.disabled = Save.coins() < p;
-    if(id === 'ticket:titans' && lockT){ b.disabled = true; if(n === 1) b.insertAdjacentHTML('beforebegin', `<small class='v22lk'>🔒 Termine le chapitre 1</small>`); }
+    if(id === 'ticket:titans' && lockT){ b.disabled = true; if(n === 1) b.insertAdjacentHTML('beforebegin', `<small class='v22lk'>🔒 Termine le niveau 7</small>`); }
     b.onclick = () => { if(b.disabled) return; if(Save.spend(p)){ Save.addItem(id, n); if(id.startsWith('ball:')) Save.load().boughtBall = 1; if(typeof coinSfx === 'function') coinSfx(); Save.save(); showShop('safari'); } };
   });
   return r;
@@ -230,7 +230,7 @@ const QUEST_POOL = [
 const BEGIN_GOALS = [
   { id:'b-lv2',   txt:'Termine le niveau 2 du Solo',        r:50,  ok:() => Math.max(Save.cleared(3), Save.cleared(6)) >= 2, go:() => SCREENS.solo() },
   { id:'b-tower', txt:'Franchis 3 étages de la Tour',       r:60,  ok:() => Tower.stats().floors >= 3, go:() => SCREENS.tower() },
-  { id:'b-balls', txt:'Achète des Poké Balls au Magasin',   r:40,  ok:() => !!Save.load().boughtBall, go:() => showShop('safari') },
+  { id:'b-balls', txt:'Achète des Poké Balls au Magasin',   r:40,  ok:() => !!Save.load().boughtBall || SAFARI.balls.reduce((s, b) => s + Save.itemCount(b.id), 0) >= 3, go:() => showShop('safari') },
   { id:'b-catch', txt:'Capture un Pokémon au Safari',       r:80,  ok:() => Owned.list().length >= 2, go:() => showSafari({ zone:'decouverte' }) },
   { id:'b-lv3',   txt:'Termine le niveau 3 du Solo',        r:100, ok:() => Math.max(Save.cleared(3), Save.cleared(6)) >= 3, go:() => SCREENS.solo() }
 ];

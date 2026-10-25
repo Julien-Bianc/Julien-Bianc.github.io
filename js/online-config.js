@@ -19,5 +19,5 @@ const ONLINE_CFG = {
   sendRate: 15,                              // positions envoyées par seconde pendant un combat (Supabase gratuit : ~3 combats simultanés à 15)
   challengeTimeout: 45,                      // secondes avant qu'un défi sans réponse soit annulé
   disconnectAfter: 20,                       // secondes sans nouvelles de l'adversaire = victoire par abandon
-  hiddenForfeit: 12                          // secondes avec le jeu en arrière-plan pendant un combat = abandon
+  hiddenForfeit: 20                          // secondes avec le jeu en arrière-plan pendant un combat = abandon
 };

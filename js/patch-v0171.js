@@ -10,7 +10,8 @@
 //       ou qui n'est pas partie ne bloque plus
 //    6. Raids : attaques de zone en plus (météores, fissures, ondes) qu'il faut esquiver
 // ============================================================
-const raidUnlocked = () => Save.cleared(3) >= CH_SIZE || Save.cleared(6) >= CH_SIZE;
+const RAID_UNLOCK_AT = 7;      // v0.24 : Raid, Safari et Caisse des Titans dès le niveau 7 du Solo (avant : fin du chapitre 1)
+const raidUnlocked = () => Save.cleared(3) >= RAID_UNLOCK_AT || Save.cleared(6) >= RAID_UNLOCK_AT;
 function raidDone(cur){ const d = Save.load().raidDone; return !!(d && cur && d.slot === cur.slot && d.id === cur.id); }   // (v0.20 : remplacée dans patch-v020.js — 3 tentatives)
 
 // ---------- 1. menu principal ----------
@@ -28,7 +29,7 @@ renderMainMM = function(){
   if(!SCREENS.raid) return;
   const cur = raidCurrent(), lock = !raidUnlocked(), done = raidDone(cur), S = SPR[cur.id];
   const html = `<button class='mm-feat raidc ${lock ? 'lock' : ''}' id='mmraid'>${S ? `<img src='${spr(cur.id, 1).toDataURL()}'>` : ''}<span>
-    <b>Raid ${'★'.repeat(cur.stars)}${cur.stars >= 5 ? ' ✦' : ''}</b><small>${lock ? '🔒 Termine le chapitre 1' : esc(NAME[cur.id] || cur.id) + (done ? ' · ✔ battu' : '')}</small>
+    <b>Raid ${'★'.repeat(cur.stars)}${cur.stars >= 5 ? ' ✦' : ''}</b><small>${lock ? '🔒 Termine le niveau 7 du Solo' : esc(NAME[cur.id] || cur.id) + (done ? ' · ✔ battu' : '')}</small>
     <small class='rt'>${lock ? '' : "Nouveau raid dans <i id='mmrt'>" + mmss2(raidNextIn()) + '</i>'}</small></span></button>`;
   const mew = box.querySelector(".mm-feat[data-go='boss']");
   if(mew) mew.insertAdjacentHTML('afterend', html); else box.insertAdjacentHTML('beforeend', html);
@@ -42,8 +43,8 @@ renderMainMM = function(){
 const _showRaidV171 = showRaid;
 showRaid = function(sel){
   if(!raidUnlocked()){
-    menu(`<h1>Combat Raid</h1><p>Les raids se débloquent quand tu as terminé le <b>chapitre 1 « ${esc(CHAPTERS[0].name)} »</b> en Solo (3v3 ou 6v6).</p>
-      <p class='hint'>Progression : 3v3 ${Math.min(CH_SIZE, Save.cleared(3))}/${CH_SIZE} · 6v6 ${Math.min(CH_SIZE, Save.cleared(6))}/${CH_SIZE}</p>
+    menu(`<h1>Combat Raid</h1><p>Les raids se débloquent quand tu as terminé le <b>niveau 7</b> du Solo (3v3 ou 6v6).</p>
+      <p class='hint'>Progression : 3v3 ${Math.min(RAID_UNLOCK_AT, Save.cleared(3))}/${RAID_UNLOCK_AT} · 6v6 ${Math.min(RAID_UNLOCK_AT, Save.cleared(6))}/${RAID_UNLOCK_AT}</p>
       <div class='row'><button class='btn' id='rgs'>Aller au Solo</button><button class='btn2' id='back'>Retour</button></div>`);
     document.getElementById('rgs').onclick = () => SCREENS.solo(); document.getElementById('back').onclick = showMain; return;
   }

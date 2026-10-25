@@ -187,10 +187,10 @@ const pkRoleTag = id => { const R = pkRole(id); return R ? `<span class='v23role
 if(typeof pokeDetail === 'function') pokeDetail = (prev => function(id){
   const h = prev(id); const R = pkRoleTag(id); return R ? h.replace(/<br>/, ` ${R}<br>`) : h;
 })(pokeDetail);
-// fiche de combat : attaques utilisées, touches, dégâts par Pokémon
+// fiche de combat : attaques utilisées, touches (v0.24 : au plus 1 par attaque lancée), dégâts par Pokémon
 fire = (prev => function(m, c, i){ if(G && G.p){ const F = G.v23f || (G.v23f = {}), o = F[G.p.t] || (F[G.p.t] = { use:0, hit:0, dmg:0, mv:{} }); o.use++; o.mv[m.n] = (o.mv[m.n] || 0) + 1; } return prev(m, c, i); })(fire);
 hurtE = (prev => function(d, b){ const e = G && G.e, h0 = e ? e.hp : 0, r = prev(d, b);
-  if(G && G.p && e && b && b.own !== 0){ const F = G.v23f || (G.v23f = {}), o = F[G.p.t] || (F[G.p.t] = { use:0, hit:0, dmg:0, mv:{} }), dd = Math.max(0, h0 - Math.max(0, e.hp)); if(dd > 0){ o.dmg += dd; if(!b._v23){ b._v23 = 1; o.hit++; } } }
+  if(G && G.p && e && b && b.own !== 0){ const F = G.v23f || (G.v23f = {}), o = F[G.p.t] || (F[G.p.t] = { use:0, hit:0, dmg:0, mv:{} }), dd = Math.max(0, h0 - Math.max(0, e.hp)); if(dd > 0){ o.dmg += dd; if(o.hitIdx !== o.use){ o.hitIdx = o.use; o.hit++; } } }
   return r; })(hurtE);
 battleEnd = (prev => function(win, why){
   const c = G && G.cfg, F = G && G.v23f, st = G && G.v22, t = G ? G.time : 0;
