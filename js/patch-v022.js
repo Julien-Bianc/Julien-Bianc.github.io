@@ -147,12 +147,12 @@ showShop = (prev => function(tab){
   const r = prev(tab);
   if(tab !== 'safari') return r;
   const unit = id => BALL[id] ? BALL[id].price : (SAFARI.zones.find(z => z.ticket.id === id) || { ticket:{ price:0 } }).ticket.price;
-  const lockT = typeof raidUnlocked === 'function' && !raidUnlocked();
+  const lockT = typeof chapter1Done === 'function' && !chapter1Done();   // v0.25 : fin du chapitre 1
   document.querySelectorAll('[data-buy]').forEach(b => {
     const id = b.dataset.buy, n = +b.dataset.n, p = n === 5 ? Math.round(unit(id)*5*V22_X5/5)*5 : unit(id);
     if(n === 5) b.innerHTML = `×5 · ${money(p)} <s>${money(unit(id)*5)}</s>`;
     b.disabled = Save.coins() < p;
-    if(id === 'ticket:titans' && lockT){ b.disabled = true; if(n === 1) b.insertAdjacentHTML('beforebegin', `<small class='v22lk'>🔒 Termine le niveau 7</small>`); }
+    if(id === 'ticket:titans' && lockT){ b.disabled = true; if(n === 1) b.insertAdjacentHTML('beforebegin', `<small class='v22lk'>🔒 Termine le chapitre 1</small>`); }
     b.onclick = () => { if(b.disabled) return; if(Save.spend(p)){ Save.addItem(id, n); if(id.startsWith('ball:')) Save.load().boughtBall = 1; if(typeof coinSfx === 'function') coinSfx(); Save.save(); showShop('safari'); } };
   });
   return r;

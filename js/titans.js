@@ -338,7 +338,7 @@ function useGoldenTicket(back){
 function useSpecial(it, back){ return it && it.use === 'golden' ? useGoldenTicket(back) : showShinySwap(back); }
 
 // ============================================================ 5. CAISSE VERROUILLÉE (chapitre 1)
-const chapter1Done = () => (typeof RAID_UNLOCK_AT === 'undefined' ? 10 : RAID_UNLOCK_AT) <= Math.max(Save.cleared(3), Save.cleared(6));      // v0.24 : niveau 7
+const chapter1Done = () => (typeof CH_SIZE === 'undefined' ? 10 : CH_SIZE) <= Math.max(Save.cleared(3), Save.cleared(6));      // v0.25 : de nouveau la fin du chapitre 1 (Raid reste au niveau 7)
 const crateLocked = c => !!(c && c.unlock === 'chapter1' && !chapter1Done());
 const _openTit = openCrate;
 openCrate = function(id){ if(crateLocked(CRATE[id])) return showCrate(id); return _openTit(id); };
@@ -384,7 +384,7 @@ function crateTile(o){
     <b>${esc(o.label)}</b><small>${esc(o.desc || '')}</small>
     <span class='crt-info'>${(c.slots || []).length} emplacements${leg ? ' · ✦ Légendaire' : ''}${(c.slots || []).some(s => s.hidden) ? ' · ??? Secret' : ''}</span>
     <span class='tag ${lock || !ok ? 'bad' : ''}'>${price}</span>
-    ${lock ? `<span class='crt-lock'>🔒<small>Termine le niveau 7 du Solo</small></span>` : ''}</button>`;
+    ${lock ? `<span class='crt-lock'>🔒<small>Termine le chapitre 1</small></span>` : ''}</button>`;
 }
 const _shopTit = showShop;
 showShop = function(tab){
@@ -402,7 +402,7 @@ showCrate = function(id){
   const look = crateLookOf(id), img = document.querySelector('#menu .cr.big'); if(img) img.src = crateArt(look);
   const crv = document.querySelector('#menu .crv'); if(crv) crv.classList.add('crv-' + look);
   if(crateLocked(CRATE[id])){
-    const op = document.getElementById('op'); if(op){ op.disabled = true; op.textContent = '🔒 Termine le niveau 7'; }
-    const row = op && op.closest('.row'); if(row) row.insertAdjacentHTML('afterend', `<p class='hint bad'>Cette caisse se débloque quand tu as terminé le <b>niveau 7</b> du Solo (3v3 ou 6v6).</p>`);
+    const op = document.getElementById('op'); if(op){ op.disabled = true; op.textContent = '🔒 Termine le chapitre 1'; }
+    const row = op && op.closest('.row'); if(row) row.insertAdjacentHTML('afterend', `<p class='hint bad'>Cette caisse se débloque quand tu as terminé le <b>chapitre 1</b> du Solo (niveau 10, en 3v3 ou 6v6).</p>`);
   }
 };

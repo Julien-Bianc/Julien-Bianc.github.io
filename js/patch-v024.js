@@ -62,14 +62,16 @@ drawScreenFx = (prev => function(){
   const x = AIM.mouse.x, y = AIM.mouse.y, p = G.p, held = [0, 1, 2].find(i => typeof down !== 'undefined' && down[i]);
   const m = held != null && p && p.mv ? p.mv[held] : null, col = m ? (COL[m.tp] || '#ffd23f') : '#ffd23f';
   const ch = held != null && p && p.ch ? Math.min(1, p.ch[held] || 0) : (held != null ? .5 + .5*Math.sin(G.time*10) : 0);
-  const R = 9 + ch*5, t = G.time;
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); const k = ctx.canvas.width/VW; ctx.scale(k, k);
-  ctx.lineWidth = 3.2; ctx.strokeStyle = 'rgba(20,10,30,.85)'; ctx.beginPath(); ctx.arc(x, y, R, 0, 6.2832); ctx.stroke();
-  ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(x, y, R, 0, 6.2832); ctx.stroke();
-  for(let i = 0; i < 4; i++){ const a = i*Math.PI/2 + (held != null ? t*2 : 0), r0 = R - 3, r1 = R + 5;
-    ctx.lineWidth = 3.2; ctx.strokeStyle = 'rgba(20,10,30,.85)'; ctx.beginPath(); ctx.moveTo(x + Math.cos(a)*r0, y + Math.sin(a)*r0); ctx.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1); ctx.stroke();
-    ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x + Math.cos(a)*r0, y + Math.sin(a)*r0); ctx.lineTo(x + Math.cos(a)*r1, y + Math.sin(a)*r1); ctx.stroke(); }
-  ctx.fillStyle = 'rgba(20,10,30,.85)'; ctx.fillRect(x - 2, y - 2, 4, 4); ctx.fillStyle = '#fff'; ctx.fillRect(x - 1, y - 1, 2, 2);
+  // v0.25 : taille FIXE à l'écran (~28 px, jusqu'à ~36 px en charge), quelle que soit la résolution
+  const cv = ctx.canvas, k = cv.width/VW, s = cv.width/Math.max(1, cv.getBoundingClientRect().width || cv.width), t = G.time;
+  const X = x*k, Y = y*k, R = (8 + ch*4)*s, L1 = 2.6*s, L2 = 1.3*s;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.lineWidth = L1; ctx.strokeStyle = 'rgba(20,10,30,.85)'; ctx.beginPath(); ctx.arc(X, Y, R, 0, 6.2832); ctx.stroke();
+  ctx.lineWidth = L2; ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(X, Y, R, 0, 6.2832); ctx.stroke();
+  for(let i = 0; i < 4; i++){ const a = i*Math.PI/2 + (held != null ? t*2 : 0), r0 = R - 2*s, r1 = R + 6*s;
+    ctx.lineWidth = L1; ctx.strokeStyle = 'rgba(20,10,30,.85)'; ctx.beginPath(); ctx.moveTo(X + Math.cos(a)*r0, Y + Math.sin(a)*r0); ctx.lineTo(X + Math.cos(a)*r1, Y + Math.sin(a)*r1); ctx.stroke();
+    ctx.lineWidth = L2; ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(X + Math.cos(a)*r0, Y + Math.sin(a)*r0); ctx.lineTo(X + Math.cos(a)*r1, Y + Math.sin(a)*r1); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(20,10,30,.85)'; ctx.fillRect(X - 2*s, Y - 2*s, 4*s, 4*s); ctx.fillStyle = '#fff'; ctx.fillRect(X - s, Y - s, 2*s, 2*s);
   ctx.restore();
 })(drawScreenFx);
 
@@ -111,7 +113,7 @@ function showCrate10Recap(id, got){
   const c = CRATE[id], p = crate10Price(c), L = got.slice().sort((a, b) => (RANK[b.it.r] || 0) - (RANK[a.it.r] || 0));
   const dupes = () => [...new Set(L.filter(g => !g.it.give).map(g => g.it.id))].reduce((s, iid) => s + Save.sellable(iid)*sellPrice(ITEM[iid] || {}), 0);
   menu(`<div class='hd'><h1>10 caisses ouvertes !</h1>${walletHtml()}</div>
-    <div class='scroll v24grid'>${L.map(g => `<div class='v24c' style='${rarCss(g.it.r)}'>${itemCard(g.it, { s:.42 })}${g.isNew ? `<i class='v24new'>Nouveau !</i>` : ''}<small style='color:${RAR[g.it.r].col}'>${RAR[g.it.r].label}</small></div>`).join('')}</div>
+    <div class='scroll v24grid'>${L.map(g => `<div class='v24c' style='${rarCss(g.it.r)}'>${itemCard(g.it, { s:.42 })}<b class='v25nm'>${esc(v25ItemName(g.it))}</b>${g.isNew ? `<i class='v24new'>Nouveau !</i>` : ''}<small style='color:${RAR[g.it.r].col}'>${RAR[g.it.r].label}</small></div>`).join('')}</div>
     <div class='row'><button class='btn' id='re10' ${Save.coins() >= p ? '' : 'disabled'}>Rouvrir ×10 — ${money(p)}</button><button class='btn2' id='sell10'></button><button class='btn2' id='inv'>Inventaire</button><button class='btn2' id='cl'>Fermer</button></div>`);
   if(typeof shopConfetti === 'function') shopConfetti(L[0].it.r);
   const sb = document.getElementById('sell10'), upd = () => { const v = dupes(); sb.disabled = !v; sb.textContent = v ? `Vendre les doublons (+${money(v)})` : 'Pas de doublon'; if(typeof refreshWallet === 'function') refreshWallet(); };

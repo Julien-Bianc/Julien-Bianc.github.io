@@ -58,11 +58,11 @@ menu = (prev => function(h){
   const t = document.querySelector('#menu h1'); if(!t) return;
   const z = SAFARI.zones.find(x => x.name === t.textContent.trim()) || SAFARI.zones[0];
   // v0.21 : zones verrouillées (Titans : chapitre 1 du Solo terminé) et titre « Safari »
-  const locked = x => x.id === 'titans' && typeof raidUnlocked === 'function' && !raidUnlocked();
+  const locked = x => x.id === 'titans' && typeof chapter1Done === 'function' && !chapter1Done();   // v0.25 : fin du chapitre 1
   if(locked(z)) return showSafari({ zone:SAFARI.zones[0].id });
   t.textContent = 'Safari';
-  t.closest('.hd').insertAdjacentHTML('afterend', `<div class='row sfz'>${SAFARI.zones.map(x => `<button class='btn2 sm ${x.id === z.id ? 'on' : ''} ${locked(x) ? 'lk' : ''}' data-sfz='${x.id}' ${locked(x) ? "title='Termine le niveau 7 du Solo'" : ''}>${locked(x) ? '🔒 ' : ''}${esc(x.name.replace('Safari ', ''))}</button>`).join('')}</div>`);
-  bindAll('[data-sfz]', b => { const x = SAFARI.zones.find(q => q.id === b.dataset.sfz); if(locked(x)) return Notif.toast('🔒 Termine le niveau 7 du Solo pour ouvrir le ' + esc(x.name)); showSafari({ zone:x.id }); });
+  t.closest('.hd').insertAdjacentHTML('afterend', `<div class='row sfz'>${SAFARI.zones.map(x => `<button class='btn2 sm ${x.id === z.id ? 'on' : ''} ${locked(x) ? 'lk' : ''}' data-sfz='${x.id}' ${locked(x) ? "title='Termine le chapitre 1'" : ''}>${locked(x) ? '🔒 ' : ''}${esc(x.name.replace('Safari ', ''))}</button>`).join('')}</div>`);
+  bindAll('[data-sfz]', b => { const x = SAFARI.zones.find(q => q.id === b.dataset.sfz); if(locked(x)) return Notif.toast('🔒 Termine le chapitre 1 pour ouvrir le ' + esc(x.name)); showSafari({ zone:x.id }); });
 })(menu);
 
 // ---------- 3. musiques ----------

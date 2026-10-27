@@ -25,7 +25,7 @@ const TOUR_LEVELS = [
 ];
 const TLVL = id => TOUR_LEVELS.find(l => l.id === id) || TOUR_LEVELS[0];
 // rythme et temps d'annonce selon le niveau de l'IA (Maître ≈ Mewtwo Extrême : rate .7 / tele .7)
-const tStageFor = sk => ({ ...TOUR_STAGE, rate:+(.84 - .45*(sk - .85)).toFixed(3), tele:+(.92 - .35*(sk - .85)).toFixed(3) });
+const tStageFor = sk => ({ ...TOUR_STAGE, pspeed:1/.85, rate:+(.84 - .45*(sk - .85)).toFixed(3), tele:+(.92 - .35*(sk - .85)).toFixed(3) });
 const TOUR_STAGE = { name:'Tournoi', level:6, arena:0, hp:1, dmg:1, speed:1, pspeed:1, rate:.75, tele:.85, aim:1, boss:1 };
 const TROUND = n => n === 1 ? 'Finale' : n === 2 ? 'Demi-finales' : n === 4 ? 'Quarts de finale' : n === 8 ? 'Huitièmes de finale' : 'Tour ' + n;
 
@@ -225,7 +225,7 @@ function tStartMatch(m){
   const arena = [0, 1, 2, 3, 4, 5][Math.floor(Math.random()*6)], fsk = F.ai ? F.ai.skill : F.skill || 1;
   start({ mode:'tourney', team:team.members.slice(), items:tMyItems(), size:3, stage:{ ...tStageFor(fsk), arena }, arena, enemies:F.team.slice(), tourItems:{ ...(F.items || {}) } });
   if(!G) return;
-  G.tour = { skill:fsk };
+  G.tour = { skill:fsk }; if(typeof AIB !== 'undefined') G.brain = AIB.level(G.cfg);      // v0.25 : le cerveau d'IA commun (js/ai-brain.js)
   if(typeof musicSet === 'function') musicSet(r === T.rounds.length - 1 && T.rounds[r].length === 1 ? 'tourney:final|tourney|boss|battle' : 'tourney|battle');
 }
 function tReport(win){
@@ -400,8 +400,8 @@ function tAiPick(e){
 }
 const AI_SWAP_DEF = typeof AI_SWAP !== 'undefined' ? { ...AI_SWAP } : null;
 step = (prev => function(dt){
-  const T = G && G.cfg && G.cfg.mode === 'tourney' && !G.over && !G.paused, e = T ? G.e : null, n0 = e ? e.next : 0;
-  if(AI_SWAP_DEF){ if(T){ const sk = (G.tour && G.tour.skill) || 1; Object.assign(AI_SWAP, { chance:Math.min(.95, .45 + .3*sk), lowChance:.2 + .2*sk, gain:1.15 - .15*sk, cooldown:7 - 1.5*sk, think:.35 }); } else Object.assign(AI_SWAP, AI_SWAP_DEF); }
+  const T = G && G.cfg && G.cfg.mode === 'tourney' && !G.over && !G.paused && !G.brain, e = T ? G.e : null, n0 = e ? e.next : 0;
+  if(AI_SWAP_DEF){ if(T){ const sk = (G.tour && G.tour.skill) || 1; Object.assign(AI_SWAP, { chance:Math.min(.95, .45 + .3*sk), lowChance:.2 + .2*sk, gain:1.15 - .15*sk, cooldown:7 - 1.5*sk, think:.35 }); } else if(!(G && G.brain)) Object.assign(AI_SWAP, AI_SWAP_DEF); }
   prev(dt);
   if(!T || !G || G.over || G.paused || HS > 0 || G.e !== e) return;
   try{
