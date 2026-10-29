@@ -35,7 +35,7 @@ renderPension = function(msg, miss){
       ${ev ? `<div class='pevo'><span>Prochaine évolution :</span><em class='${ev.ageOK ? 'ok' : ''}'>âge ${ev.ageOK ? '✓' : penFmt(ev.age)}</em><em class='${ev.joyOK ? 'ok' : ''}'>bonheur ${ev.joyOK ? '✓' : ev.joy + ' %'}</em></div>` : `<div class='pevo'><span>Forme finale !</span></div>`}`;
   } else {
     hero = `<img class='phero egg dim' src='assets/items/${PEN.egg}.png'>`;
-    info = `<b class='pname'>La pension est vide</b><span class='ptag'>Œufs Mystère dans ton sac : ${Pen.eggs()}</span><p class='phint'>Dépose un Œuf Mystère : il éclot en un Pokémon que tu élèves jusqu'à sa forme finale — elle rejoint alors tes Pokémon de combat. L'œuf se trouve dans les <b>caisses</b> (rareté secrète dorée), ou en récompense de la <b>fin du chapitre 1</b> (Quêtes → objectifs du débutant).</p>`;
+    info = `<b class='pname'>La pension est vide</b><span class='ptag'>Œufs Mystère dans ton sac : ${Pen.eggs()}</span><p class='phint'>Dépose un Œuf Mystère : il éclot en un Pokémon que tu élèves jusqu'à sa forme finale — elle rejoint alors tes Pokémon de combat. L'œuf se trouve dans les <b>caisses</b> (rareté secrète dorée), ou en récompense finale des <b>objectifs du nouvel arrivant</b> (Quêtes du jour).</p>`;
   }
   const errs = (miss || []).map(id => `<li><b>assets/pokemon/${id}/</b> — ${esc(PEN_ERR[id] || 'introuvable')}</li>`).join('');
   menu(`<div class='hd' data-penscene><h1>Pension Pokémon</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}

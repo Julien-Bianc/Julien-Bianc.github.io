@@ -51,7 +51,7 @@ badgeToast = (prev => function(list){
 (() => {
   const C = CHAPTERS[1]; if(!C) return;
   // classées de la plus faible à la plus forte (simulateur « joueur moyen », rapport n°4) — le décor de chaque niveau ne change pas
-  const ORD3 = [2, 4, 7, 8, 3, 5, 9, 0, 6, 1];
+  const ORD3 = [2, 4, 7, 8, 3, 5, 1, 0, 6, 9];      // v0.26 : équipes 17 et 20 échangées (Ectoplasma, Tyranocif, Carchacrok = boss final)
   if(C.teams3 && C.teams3.length === 10) C.teams3 = ORD3.map(i => C.teams3[i]);
   if(C.teams6 && C.teams6.length === 10) C.teams6 = ORD3.map(i => C.teams6[i]);
   // courbe : l'IA (Expert puis Champion) fait déjà la difficulté → stats moins gonflées en fin de chapitre
@@ -62,8 +62,7 @@ badgeToast = (prev => function(list){
 
 // ---------------------------------------------------------------- 6. fin du chapitre 1 : écran + Œuf Mystère donné directement
 // l'objectif débutant « Termine le chapitre 1 » ne redonne pas l'œuf s'il a déjà été donné par cet écran
-(() => { const g = BEGIN_GOALS.find(x => x.id === 'b-ch1'); if(!g || typeof PEN === 'undefined') return;
-  Object.defineProperty(g, 'item', { configurable:true, get:() => Save.load().v25egg === 'given' ? null : PEN.egg, set:() => {} }); })();
+// (v0.26 : l'œuf est maintenant la récompense finale des objectifs du nouvel arrivant — js/patch-v026.js)
 function v25Chapter1Scene(){
   const app = document.getElementById('app'); if(!app || document.getElementById('v25egg')) return;
   const egg = typeof PEN !== 'undefined' ? `assets/items/${PEN.egg}.png` : '';
@@ -85,7 +84,7 @@ battleEnd = (prev => function(win, why){
   const c = G && G.cfg, before = Math.max(Save.cleared(3), Save.cleared(6)), first = !!(win && c && c.mode === 'solo' && c.stageIndex === CH_SIZE - 1 && before < CH_SIZE && !Save.load().v25egg);
   const r = prev(win, why);
   if(first && Math.max(Save.cleared(3), Save.cleared(6)) >= CH_SIZE){
-    const d = Save.load(); d.v25egg = 'given'; if(typeof PEN !== 'undefined') Save.addItem(PEN.egg, 1); Save.save();
+    const d = Save.load(); d.v25egg = 'scene'; Save.save();      // v0.26 : plus d'œuf ici (récompense finale des objectifs)
     setTimeout(v25Chapter1Scene, 1400);
   }
   return r;
@@ -124,10 +123,10 @@ battleEnd = (prev => function(win, why){
   const c = G && G.cfg; let gift = null;
   if(c && c.mode === 'solo'){ const d = Save.load(), L = d.v25lose || {};
     if(win) d.v25lose = {}; else { const n = L.st === c.stageIndex ? (L.n || 0) + 1 : 1; d.v25lose = { st:c.stageIndex, n };
-      if(n % 3 === 0){ const pool = HELD.filter(h => (h.r === 'C' || h.r === 'PC') && !h.set); gift = pool[Math.floor(Math.random()*pool.length)]; if(gift) Save.addItem(gift.id, 1); } }
+      if(n % 3 === 0){ const pool = HELD.filter(h => (h.r === 'C' || h.r === 'PC') && !h.set && !/^baie-/.test(h.id)); /* v0.26 : pas de baie (même nom que les baies de Concours) */ gift = pool[Math.floor(Math.random()*pool.length)]; if(gift) Save.addItem(gift.id, 1); } }
     Save.save(); }
   const r = prev(win, why);
-  if(gift) setTimeout(() => Notif.toast(`🎁 3 défaites sur ce niveau : on t'offre <b>${esc(gift.name)}</b> ! Équipe-le dans Mes équipes.`, '#ffd23f'), 900);
+  if(gift) setTimeout(() => Notif.toast(`🎁 3 défaites sur ce niveau : on t'offre l'objet tenu <b>${esc(gift.name)}</b> ! Donne-le à un Pokémon dans Mes équipes.`, '#ffd23f'), 2600);
   return r;
 })(battleEnd);
 

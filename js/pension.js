@@ -140,7 +140,7 @@ function renderPension(msg, miss){
       <div class='pgs'><span>Faim</span>${penBar(m.hunger, '#ff9a3c')}<span>Bonheur</span>${penBar(m.joy, '#ff7ac8')}<span>Énergie</span>${penBar(m.energy, '#ffd23f')}<span>Propreté</span>${penBar(m.clean, '#5ad8ff')}</div>
       <small>${PEN_MOOD_TXT[penMood(m)]}${ev ? ` · Évolution : âge ${ev.ageOK ? '✓' : penFmt(ev.age)} · bonheur ${ev.joyOK ? '✓' : ev.joy + ' %'}` : ''}</small></div>`;
   } else {
-    card = `<img class='pegg dim' src='assets/items/${PEN.egg}.png'><div class='pbody'><b>La pension est vide</b><small>Œufs Mystère dans ton inventaire : ${Pen.eggs()}</small><small>L'œuf se trouve dans les <b>caisses</b> (rareté secrète dorée) ou en récompense de la <b>fin du chapitre 1</b>.</small></div>`;
+    card = `<img class='pegg dim' src='assets/items/${PEN.egg}.png'><div class='pbody'><b>La pension est vide</b><small>Œufs Mystère dans ton inventaire : ${Pen.eggs()}</small><small>L'œuf se trouve dans les <b>caisses</b> (rareté secrète dorée) ou en récompense finale des <b>objectifs du nouvel arrivant</b>.</small></div>`;
   }
   menu(`<div class='hd'><h1>Pension Pokémon</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
     <div class='pcard'>${card}</div>
@@ -158,7 +158,7 @@ function penEnter(){ if(typeof scenePension === 'function') scenePension(); }
 function showPenShop(msg){
   const P = Pen.d();
   menu(`<div class='hd'><h1>Boutique de la pension</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
-    <div class='scroll pshop'><h2>Baies</h2><div class='igrid'>${PEN_FOODS.map(f => `<div class='berry'><img class='bimg' src='assets/items/${f.img}.png'><b>${f.name}</b><small>Faim +${f.v}${f.joy ? ' · bonheur +' + f.joy : ''} · en stock : ${P.food[f.id] || 0}</small><button class='btn2' data-f='${f.id}'>Acheter ${money(f.price)}</button></div>`).join('')}</div>
+    <div class='scroll pshop'><h2>Baies</h2><div class='igrid'>${PEN_FOODS.map(f => `<div class='berry'><img class='bimg' src='assets/items/${f.img}.png'><b>${f.name}</b><small>Faim +${f.v}${f.joy ? ' · bonheur +' + f.joy : ''} · <span class='nw'>en stock : ${P.food[f.id] || 0}</span></small><button class='btn2' data-f='${f.id}'>Acheter ${money(f.price)}</button></div>`).join('')}</div>
     <h2>Confort</h2><div class='igrid'>${PEN_COMFORT.map(c => `<div class='berry cf'><img class='bimg big' src='${penIcon(c.id)}'><b>${c.name}</b><small>${c.desc}</small>${P.items[c.id] ? `<button class='btn2' disabled>Acheté ✓</button>` : `<button class='btn2' data-c='${c.id}'>Acheter ${money(c.price)}</button>`}</div>`).join('')}</div></div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
   bindAll('[data-f]', el => { const f = PEN_FOOD[el.dataset.f]; if(Save.spend(f.price)){ P.food[f.id] = (P.food[f.id] || 0) + 1; Pen.save(); showPenShop('+1 ' + f.name); } else showPenShop('Pas assez de Pokédollars.'); });

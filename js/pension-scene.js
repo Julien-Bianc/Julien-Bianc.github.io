@@ -323,7 +323,7 @@ function scenePension(){
         sc.ui().filter(r => PEN_TOOLS.some(b => b.id === r.id)).forEach(r => { const on = tool === r.id || (r.id === 'sleep' && m.sleeping); cPanel(x, r.x, r.y, r.w, r.h, on ? '#ffd23f' : '#4a3a7a'); cRect(x, on ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.18)', r.x, r.y, r.w, 5); penGlyph(x, r.id, r.x + r.w/2, r.y + 11); cTxt(x, r.id === 'sleep' && m.sleeping ? 'Réveil' : PEN_TOOLS.find(b => b.id === r.id).n, r.x + r.w/2, r.y + 18, { sz:7, al:'center', col:on ? '#14101c' : '#fff', sh:!on }); });
         const hint = { feed:'Touche ou glisse une baie sur lui', play:'Agite la plume : il court après !', pet:'Frotte-le doucement pour le câliner', clean:'Frotte-le pour le laver', free:PEN_MOOD_TXT[penMood(m)] }[m.sleeping ? 'free' : tool]; cTxt(x, hint, CV.cx, CV.b - 62 - (tool === 'feed' ? 40 : 0), { sz:8, al:'center', col:'#fff3d0' });
       }
-      toasts.forEach((o, i) => { const a = Math.min(1, (3.2 - o.t)*2, o.t*5); x.globalAlpha = Math.max(0, a); cPanel(x, CV.cx - 100, CV.t + 24 + i*17, 200, 14, '#2a2146'); cTxt(x, o.s, CV.cx, CV.t + 27 + i*17, { sz:8, al:'center', col:o.c }); x.globalAlpha = 1; });
+      toasts.forEach((o, i) => { const a = Math.min(1, (3.2 - o.t)*2, o.t*5); x.globalAlpha = Math.max(0, a); const ty = CV.b - 64 - i*17; /* v0.26 : en bas, plus sur le panneau de stats */ cPanel(x, CV.cx - 100, ty, 200, 14, '#2a2146'); cTxt(x, o.s, CV.cx, ty + 3, { sz:8, al:'center', col:o.c }); x.globalAlpha = 1; });
     }
     sc.pen = 1; conRun(sc);
   }

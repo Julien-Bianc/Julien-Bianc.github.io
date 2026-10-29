@@ -21,15 +21,15 @@ const AIB = {
     { react:.5,  dodge:.15, gap:1.6,  small:.6,  indep:false, tele:1.2,  lead:0,   type:false, range:false, punish:false, feint:0 },
     { react:.35, dodge:.35, gap:1.2,  small:.55, indep:false, tele:1.08, lead:.4,  type:true,  range:true,  punish:false, feint:0 },
     { react:.25, dodge:.55, gap:.05,  small:.3,  indep:true,  tele:1,    lead:.8,  type:true,  range:true,  punish:false, feint:0, tour:{ small:.22, cdK:.5 } },
-    { react:.18, dodge:.7,  gap:0,    small:.18, indep:true,  tele:.93,  lead:.9,  type:true,  range:true,  punish:true,  feint:0, tour:{ small:.15, cdK:.4 } },
-    { react:.12, dodge:.85, gap:0,    small:.12, indep:true,  tele:.75,  lead:.95, type:true,  range:true,  punish:true,  feint:.3, tour:{ small:.1, cdK:.2, tele:.7, react:.08, dodge:.95 } }],
+    { react:.18, dodge:.7,  gap:0,    small:.18, indep:true,  tele:.93,  lead:.9,  type:true,  range:true,  punish:true,  feint:0, tour:{ small:.15, cdK:.4, beamT:.25, bigK:.8 } },
+    { react:.12, dodge:.85, gap:0,    small:.12, indep:true,  tele:.75,  lead:.95, type:true,  range:true,  punish:true,  feint:.3, tour:{ small:.1, cdK:.3, tele:.7, react:.08, dodge:.95, beamT:.12, bigK:.6 } }],
   // tour:{…} = réglages en plus pour le Tournoi (annonces plus courtes, recharges ×cdK) — calibrés au simulateur « joueur moyen »
   cur(){ const B = G && G.brain, L = this.LV[B]; if(!L) return null; if(!(G.cfg && G.cfg.mode === 'tourney' && L.tour)) return L; return this._c && this._c.b === B ? this._c.L : (this._c = { b:B, L:{ ...L, ...L.tour } }).L; },
   // niveau selon le mode
   level(cfg){
     if(!cfg) return 0;
     const m = cfg.mode;
-    if(m === 'solo'){ const i = cfg.stageIndex || 0; return i <= 2 ? 1 : i <= 6 ? 2 : i <= 14 ? 3 : 4; }
+    if(m === 'solo'){ const i = cfg.stageIndex || 0; return i <= 2 ? 1 : i <= 6 ? 2 : i <= 11 ? 3 : 4; }      // v0.26 : Champion dès le niveau 13
     if(m === 'safari') return cfg.tuto ? 1 : cfg.zone === 'decouverte' ? 1 : 2;
     if(m === 'tower'){ const f = (typeof Tower !== 'undefined' && Tower.run() && Tower.run().floor) || 1; return f <= 10 ? 2 : f <= 30 ? 3 : 4; }
     if(m === 'tourney'){ const sk = (G && G.tour && G.tour.skill) || 1; return sk >= 1.36 ? 5 : sk >= 1.1 ? 4 : 3; }
@@ -124,8 +124,11 @@ step = (prev => function(dt){
       if(k < 0){ e.tele = 0; e.next = .15; }
       else { e.pat = k; const big = aibBig(MV[e.t][k]); let T = (big ? .8 : L.small)*L.tele*(G.cfg.mode === 'tourney' ? 1 : (G.stage.tele || 1))*((typeof AIB_TELE_X !== 'undefined' && AIB_TELE_X[e.t + ':' + MV[e.t][k].k]) || 1);
         if(L.feint && Math.random() < L.feint && !big) T *= .6;                    // feinte : annonce très courte
-        e.tele = e.tm = Math.max(.25, T);
-        if(MV[e.t][k].k === 'beam') e.aim = Math.atan2(p.y - e.y, p.x - e.x); }
+        if(big && L.bigK) T *= L.bigK;                                             // v0.26 Tournoi : grosses attaques annoncées plus vite
+        const beam = MV[e.t][k].k === 'beam';
+        e.tele = e.tm = beam && L.beamT ? L.beamT : Math.max(.25, T);              // v0.26 Tournoi Élite/Maître : rayon quasi instantané
+        e.aibFast = !!(beam && L.beamT);
+        if(beam) e.aim = Math.atan2(p.y - e.y, p.x - e.x); }
     }
     // après un tir : quand attaquer de nouveau ?
     if(e.next > n0 + .1 && !(e.tele > 0)){
@@ -135,7 +138,8 @@ step = (prev => function(dt){
       e.next = w;
     }
     // le rayon suit pendant l'annonce (Expert+)
-    if(G.brain >= 3 && e.tele > (G.brain >= 4 ? .07 : .2) && MV[e.t][e.pat] && MV[e.t][e.pat].k === 'beam'){ const T = .25*L.lead; e.aim = Math.atan2(p.y + (p.vy || 0)*T - e.y, p.x + (p.vx || 0)*T - e.x); }
+    if(e.aibFast && e.tele > 0){ /* rayon rapide : visée figée là où tu étais à l'annonce, sans anticipation → un pas de côté l'évite */ }
+    else if(G.brain >= 3 && e.tele > (G.brain >= 4 ? .07 : .2) && MV[e.t][e.pat] && MV[e.t][e.pat].k === 'beam'){ const T = .25*L.lead; e.aim = Math.atan2(p.y + (p.vy || 0)*T - e.y, p.x + (p.vx || 0)*T - e.x); }
     aibDodge(e, p, L, dist);
     aibMove(e, p, L, dt, dist);
   }catch(err){ console.warn('ia', err); }

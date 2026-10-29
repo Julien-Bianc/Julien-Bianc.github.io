@@ -25,7 +25,9 @@ const TOUR_LEVELS = [
 ];
 const TLVL = id => TOUR_LEVELS.find(l => l.id === id) || TOUR_LEVELS[0];
 // rythme et temps d'annonce selon le niveau de l'IA (Maître ≈ Mewtwo Extrême : rate .7 / tele .7)
-const tStageFor = sk => ({ ...TOUR_STAGE, pspeed:1/.85, rate:+(.84 - .45*(sk - .85)).toFixed(3), tele:+(.92 - .35*(sk - .85)).toFixed(3) });
+// v0.26 : PV / dégâts de l'IA selon la ligue (rapport n°5, joueur « Élite » simulé) — Élite ×1,15 / ×1,2 ; Maître ×1,4 / ×1,45
+const tStageFor = sk => ({ ...TOUR_STAGE, pspeed:1/.85, rate:+(.84 - .45*(sk - .85)).toFixed(3), tele:+(.92 - .35*(sk - .85)).toFixed(3),
+  hp:sk >= 1.36 ? 1.4 : sk >= 1.1 ? 1.15 : 1, dmg:sk >= 1.36 ? 1.45 : sk >= 1.1 ? 1.2 : 1 });
 const TOUR_STAGE = { name:'Tournoi', level:6, arena:0, hp:1, dmg:1, speed:1, pspeed:1, rate:.75, tele:.85, aim:1, boss:1 };
 const TROUND = n => n === 1 ? 'Finale' : n === 2 ? 'Demi-finales' : n === 4 ? 'Quarts de finale' : n === 8 ? 'Huitièmes de finale' : 'Tour ' + n;
 
@@ -46,9 +48,9 @@ const tPool = () => ORDER.filter(id => HERO[id] && MV[id] && !(POKEMON[id] && PO
 function tStrength(id){ const H = HERO[id]; return H.hp/120 + H.sp/420 + MV[id].reduce((s, m) => s + (m.d || 0), 0)/55; }
 function tMatchup(a, b){ return (lg2(bestHit(a, b)) - .8*lg2(bestHit(b, a))); }
 // l'IA choisit 3 Pokémon de sa réserve de 6 contre l'équipe adverse
-function tAiTeam(roster, foe, n){
-  n = n || 3;
-  const sc = id => tStrength(id) + (foe && foe.length ? foe.reduce((s, f) => s + tMatchup(id, f), 0)*.35 : 0) + Math.random()*.45;
+function tAiTeam(roster, foe, n, sk){
+  n = n || 3; const read = (sk || 0) >= 1.36;                                       // v0.26 : l'IA Maître « lit » ton équipe et la contre
+  const sc = id => tStrength(id) + (foe && foe.length ? foe.reduce((s, f) => s + tMatchup(id, f), 0)*(read ? 1.1 : .35) : 0) + Math.random()*(read ? .15 : .45);
   const out = [], L = roster.slice().sort((x, y) => sc(y) - sc(x));
   for(const id of L){ if(out.length >= n) break; if(out.some(o => typesOf(o)[0] === typesOf(id)[0]) && L.length - L.indexOf(id) > n - out.length) continue; out.push(id); }
   const R2 = out.length === n ? out : L.slice(0, n);
@@ -100,7 +102,7 @@ const TEng = {
     const anyHuman = (T.rounds[T.round] || []).some(m => [m.a, m.b].some(id => tP(T, id).kind !== 'ai'));
     T.deadline = Date.now() + (anyHuman ? TOUR.prep : 6)*1000;
     // l'IA choisit son équipe contre son adversaire du tour
-    (T.rounds[T.round] || []).forEach(m => [[m.a, m.b], [m.b, m.a]].forEach(([x, y]) => { const P = tP(T, x), F = tP(T, y); if(P.kind === 'ai') P.team = tAiTeam(P.ai.roster, F.team); }));
+    (T.rounds[T.round] || []).forEach(m => [[m.a, m.b], [m.b, m.a]].forEach(([x, y]) => { const P = tP(T, x), F = tP(T, y); if(P.kind === 'ai') P.team = tAiTeam(P.ai.roster, F.team, 3, P.ai.skill); }));
   },
   tick(T){
     if(!T || T.phase !== 'prep') return false;

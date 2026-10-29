@@ -330,7 +330,7 @@ function showContestMon(pid, tab, msg){
 // ---------- Marché aux baies ----------
 function showMarket(msg){
   menu(`<div class='hd'><h1>Marché aux baies</h1>${walletHtml()}</div>${msg ? `<small class='sub'>${esc(msg)}</small>` : ''}
-    <div class='scroll igrid cberr'>${BERRIES.map(b => `<div class='berry'>${berryImgHtml(b)}<b>${b.name}</b><span class='fl'>${Object.entries(b.fl).map(([k, v]) => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor} ${v}</i>`).join(' ')}</span><small>Lisse ${b.lisse} · en stock : ${Con.berry(b.id)}</small><button class='btn2' data-b='${b.id}'>Acheter ${money(b.price)}</button></div>`).join('')}</div>
+    <div class='scroll igrid cberr'>${BERRIES.map(b => `<div class='berry'>${berryImgHtml(b)}<b>${b.name}</b><span class='fl'>${Object.entries(b.fl).map(([k, v]) => `<i style='color:${catColor(k)}'>${CSTAT[k].flavor} ${v}</i>`).join(' ')}</span><small>Lisse ${b.lisse} · <span class='nw'>en stock : ${Con.berry(b.id)}</span></small><button class='btn2' data-b='${b.id}'>Acheter ${money(b.price)}</button></div>`).join('')}</div>
     <div class='row'><button class='btn2' id='back'>Retour</button></div>`);
   bindAll('[data-b]', el => { const b = BERRY[el.dataset.b]; if(Save.spend(b.price)){ Con.addBerry(b.id, 1); showMarket('+1 ' + b.name); } else showMarket('Pas assez de Pokédollars.'); });
   document.getElementById('back').onclick = showContest;

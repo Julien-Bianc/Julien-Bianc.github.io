@@ -16,7 +16,7 @@ applyLayout(); setTimeout(applyLayout, 500);                        // le bouton
 function editLayout(back){
   const app = document.getElementById('app'), ui = document.getElementById('ui'), L = lytGet();
   const saved = {}; LYT_IDS.forEach(id => { const el = document.getElementById(id); if(el){ saved[id] = { html:el.innerHTML, disp:el.style.display }; el.style.display = ''; } });
-  const lbl = { b0:'A', b1:'B', b2:'C', b3:'Esquive', b4:'Relève', b5:'Ball' };
+  const lbl = { b0:'A', b1:'B', b2:'C', b3:'»', b4:'Relève', b5:'Ball' };
   for(const id in lbl){ const el = document.getElementById(id); if(el && !G) el.innerHTML = `<b>${lbl[id]}</b>`; }
   app.classList.add('lyt');
   const bar = document.createElement('div'); bar.id = 'lytbar';
